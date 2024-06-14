@@ -22,7 +22,11 @@ static constexpr uint32_t MAX_HUGEPAGE_SIZE = 1 << 30; // 1GB;
 static constexpr uint32_t MAX_DEV_CHANNEL_SIZE = 1 << 28; // 256 MB;
 static constexpr uint32_t DEVICES_PER_UMD_CHANNEL = MAX_HUGEPAGE_SIZE / MAX_DEV_CHANNEL_SIZE; // 256 MB;
 
+#if defined(__x86_64__)
 static constexpr uint32_t MEMCPY_ALIGNMENT = sizeof(__m128i);
+#else
+static constexpr uint32_t MEMCPY_ALIGNMENT = 16;
+#endif
 
 enum class CommandQueueDeviceAddrType : uint8_t {
     PREFETCH_Q_RD = 0,
@@ -313,6 +317,7 @@ inline uint32_t get_cq_completion_rd_ptr(chip_id_t chip_id, uint8_t cq_id, uint3
 // Ideally would work by cachelines, but the min size is less than that
 // TODO: Revisit this w/ regard to possibly eliminating min sizes and orphan writes at the end
 // TODO: ditto alignment isues
+#if defined(__x86_64__)
 template <bool debug_sync = false>
 static inline void memcpy_to_device(void *__restrict dst, const void *__restrict src, size_t n) {
     TT_ASSERT((uintptr_t)dst % MEMCPY_ALIGNMENT == 0);
@@ -367,6 +372,25 @@ static inline void memcpy_to_device(void *__restrict dst, const void *__restrict
         tt_driver_atomics::sfence();
     }
 }
+#else
+template <bool debug_sync = false>
+static inline void memcpy_to_device(void *__restrict dst, const void *__restrict src, size_t n) {
+    TT_ASSERT((uintptr_t)dst % MEMCPY_ALIGNMENT == 0);
+    TT_ASSERT(n % sizeof(uint32_t) == 0);
+
+    uint32_t *src32 = (uint32_t *)src;
+    uint32_t *dst32 = (uint32_t *)dst;
+
+    size_t num_blocks = n / sizeof(uint32_t);
+    for (size_t i = 0; i < num_blocks; ++i) {
+        *dst32++ = *src32++;
+    }
+
+    if constexpr (debug_sync) {
+        tt_driver_atomics::sfence();
+    }
+}
+#endif
 
 struct SystemMemoryCQInterface {
     // CQ is split into issue and completion regions
