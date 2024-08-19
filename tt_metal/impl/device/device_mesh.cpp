@@ -12,7 +12,7 @@
 
 namespace tt::tt_metal {
 
-DeviceMesh::DeviceMesh(const DeviceGrid& device_grid, const DeviceIds &device_ids, size_t l1_small_size, size_t trace_region_size, size_t num_command_queues, DispatchCoreType dispatch_core_type)
+DeviceMesh::DeviceMesh(const DeviceGrid& device_grid, const DeviceIds &device_ids, size_t l1_small_size, size_t trace_region_size, size_t num_command_queues, DispatchCoreType dispatch_core_type, size_t mmio_offset)
     : device_grid(device_grid)
 {
     auto [num_rows, num_cols] = device_grid;
@@ -31,7 +31,7 @@ DeviceMesh::DeviceMesh(const DeviceGrid& device_grid, const DeviceIds &device_id
         TT_FATAL(num_cols <= cluster_tunnel_depth and num_rows <= cluster_tunnel_count * num_mmio_devices, "Unsupported Galaxy mesh shape");
 
         DeviceIds galaxy_device_ids;
-        for (int mmio_device_id = 0; mmio_device_id < num_mmio_devices; mmio_device_id++) {
+        for (int mmio_device_id = mmio_offset; mmio_device_id < num_mmio_devices; mmio_device_id++) {
             auto tunnels_from_mmio = tt::Cluster::instance().get_tunnels_from_mmio_device(mmio_device_id);
             for (uint32_t t = 0; t < tunnels_from_mmio.size(); t++) {
                 if (galaxy_device_ids.size() == num_requested_devices) {

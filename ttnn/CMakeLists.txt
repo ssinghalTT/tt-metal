@@ -281,6 +281,11 @@ set(ALL_TTNN_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/operations/transformer/sdpa_decode_gqa/sdpa_decode_gqa.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/operations/transformer/sdpa_decode_gqa/sdpa_decode_gqa_pybind.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/operations/transformer/sdpa_decode_gqa/device/sdpa_decode_gqa_op.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/multi_server/tensor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/multi_server/utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/multi_server/message.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/multi_server/server.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/multi_server/client.cpp
 )
 
 # Split src and python bindings
@@ -315,6 +320,7 @@ set(TTNN_PUBLIC_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR} # ${PROJECT_SOURCE_DIR}/ttnn
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/deprecated # symlink to tt_eager; should become native folder once merge complete
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/cpp/ttnn/multi_server
     ${PROJECT_SOURCE_DIR}/tt_metal/third_party/fmt)
 set(TTNN_PUBLIC_LINK_LIBRARIES compiler_flags metal_header_directories metal_common_libs tt_metal linker_flags) # linker_flags = -rdynamic if tracy enabled
 set(TTNN_PUBLIC_LINK_DIRS "")

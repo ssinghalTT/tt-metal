@@ -249,7 +249,7 @@ void dump_memory_config(const std::string& file_name, const MemoryConfig& memory
     dump_memory_config(output_stream, memory_config);
 }
 
-MemoryConfig load_memory_config(std::ifstream& input_stream) {
+MemoryConfig load_memory_config(std::istream& input_stream) {
     std::uint8_t version_id;
     TensorMemoryLayout memory_layout;
     BufferType buffer_type;

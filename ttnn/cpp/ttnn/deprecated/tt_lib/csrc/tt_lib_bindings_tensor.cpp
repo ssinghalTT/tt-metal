@@ -467,10 +467,9 @@ void TensorModule(py::module& m_tensor) {
         R"doc(
             Returns shape padded to tile shape
         )doc");
-
     m_tensor.def(
         "dump_tensor",
-        &dump_tensor,
+        py::overload_cast<const std::string&, const Tensor&, const std::unordered_map<std::string, std::string>&>(&tt::tt_metal::dump_tensor),
         py::arg("filename"),
         py::arg("tensor"),
         py::arg("strategy") = std::unordered_map<std::string, std::string>{},
@@ -479,17 +478,42 @@ void TensorModule(py::module& m_tensor) {
         )doc");
 
     m_tensor.def(
-        "load_tensor",
-        static_cast<Tensor (*)(const std::string&, Device*)>(&load_tensor<Device*>),
-        py::arg("file_name"),
-        py::arg("device") = nullptr,
-        R"doc(Load tensor to file)doc");
+        "dump_tensor",
+        py::overload_cast<std::ostream&, const Tensor&, const std::unordered_map<std::string, std::string>&>(&tt::tt_metal::dump_tensor),
+        py::arg("output_stream"),
+        py::arg("tensor"),
+        py::arg("strategy") = std::unordered_map<std::string, std::string>{},
+        R"doc(
+            Dump tensor to output stream
+        )doc");
+
     m_tensor.def(
         "load_tensor",
-        static_cast<Tensor (*)(const std::string&, DeviceMesh*)>(&load_tensor<DeviceMesh*>),
+        py::overload_cast<const std::string&, Device*>(&tt::tt_metal::load_tensor<Device*>),
         py::arg("file_name"),
         py::arg("device") = nullptr,
-        R"doc(Load tensor to file)doc");
+        R"doc(Load tensor from file to Device)doc");
+
+    m_tensor.def(
+        "load_tensor",
+        py::overload_cast<const std::string&, DeviceMesh*>(&tt::tt_metal::load_tensor<DeviceMesh*>),
+        py::arg("file_name"),
+        py::arg("device") = nullptr,
+        R"doc(Load tensor from file to DeviceMesh)doc");
+
+    m_tensor.def(
+        "load_tensor",
+        py::overload_cast<std::istream&, Device*>(&tt::tt_metal::load_tensor<Device*>),
+        py::arg("input_stream"),
+        py::arg("device") = nullptr,
+        R"doc(Load tensor from input stream to Device)doc");
+
+    m_tensor.def(
+        "load_tensor",
+        py::overload_cast<std::istream&, DeviceMesh*>(&tt::tt_metal::load_tensor<DeviceMesh*>),
+        py::arg("input_stream"),
+        py::arg("device") = nullptr,
+        R"doc(Load tensor from input stream to DeviceMesh)doc");
 
     m_tensor.def(
         "num_cores_to_corerange_set",

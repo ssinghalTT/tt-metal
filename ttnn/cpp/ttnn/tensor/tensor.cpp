@@ -597,7 +597,7 @@ Tensor Tensor::to(Layout target_layout, DeviceMesh* device_mesh) const {
         }
         Tensor tensor_modified_layout = Tensor({}, workers.size(), distributed_config);
         for (int worker_index = 0; worker_index < workers.size(); ++worker_index) {
-            auto& worker = workers[worker_index];
+            auto& worker = workers.at(worker_index);
             worker->push_work([*this, tensor_modified_layout, target_layout, worker, worker_index]() mutable {
                 TT_ASSERT(
                     this->storage_type() == StorageType::OWNED || this->storage_type() == StorageType::BORROWED ||
@@ -605,7 +605,6 @@ Tensor Tensor::to(Layout target_layout, DeviceMesh* device_mesh) const {
                         "to(layout) must be called on host tensors with MULTI_DEVICE_HOST_STORAGE when multiple "
                         "workers "
                         "are specified");
-                ;
                 auto shard = get_shard_for_device(*this, worker, worker_index);
                 shard = tensor_impl::to_layout_wrapper(shard, target_layout);
                 insert_buffer_and_shape_for_device(worker, shard, tensor_modified_layout, worker_index);

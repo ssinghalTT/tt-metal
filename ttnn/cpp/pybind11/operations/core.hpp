@@ -69,16 +69,14 @@ void py_module(py::module& module) {
 
     module.def(
         "to_device",
-        py::overload_cast<const ttnn::Tensor&, Device*, const std::optional<MemoryConfig>&>(
-            &ttnn::operations::core::to_device),
+        &ttnn::operations::core::to_device<Device>,
         py::arg("tensor"),
         py::arg("device"),
         py::arg("memory_config") = std::nullopt);
 
     module.def(
         "to_device",
-        py::overload_cast<const ttnn::Tensor&, DeviceMesh*, const std::optional<MemoryConfig>&>(
-            &ttnn::operations::core::to_device),
+        &ttnn::operations::core::to_device<DeviceMesh>,
         py::arg("tensor"),
         py::arg("device"),
         py::arg("memory_config") = std::nullopt);

@@ -103,15 +103,6 @@ ttnn::Tensor squeeze_from_4D(const ttnn::Tensor& tensor, const int rank) {
     }
 }
 
-ttnn::Tensor to_device(const ttnn::Tensor& tensor, Device* device, const std::optional<MemoryConfig>& memory_config) {
-    return tensor.to(device, memory_config.value_or(ttnn::DRAM_MEMORY_CONFIG));
-}
-
-ttnn::Tensor to_device(
-    const ttnn::Tensor& tensor, DeviceMesh* device_mesh, const std::optional<MemoryConfig>& memory_config) {
-    return tensor.to(device_mesh, memory_config.value_or(ttnn::DRAM_MEMORY_CONFIG));
-}
-
 ttnn::Tensor allocate_tensor_on_device(
     const Shape& shape,
     DataType data_type,

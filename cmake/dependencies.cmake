@@ -55,3 +55,14 @@ CPMAddPackage(
   GITHUB_REPOSITORY boost-ext/reflect
   GIT_TAG v1.1.1
 )
+
+############################################################################################################################
+# ZeroMQ C++ binding : https://github.com/zeromq/cppzmq
+############################################################################################################################
+# Add ZeroMQ C++ binding using CPM
+set(CPPZMQ_BUILD_TESTS OFF)
+CPMAddPackage(
+    NAME cppzmq
+    GIT_REPOSITORY https://github.com/zeromq/cppzmq.git
+    GIT_TAG v4.7.1 # Specify the version you need
+)

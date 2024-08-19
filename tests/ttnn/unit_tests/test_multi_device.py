@@ -588,3 +588,17 @@ def test_validate_as_tensor(tmp_path, device_mesh, height, width):
     for device in device_mesh.get_devices():
         device_tensor = ttnn.get_device_tensor(tensor, device)
         assert torch.allclose(ttnn.to_torch(device_tensor), torch_input_tensor)
+
+
+def test_multi_server_data_copy():
+    multi_server = ttnn.distributed.initialize()
+
+    torch_tensor = torch.rand((1, 1, 32, 32 * multi_server.get_global_devices()), dtype=torch.bfloat16)
+    ttnn_tensor = ttnn.from_torch(
+        torch_tensor, dtype=ttnn.bfloat16, layout=ttnn.TILE_LAYOUT, mesh_mapper=ShardTensorToMesh(multi_server, dim=3)
+    )
+    ttnn_tensor = ttnn.to_device(ttnn_tensor, multi_server, memory_config=ttnn.DRAM_MEMORY_CONFIG)
+    ttnn_loop_back_tensor = ttnn.from_device(ttnn_tensor)
+    torch_loop_back_tensor = ttnn.to_torch(ttnn_loop_back_tensor, mesh_composer=ConcatMeshToTensor(multi_server, dim=3))
+
+    assert_with_pcc(torch_tensor, torch_loop_back_tensor, pcc=0.9999)

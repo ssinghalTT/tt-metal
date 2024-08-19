@@ -12,14 +12,6 @@ class TtFalconMLP:
         self.model_config = model_config
         self.dense_h_to_4h_weights = parameters.dense_h_to_4h.weight
         self.dense_4h_to_h_weights = parameters.dense_4h_to_h.weight
-        if is_wormhole_b0():
-            self.compute_kernel_config = ttnn.WormholeComputeKernelConfig(
-                math_fidelity=ttnn.MathFidelity.LoFi, packer_l1_acc=True
-            )
-            self.core_grid = ttnn.CoreGrid(y=7, x=8)
-        else:
-            self.compute_kernel_config = None
-            self.core_grid = ttnn.CoreGrid(y=9, x=12)
 
     def __call__(self, x: ttnn.Tensor) -> ttnn.Tensor:
         ff1_linear: ttnn.Tensor = ttnn.linear(

@@ -138,7 +138,7 @@ endif()
 
 add_library(metal_common_libs INTERFACE)
 target_link_libraries(metal_common_libs INTERFACE
-    dl z pthread atomic hwloc numa stdlib # system libraries, hwloc has no cmake support, find_package won't find it
+    dl z pthread atomic hwloc numa zmq cppzmq stdlib # system libraries, hwloc has no cmake support, find_package won't find it
 )
 
 # Note on flags:
@@ -240,3 +240,17 @@ add_custom_target(clean-built
    COMMAND ${CMAKE_COMMAND} -E remove_directory ${PROJECT_SOURCE_DIR}/built
    COMMENT "Cleaning `built` directory"
 )
+
+# Add your executable
+#add_executable(client client.cpp)
+#add_executable(simple_client simple_client.cpp)
+add_executable(new_client new_client.cpp)
+add_executable(new_server new_server.cpp)
+
+# Link ZeroMQ and cppzmq to your target
+#target_link_libraries(simple_client PRIVATE zmq cppzmq pthread ttnn tt_metal)
+target_link_libraries(new_client PRIVATE zmq cppzmq pthread ttnn tt_metal)
+target_link_libraries(new_server PRIVATE zmq cppzmq pthread ttnn tt_metal)
+
+#target_link_libraries(client PRIVATE zmq cppzmq pthread ttnn tt_metal)
+#target_link_libraries(server PRIVATE zmq cppzmq pthread ttnn tt_metal)
