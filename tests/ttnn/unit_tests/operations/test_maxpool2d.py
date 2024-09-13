@@ -805,3 +805,204 @@ def test_pool_core_nondivis(
     assert isclose
     if dtype == ttnn.bfloat16:
         assert isequal
+
+
+@pytest.mark.parametrize(
+    "act_shape, kernel_size, padding, stride",
+    [
+        # ((1, 256, 64, 64), (3, 3), (0, 0), (2, 2)), # shape mismatch
+        # ((1, 512, 32, 32), (3, 3), (0, 0), (2, 2)), # shape mismatch
+        # ((1, 768, 16, 16), (3, 3), (0, 0), (2, 2)), # is_pow2 error
+    ],
+)
+@pytest.mark.parametrize(
+    "nblocks",
+    (1,),
+)
+@pytest.mark.parametrize("dtype", [ttnn.bfloat16])
+@pytest.mark.parametrize("dilation", ((1, 1),))  ## default
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
+def test_vovnet_maxpool(
+    act_shape,
+    kernel_size,
+    padding,
+    stride,
+    dilation,
+    nblocks,
+    device,
+    dtype,
+):
+    act = torch.randn((act_shape), dtype=torch.bfloat16)
+    act_shape = (act.shape[0], 1, act.shape[2] * act.shape[3], act.shape[1])
+    act_permuted = torch.permute(act, (0, 2, 3, 1))
+    act_reshaped = act_permuted.reshape(act_shape)
+
+    if dtype == ttnn.bfloat8_b:
+        ttact = ttnn.from_torch(act_reshaped, dtype, layout=ttnn.TILE_LAYOUT)
+    else:
+        ttact = ttnn.from_torch(act_reshaped, dtype)
+    ttact_d = ttnn.to_device(ttact, device)
+    output = ttnn.max_pool2d(
+        input_tensor=ttact_d,
+        batch_size=act.shape[0],
+        input_h=act.shape[2],
+        input_w=act.shape[3],
+        channels=act.shape[1],
+        kernel_size=[kernel_size[0], kernel_size[1]],
+        stride=[stride[0], stride[1]],
+        padding=[padding[0], padding[1]],
+        dilation=[dilation[0], dilation[1]],
+        device=device,
+    )
+
+    output_host = output.cpu()
+    output_pytorch_padded = ttnn.to_torch(output_host)
+    output_pytorch = output_pytorch_padded[:, :, :, : act.shape[1]]
+
+    ## reference
+    golden_pytorch = torch.nn.MaxPool2d(
+        (kernel_size[0], kernel_size[1]),
+        stride=[stride[0], stride[1]],
+        padding=[padding[0], padding[1]],
+        dilation=[dilation[0], dilation[1]],
+        ceil_mode=True,
+    )(act)
+
+    ## test for equivalance
+    golden_shape = golden_pytorch.shape
+    output_pytorch = output_pytorch.reshape(golden_shape[0], golden_shape[2], golden_shape[3], golden_shape[1])
+    output_pytorch = torch.permute(output_pytorch, (0, 3, 1, 2))  ## N, C, H, W
+    passing, pcc = assert_with_pcc(output_pytorch, golden_pytorch)
+
+
+@pytest.mark.parametrize(
+    "act_shape, kernel_size, padding, stride",
+    [
+        ((1, 256, 64, 64), (3, 3), (0, 0), (2, 2)),  # shape mismatch
+        ((1, 512, 32, 32), (3, 3), (0, 0), (2, 2)),  # shape mismatch
+    ],
+)
+@pytest.mark.parametrize(
+    "nblocks",
+    (1,),
+)
+@pytest.mark.parametrize("dtype", [ttnn.bfloat16])
+@pytest.mark.parametrize("dilation", ((1, 1),))  ## default
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
+def test_vovnet_maxpool_shape_mismatch(
+    act_shape,
+    kernel_size,
+    padding,
+    stride,
+    dilation,
+    nblocks,
+    device,
+    dtype,
+):
+    act = torch.randn((act_shape), dtype=torch.bfloat16)
+    act_shape = (act.shape[0], 1, act.shape[2] * act.shape[3], act.shape[1])
+    act_permuted = torch.permute(act, (0, 2, 3, 1))
+    act_reshaped = act_permuted.reshape(act_shape)
+
+    if dtype == ttnn.bfloat8_b:
+        ttact = ttnn.from_torch(act_reshaped, dtype, layout=ttnn.TILE_LAYOUT)
+    else:
+        ttact = ttnn.from_torch(act_reshaped, dtype)
+    ttact_d = ttnn.to_device(ttact, device)
+    output = ttnn.max_pool2d(
+        input_tensor=ttact_d,
+        batch_size=act.shape[0],
+        input_h=act.shape[2],
+        input_w=act.shape[3],
+        channels=act.shape[1],
+        kernel_size=[kernel_size[0], kernel_size[1]],
+        stride=[stride[0], stride[1]],
+        padding=[padding[0], padding[1]],
+        dilation=[dilation[0], dilation[1]],
+        device=device,
+    )
+
+    output_host = output.cpu()
+    output_pytorch_padded = ttnn.to_torch(output_host)
+    output_pytorch = output_pytorch_padded[:, :, :, : act.shape[1]]
+
+    ## reference
+    golden_pytorch = torch.nn.MaxPool2d(
+        (kernel_size[0], kernel_size[1]),
+        stride=[stride[0], stride[1]],
+        padding=[padding[0], padding[1]],
+        dilation=[dilation[0], dilation[1]],
+        ceil_mode=True,
+    )(act)
+
+    ## test for equivalance
+    golden_shape = golden_pytorch.shape
+    output_pytorch = output_pytorch.reshape(golden_shape[0], golden_shape[2], golden_shape[3], golden_shape[1])
+    output_pytorch = torch.permute(output_pytorch, (0, 3, 1, 2))  ## N, C, H, W
+    passing, pcc = assert_with_pcc(output_pytorch, golden_pytorch)
+
+
+@pytest.mark.parametrize(
+    "act_shape, kernel_size, padding, stride",
+    [
+        ((1, 768, 16, 16), (3, 3), (0, 0), (2, 2)),  # is_pow2 error
+    ],
+)
+@pytest.mark.parametrize(
+    "nblocks",
+    (1,),
+)
+@pytest.mark.parametrize("dtype", [ttnn.bfloat16])
+@pytest.mark.parametrize("dilation", ((1, 1),))  ## default
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
+def test_vovnet_maxpool_pow2(
+    act_shape,
+    kernel_size,
+    padding,
+    stride,
+    dilation,
+    nblocks,
+    device,
+    dtype,
+):
+    act = torch.randn((act_shape), dtype=torch.bfloat16)
+    act_shape = (act.shape[0], 1, act.shape[2] * act.shape[3], act.shape[1])
+    act_permuted = torch.permute(act, (0, 2, 3, 1))
+    act_reshaped = act_permuted.reshape(act_shape)
+
+    if dtype == ttnn.bfloat8_b:
+        ttact = ttnn.from_torch(act_reshaped, dtype, layout=ttnn.TILE_LAYOUT)
+    else:
+        ttact = ttnn.from_torch(act_reshaped, dtype)
+    ttact_d = ttnn.to_device(ttact, device)
+    output = ttnn.max_pool2d(
+        input_tensor=ttact_d,
+        batch_size=act.shape[0],
+        input_h=act.shape[2],
+        input_w=act.shape[3],
+        channels=act.shape[1],
+        kernel_size=[kernel_size[0], kernel_size[1]],
+        stride=[stride[0], stride[1]],
+        padding=[padding[0], padding[1]],
+        dilation=[dilation[0], dilation[1]],
+        device=device,
+    )
+
+    output_host = output.cpu()
+    output_pytorch_padded = ttnn.to_torch(output_host)
+    output_pytorch = output_pytorch_padded[:, :, :, : act.shape[1]]
+
+    ## reference
+    golden_pytorch = torch.nn.MaxPool2d(
+        (kernel_size[0], kernel_size[1]),
+        stride=[stride[0], stride[1]],
+        padding=[padding[0], padding[1]],
+        dilation=[dilation[0], dilation[1]],
+        ceil_mode=True,
+    )(act)
+
+    ## test for equivalance
+    golden_shape = golden_pytorch.shape
+    output_pytorch = output_pytorch.reshape(golden_shape[0], golden_shape[2], golden_shape[3], golden_shape[1])
+    output_pytorch = torch.permute(output_pytorch, (0, 3, 1, 2))  ## N, C, H, W
+    passing, pcc = assert_with_pcc(output_pytorch, golden_pytorch)
