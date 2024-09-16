@@ -392,3 +392,40 @@ def run_activation_test_threshold(device, h, w, scalar1, scalar2, ttnn_function,
 @pytest.mark.parametrize("w", [128])
 def test_threshold(device, h, w, value, threshold):
     run_activation_test_threshold(device, h, w, value, threshold, ttnn.threshold)
+
+
+def run_activation_unary_test_5d(device, n, c, h, w, z, ttnn_function, pcc=0.99):
+    torch.manual_seed(0)
+
+    torch_input_tensor = torch.randn((n, c, h, w, z), dtype=torch.bfloat16)
+    golden_function = ttnn.get_golden_function(ttnn_function)
+    torch_output_tensor = golden_function(torch_input_tensor)
+
+    input_tensor = ttnn.from_torch(
+        torch_input_tensor, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    output_tensor = ttnn_function(input_tensor)
+    print("output_tensor: ", output_tensor.shape, output_tensor.memory_config())
+    output_tensor = ttnn.to_layout(output_tensor, ttnn.ROW_MAJOR_LAYOUT)
+    output_tensor = ttnn.from_device(output_tensor)
+    output_tensor = ttnn.to_torch(output_tensor)
+
+    assert_with_pcc(torch_output_tensor, output_tensor, pcc)
+
+
+@pytest.mark.parametrize(
+    "n, c, h, w, z",
+    (
+        (1, 3, 40, 40, 85),  # AssertionError: 0.0010075081173280347
+        (
+            1,
+            3,
+            20,
+            20,
+            85,
+        ),  # RuntimeError: TT_FATAL @ ../tt_metal/impl/buffers/buffer.cpp:378: page_size == 0 ? size_ == 0 : size_ % page_size == 0
+        (1, 3, 80, 80, 85),  # AssertionError: 0.0008636295577814111
+    ),
+)
+def test_sigmoid_yolov7(device, n, c, h, w, z):
+    run_activation_unary_test_5d(device, n, c, h, w, z, ttnn.sigmoid)

@@ -477,3 +477,29 @@ def test_reshape_zero_element(input_shape, output_shape, layout, ttnn_reshape, u
     tt_output_tensor = ttnn.from_device(tt_output_tensor)
     tt_output_tensor = ttnn.to_torch(tt_output_tensor)
     assert tt_output_tensor.shape == torch.Size(output_shape)
+
+
+@pytest.mark.parametrize(
+    "input_shape, output_shape",
+    [
+        ([40, 40, 2], [1, 1, 40, 40, 2]),  # Passed
+        ([20, 20, 2], [1, 1, 20, 20, 2]),  # Passed
+        ([1, 255, 40, 40], [1, 3, 85, 40, 40]),  # Passed
+        ([1, 3, 40, 40, 85], [1, 4800, 85]),  # Passed
+        ([1, 255, 20, 20], [1, 3, 85, 20, 20]),  # Passed
+        ([1, 3, 20, 20, 85], [1, 1200, 85]),  # Passed
+        ([1, 3, 80, 80, 85], [1, 19200, 85]),  # Passed
+        ([1, 255, 80, 80], [1, 3, 85, 80, 80]),  # Passed
+        ([80, 80, 2], [1, 1, 80, 80, 2]),  # Passed
+    ],
+)
+def test_reshape_yolov7(device, input_shape, output_shape):
+    a = torch.randn(input_shape)
+
+    tt_a = ttnn.from_torch(a, device=device, memory_config=ttnn.L1_MEMORY_CONFIG)
+
+    tt_a = ttnn.reshape(tt_a, output_shape)
+    tt_a = ttnn.to_torch(tt_a)
+
+    torch_a = a.reshape(output_shape)
+    assert_with_pcc(torch_a, tt_a, 0.99)

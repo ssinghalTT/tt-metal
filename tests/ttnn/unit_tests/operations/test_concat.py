@@ -275,3 +275,223 @@ def test_concat_5d(device, dim):
     ttnn_result = ttnn.concat([ttnn_input_tensor, ttnn_input_tensor], dim=dim)
     ttnn_result = ttnn.to_torch(ttnn_result)
     assert_with_pcc(torch_result, ttnn_result, 0.9999)
+
+
+@pytest.mark.parametrize(
+    "input1, input2",
+    (
+        ([1, 128, 80, 80], [1, 128, 80, 80]),
+        ([1, 256, 40, 40], [1, 256, 40, 40]),
+        ([1, 512, 20, 20], [1, 512, 20, 20]),
+    ),
+)
+@pytest.mark.parametrize("dim", [1])
+@pytest.mark.parametrize("async_mode", [True, False], ids=["async_on", "async_off"])
+def test_concat_yolov7_2inputs(device, input1, input2, dim, async_mode):
+    device.enable_async(async_mode)
+    torch_input_tensor_a = torch.rand(input1, dtype=torch.bfloat16)
+    torch_input_tensor_b = torch.rand(input2, dtype=torch.bfloat16)
+    torch_output_tensor = torch.concat([torch_input_tensor_a, torch_input_tensor_b], dim=dim)
+
+    input_tensor_a = ttnn.from_torch(
+        torch_input_tensor_a, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_b = ttnn.from_torch(
+        torch_input_tensor_b, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+
+    if ttnn.has_tile_padding(input_tensor_a, dim=dim) or ttnn.has_tile_padding(input_tensor_b, dim=dim):
+        pytest.skip("Cannot concat tensors with tile padding")
+
+    output = ttnn.concat([input_tensor_a, input_tensor_b], dim=dim, memory_config=ttnn.L1_MEMORY_CONFIG)
+    output = ttnn.to_torch(output)
+
+    assert_with_pcc(torch_output_tensor, output, 0.9999)
+
+
+@pytest.mark.parametrize(
+    "input1, input2, input3",
+    (
+        ([1, 128, 40, 40], [1, 128, 40, 40], [1, 256, 40, 40]),
+        ([1, 256, 20, 20], [1, 256, 20, 20], [1, 512, 20, 20]),
+    ),
+)
+@pytest.mark.parametrize("dim", [1])
+@pytest.mark.parametrize("async_mode", [True, False], ids=["async_on", "async_off"])
+def test_concat_yolov7_3inputs(device, input1, input2, input3, dim, async_mode):
+    device.enable_async(async_mode)
+    torch_input_tensor_a = torch.rand(input1, dtype=torch.bfloat16)
+    torch_input_tensor_b = torch.rand(input2, dtype=torch.bfloat16)
+    torch_input_tensor_c = torch.rand(input3, dtype=torch.bfloat16)
+    torch_output_tensor = torch.concat([torch_input_tensor_a, torch_input_tensor_b, torch_input_tensor_c], dim=dim)
+
+    input_tensor_a = ttnn.from_torch(
+        torch_input_tensor_a, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_b = ttnn.from_torch(
+        torch_input_tensor_b, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_c = ttnn.from_torch(
+        torch_input_tensor_c, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+
+    if (
+        ttnn.has_tile_padding(input_tensor_a, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_b, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_c, dim=dim)
+    ):
+        pytest.skip("Cannot concat tensors with tile padding")
+
+    output = ttnn.concat([input_tensor_a, input_tensor_b, input_tensor_c], dim=dim, memory_config=ttnn.L1_MEMORY_CONFIG)
+    output = ttnn.to_torch(output)
+
+    assert_with_pcc(torch_output_tensor, output, 0.9999)
+
+
+@pytest.mark.parametrize(
+    "input1, input2, input3, input4",
+    (
+        ([1, 64, 160, 160], [1, 64, 160, 160], [1, 64, 160, 160], [1, 64, 160, 160]),
+        ([1, 128, 80, 80], [1, 128, 80, 80], [1, 128, 80, 80], [1, 128, 80, 80]),
+        ([1, 256, 40, 40], [1, 256, 40, 40], [1, 256, 40, 40], [1, 256, 40, 40]),
+        ([1, 256, 20, 20], [1, 256, 20, 20], [1, 256, 20, 20], [1, 256, 20, 20]),
+    ),
+)
+@pytest.mark.parametrize("dim", [1])
+@pytest.mark.parametrize("async_mode", [True, False], ids=["async_on", "async_off"])
+def test_concat_yolov7_4inputs(device, input1, input2, input3, input4, dim, async_mode):
+    device.enable_async(async_mode)
+    torch_input_tensor_a = torch.rand(input1, dtype=torch.bfloat16)
+    torch_input_tensor_b = torch.rand(input2, dtype=torch.bfloat16)
+    torch_input_tensor_c = torch.rand(input3, dtype=torch.bfloat16)
+    torch_input_tensor_d = torch.rand(input4, dtype=torch.bfloat16)
+    torch_output_tensor = torch.concat(
+        [torch_input_tensor_a, torch_input_tensor_b, torch_input_tensor_c, torch_input_tensor_d], dim=dim
+    )
+
+    input_tensor_a = ttnn.from_torch(
+        torch_input_tensor_a, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_b = ttnn.from_torch(
+        torch_input_tensor_b, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_c = ttnn.from_torch(
+        torch_input_tensor_c, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_d = ttnn.from_torch(
+        torch_input_tensor_d, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+
+    if (
+        ttnn.has_tile_padding(input_tensor_a, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_b, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_c, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_d, dim=dim)
+    ):
+        pytest.skip("Cannot concat tensors with tile padding")
+
+    output = ttnn.concat(
+        [input_tensor_a, input_tensor_b, input_tensor_c, input_tensor_d], dim=dim, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    output = ttnn.to_torch(output)
+
+    assert_with_pcc(torch_output_tensor, output, 0.9999)
+
+
+@pytest.mark.parametrize(
+    "input1, input2, input3, input4, input5, input6",
+    (
+        ([1, 128, 40, 40], [1, 128, 40, 40], [1, 128, 40, 40], [1, 128, 40, 40], [1, 256, 40, 40], [1, 256, 40, 40]),
+        ([1, 64, 80, 80], [1, 64, 80, 80], [1, 64, 80, 80], [1, 64, 80, 80], [1, 128, 80, 80], [1, 128, 80, 80]),
+        ([1, 256, 20, 20], [1, 256, 20, 20], [1, 256, 20, 20], [1, 256, 20, 20], [1, 512, 20, 20], [1, 512, 20, 20]),
+    ),
+)
+@pytest.mark.parametrize("dim", [1])
+@pytest.mark.parametrize("async_mode", [True, False], ids=["async_on", "async_off"])
+def test_concat_yolov7_6inputs(device, input1, input2, input3, input4, input5, input6, dim, async_mode):
+    device.enable_async(async_mode)
+    torch_input_tensor_a = torch.rand(input1, dtype=torch.bfloat16)
+    torch_input_tensor_b = torch.rand(input2, dtype=torch.bfloat16)
+    torch_input_tensor_c = torch.rand(input3, dtype=torch.bfloat16)
+    torch_input_tensor_d = torch.rand(input4, dtype=torch.bfloat16)
+    torch_input_tensor_e = torch.rand(input5, dtype=torch.bfloat16)
+    torch_input_tensor_f = torch.rand(input6, dtype=torch.bfloat16)
+    torch_output_tensor = torch.concat(
+        [
+            torch_input_tensor_a,
+            torch_input_tensor_b,
+            torch_input_tensor_c,
+            torch_input_tensor_d,
+            torch_input_tensor_e,
+            torch_input_tensor_f,
+        ],
+        dim=dim,
+    )
+
+    input_tensor_a = ttnn.from_torch(
+        torch_input_tensor_a, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_b = ttnn.from_torch(
+        torch_input_tensor_b, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_c = ttnn.from_torch(
+        torch_input_tensor_c, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_d = ttnn.from_torch(
+        torch_input_tensor_d, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_e = ttnn.from_torch(
+        torch_input_tensor_e, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+    input_tensor_f = ttnn.from_torch(
+        torch_input_tensor_f, layout=ttnn.TILE_LAYOUT, device=device, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+
+    if (
+        ttnn.has_tile_padding(input_tensor_a, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_b, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_c, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_d, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_e, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_f, dim=dim)
+    ):
+        pytest.skip("Cannot concat tensors with tile padding")
+
+    output = ttnn.concat(
+        [input_tensor_a, input_tensor_b, input_tensor_c, input_tensor_d, input_tensor_e, input_tensor_f],
+        dim=dim,
+        memory_config=ttnn.L1_MEMORY_CONFIG,
+    )
+    output = ttnn.to_torch(output)
+
+    assert_with_pcc(torch_output_tensor, output, 0.9999)
+
+
+@pytest.mark.parametrize(
+    "input1, input2, input3",
+    (([1, 19200, 85], [1, 4800, 85], [1, 1200, 85]),),  # Passed
+)
+@pytest.mark.parametrize("dim", [1])
+@pytest.mark.parametrize("async_mode", [True, False], ids=["async_on", "async_off"])
+def test_concat_yolov7_3inputs_3d(device, input1, input2, input3, dim, async_mode):
+    device.enable_async(async_mode)
+    torch_input_tensor_a = torch.rand(input1, dtype=torch.bfloat16)
+    torch_input_tensor_b = torch.rand(input2, dtype=torch.bfloat16)
+    torch_input_tensor_c = torch.rand(input3, dtype=torch.bfloat16)
+    torch_output_tensor = torch.concat([torch_input_tensor_a, torch_input_tensor_b, torch_input_tensor_c], dim=dim)
+
+    input_tensor_a = ttnn.from_torch(torch_input_tensor_a, device=device, memory_config=ttnn.L1_MEMORY_CONFIG)
+    input_tensor_b = ttnn.from_torch(torch_input_tensor_b, device=device, memory_config=ttnn.L1_MEMORY_CONFIG)
+    input_tensor_c = ttnn.from_torch(torch_input_tensor_c, device=device, memory_config=ttnn.L1_MEMORY_CONFIG)
+
+    if (
+        ttnn.has_tile_padding(input_tensor_a, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_b, dim=dim)
+        or ttnn.has_tile_padding(input_tensor_c, dim=dim)
+    ):
+        pytest.skip("Cannot concat tensors with tile padding")
+
+    output = ttnn.concat([input_tensor_a, input_tensor_b, input_tensor_c], dim=dim, memory_config=ttnn.L1_MEMORY_CONFIG)
+    output = ttnn.to_torch(output)
+
+    assert_with_pcc(torch_output_tensor, output, 0.9999)

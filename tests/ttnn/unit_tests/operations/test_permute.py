@@ -430,3 +430,19 @@ def test_permute_4d_fixed_w(shape, perm, device):
     torch_output = torch.permute(torch_tensor, perm)
     assert torch_output.shape == output_tensor.shape
     assert_with_pcc(torch_output, output_tensor, 0.9999)
+
+
+@pytest.mark.parametrize("shape", [(1, 3, 85, 40, 40), [1, 3, 85, 20, 20], [1, 3, 85, 80, 80]])  # Passed
+@pytest.mark.parametrize("perm", [(0, 1, 3, 4, 2)])
+def test_permute_5d_yolov7(shape, perm, device):
+    torch.manual_seed(2005)
+    input_a = torch.randn(shape)
+    torch_output = torch.permute(input_a, perm)
+
+    tt_input = ttnn.from_torch(
+        input_a, device=device, layout=ttnn.ROW_MAJOR_LAYOUT, dtype=ttnn.bfloat16, memory_config=ttnn.L1_MEMORY_CONFIG
+    )
+
+    tt_output = ttnn.permute(tt_input, perm)
+    tt_output = ttnn.to_torch(tt_output)
+    assert_with_pcc(torch_output, tt_output, 0.9999)

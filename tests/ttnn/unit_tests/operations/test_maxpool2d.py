@@ -874,3 +874,51 @@ def test_run_max_pool_squeeze_net_model(
         dtype,
         ceil_mode=ceil_mode,
     )
+
+
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
+@pytest.mark.parametrize(
+    "act_shape, kernel_size, stride, padding, dilation",  ## NCHW
+    (
+        (
+            ([1, 256, 160, 160], (2, 2), (2, 2), (0, 0), (1, 1)),  # Passed
+            ([1, 512, 80, 80], (2, 2), (2, 2), (0, 0), (1, 1)),  # Passed
+            ([1, 1024, 40, 40], (2, 2), (2, 2), (0, 0), (1, 1)),  # Passed
+            (
+                [1, 512, 20, 20],
+                (5, 5),
+                (1, 1),
+                (2, 2),
+                (1, 1),
+            ),  # Passed for BFLOAT16, Skipped For BFP8_B datatype, input height * width should be multiple of 32
+            (
+                [1, 512, 20, 20],
+                (9, 9),
+                (1, 1),
+                (4, 4),
+                (1, 1),
+            ),  # Passed for BFLOAT16, Skipped For BFP8_B datatype, input height * width should be multiple of 32
+            (
+                [1, 512, 20, 20],
+                (13, 13),
+                (1, 1),
+                (6, 6),
+                (1, 1),
+            ),  # Passed for BFLOAT16, Skipped For BFP8_B datatype, input height * width should be multiple of 32
+            ([1, 128, 80, 80], (2, 2), (2, 2), (0, 0), (1, 1)),  # Passed
+            ([1, 256, 40, 40], (2, 2), (2, 2), (0, 0), (1, 1)),  # Passed
+        )
+    ),
+)
+@pytest.mark.parametrize("dtype", [ttnn.bfloat16, ttnn.bfloat8_b])
+def test_run_max_pool_yolov7(
+    act_shape,
+    kernel_size,
+    padding,
+    stride,
+    dilation,
+    device,
+    dtype,
+    use_program_cache,
+):
+    run_max_pool(act_shape, kernel_size, padding, stride, dilation, device, dtype)
