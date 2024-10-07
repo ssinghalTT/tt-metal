@@ -48,7 +48,7 @@ def run_conv(
     auto_shard=False,
 ):
     # has_bias = False
-    has_bias = False
+    has_bias = True
     torch.manual_seed(0)
     conv_input_shape = [batch_size, input_channels, input_length]
     conv_weight_shape = [output_channels, input_channels // groups, kernel_size]
@@ -255,6 +255,75 @@ def test_conv1d_mamba(
 @pytest.mark.parametrize("math_fidelity", [ttnn.MathFidelity.LoFi])
 @pytest.mark.parametrize("output_layout", [ttnn.TILE_LAYOUT])
 def test_conv1d(
+    device,
+    use_program_cache,
+    math_fidelity,
+    activations_dtype,
+    weights_dtype,
+    output_dtype,
+    batch_size,
+    output_channels,
+    input_channels,
+    input_length,
+    kernel_size,
+    stride,
+    padding,
+    groups,
+    use_1d_systolic_array,
+    config_override,
+    use_shallow_conv_variant,
+    output_layout,
+):
+    if activations_dtype == ttnn.bfloat8_b:
+        pytest.skip("Row major layout not compatible with bfloat8_b")
+    if groups > 5120 or input_channels > 5120 or output_channels > 5120:
+        pytest.skip("OOM")
+    if (input_channels > 2560 or output_channels > 2560) and output_dtype == ttnn.bfloat16:
+        pytest.skip("OOM")
+
+    run_conv(
+        device,
+        math_fidelity,
+        activations_dtype,
+        weights_dtype,
+        output_dtype,
+        batch_size,
+        output_channels,
+        input_channels,
+        input_length,
+        kernel_size,
+        stride,
+        padding,
+        use_1d_systolic_array,
+        config_override,
+        use_shallow_conv_variant=use_shallow_conv_variant,
+        transpose_mcast=use_1d_systolic_array,  ## use RM (transpose_mcast=False) with 2D on WH
+        padded_input_channels=None,
+        output_layout=output_layout,
+        groups=groups,
+    )
+
+
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
+@pytest.mark.parametrize(
+    "batch_size, output_channels, input_channels, input_length, kernel_size, stride, padding, groups, use_1d_systolic_array, config_override, use_shallow_conv_variant",
+    ((8, 512, 512, 3000, 3, 2, 1, 1, True, None, False),),
+)
+@pytest.mark.parametrize(
+    "weights_dtype",
+    [ttnn.bfloat8_b],
+)
+@pytest.mark.parametrize(
+    "activations_dtype",
+    [ttnn.bfloat16],
+)
+@pytest.mark.parametrize(
+    "output_dtype",
+    [ttnn.bfloat16],
+)
+@pytest.mark.parametrize("math_fidelity", [ttnn.MathFidelity.HiFi4])
+@pytest.mark.parametrize("output_layout", [ttnn.TILE_LAYOUT])
+def test_whisper_conv1d(
     device,
     use_program_cache,
     math_fidelity,
