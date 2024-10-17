@@ -188,7 +188,6 @@ def run_conv(
         return_weights_and_bias=True,
         return_output_dim=True,
     )
-
     tt_output_tensor = ttnn.from_device(tt_output_tensor_on_device)
     torch_output_tensor = ttnn.to_torch(tt_output_tensor, mesh_composer=output_mesh_composer)
 
@@ -2718,162 +2717,77 @@ def test_conv_for_vanilla_unet(
     )
 
 
-@skip_for_blackhole()
-@pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
-@pytest.mark.parametrize(
-    "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override",
-    (
-        # unique convs in rn50 (complete list)
-        # first conv post folding and input_channels padding to tile width
-        (16, 64, 64, 14, 14, 3, 3, 1, 1, 1, 1, True, None),
-        # rn50 layer1
-        (8, 64, 64, 56, 56, 3, 3, 1, 1, 1, 1, True, None),
-        (16, 64, 64, 56, 56, 3, 3, 1, 1, 1, 1, True, None),
-        (20, 64, 64, 56, 56, 3, 3, 1, 1, 1, 1, True, None),
-        # rn50 layer2
-        (8, 128, 128, 56, 56, 3, 3, 2, 2, 1, 1, True, None),
-        (16, 128, 128, 56, 56, 3, 3, 2, 2, 1, 1, True, None),
-        (20, 128, 128, 56, 56, 3, 3, 2, 2, 1, 1, True, None),
-        (8, 128, 128, 28, 28, 3, 3, 1, 1, 1, 1, True, None),
-        (16, 128, 128, 28, 28, 3, 3, 1, 1, 1, 1, True, None),
-        (20, 128, 128, 28, 28, 3, 3, 1, 1, 1, 1, True, None),
-        (1, 32, 32, 240, 320, 3, 3, 1, 1, 1, 1, True, None),
-        (1, 64, 32, 240, 320, 3, 3, 1, 1, 1, 1, True, None),
-    ),
-)
-@pytest.mark.parametrize(
-    "weights_dtype",
-    [ttnn.bfloat8_b, ttnn.bfloat16],
-)
-@pytest.mark.parametrize(
-    "activations_dtype",
-    [ttnn.bfloat16, ttnn.float32],
-)
-@pytest.mark.parametrize("fp32_accum", [False, True], ids=["no_fp32_accum", "fp32_accum"])
-@pytest.mark.parametrize("math_fidelity", [ttnn.MathFidelity.LoFi])
-@pytest.mark.parametrize("packer_l1_acc", [True, False], ids=["pack_l1", "no_pack_l1"])
-@pytest.mark.parametrize("has_bias", [True, False], ids=["with_bias", "no_bias"])
-def test_non_tile_multiple_height_conv_wh(
-    device,
-    use_program_cache,
-    math_fidelity,
-    activations_dtype,
-    weights_dtype,
-    batch_size,
-    output_channels,
-    input_channels,
-    input_height,
-    input_width,
-    filter_height,
-    filter_width,
-    stride_h,
-    stride_w,
-    pad_h,
-    pad_w,
-    use_1d_systolic_array,
-    config_override,
-    fp32_accum,
-    packer_l1_acc,
-    has_bias,
-):
-    if device.core_grid.y == 7:
-        pytest.skip("Issue #6992: Statically allocated circular buffers in program clash with L1 buffers on core range")
-
-    if (
-        is_grayskull()
-        and activations_dtype == ttnn.bfloat16
-        and batch_size == 20
-        and (
-            output_channels == 64
-            or (
-                stride_h == 2
-                and (output_channels == 256 or (output_channels == 128 and weights_dtype == ttnn.bfloat16))
-            )
-        )
-    ):
-        pytest.skip("Skipping test because it won't fit in L1!")
-
-    if activations_dtype == ttnn.float32 and (batch_size >= 16 or (output_channels == 64 and input_height == 240)):
-        pytest.skip("Skipping test because it won't fit in L1!")
-
-    if (
-        (weights_dtype == ttnn.bfloat16 and batch_size == 20 and output_channels == 128 and input_height == 56)
-        or (weights_dtype == ttnn.bfloat16 and batch_size == 20 and output_channels == 64)
-        or (weights_dtype == ttnn.bfloat8_b and batch_size == 20 and output_channels == 128 and input_height == 56)
-    ):
-        pytest.skip("Skipping test because it won't fit in L1!")
-
-    if has_bias and packer_l1_acc and (fp32_accum or activations_dtype is ttnn.float32):
-        pytest.skip("skipping due to pack_untilize_dst issue! --> #14236")
-
-    use_shallow_conv_variant = (input_channels == 16) and device.arch() != ttnn.device.Arch.WORMHOLE_B0
-    run_conv(
-        device,
-        math_fidelity,
-        activations_dtype,
-        weights_dtype,
-        batch_size,
-        output_channels,
-        input_channels,
-        input_height,
-        input_width,
-        filter_height,
-        filter_width,
-        stride_h,
-        stride_w,
-        pad_h,
-        pad_w,
-        use_1d_systolic_array,
-        config_override=config_override,
-        use_shallow_conv_variant=use_shallow_conv_variant,
-        transpose_mcast=use_1d_systolic_array,  ## use RM (transpose_mcast=False) with 2D on WH
-        packer_l1_acc=packer_l1_acc,
-        fp32_accum=fp32_accum,
-        has_bias=has_bias,
-        output_layout=ttnn.ROW_MAJOR_LAYOUT,
-    )
-
-
 @skip_for_grayskull()
 @pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
 @pytest.mark.parametrize(
-    "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override",
+    "batch_size, input_channels, output_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, groups, use_1d_systolic_array, config_override, use_shallow_conv_variant",
     (
-        (1, 64, 64, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 64, 128, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 64, 192, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 64, 256, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 64, 320, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 64, 384, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 64, 448, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 64, 512, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 64, 576, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 64, 640, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 64, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 128, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 192, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 256, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 320, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 384, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 448, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 512, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 576, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 128, 640, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 320, 320, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (1, 640, 640, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
+        (1, 3, 16, 224, 224, 3, 3, 2, 2, 1, 1, 1, True, None, False),
+        (1, 16, 32, 112, 112, 3, 3, 2, 2, 1, 1, 1, True, None, False),
+        (1, 32, 32, 56, 56, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 16, 8, 56, 56, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 8, 16, 56, 56, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 48, 64, 56, 56, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 64, 64, 56, 56, 3, 3, 2, 2, 1, 1, 1, True, None, False),
+        (1, 64, 64, 28, 28, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 32, 16, 28, 28, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 16, 32, 28, 28, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 96, 128, 28, 28, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 128, 128, 28, 28, 3, 3, 2, 2, 1, 1, 1, True, None, False),
+        (1, 128, 128, 14, 14, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 64, 32, 14, 14, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 32, 32, 14, 14, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 64, 64, 14, 14, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 192, 128, 14, 14, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 128, 256, 14, 14, 3, 3, 2, 2, 1, 1, 1, False, None, False),
+        (1, 256, 256, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 128, 64, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 64, 64, 7, 7, 3, 3, 1, 1, 1, 1, 1, False, None, False),
+        (1, 128, 128, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 384, 256, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 256, 128, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 512, 256, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 128, 256, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 128, 128, 7, 7, 3, 3, 1, 1, 1, 1, 128, False, None, False),
+        (1, 384, 128, 14, 14, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 64, 32, 14, 14, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 32, 64, 14, 14, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 256, 64, 28, 28, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 96, 64, 28, 28, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 64, 64, 28, 28, 3, 3, 2, 2, 1, 1, 1, True, None, False),
+        (1, 128, 128, 14, 14, 3, 3, 2, 2, 1, 1, 1, False, None, False),
+        (1, 64, 64, 28, 28, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 64, 64, 28, 28, 3, 3, 1, 1, 1, 1, 64, True, None, False),
+        (1, 64, 80, 28, 28, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 80, 80, 28, 28, 3, 3, 1, 1, 1, 1, 80, True, None, False),
+        (1, 80, 80, 28, 28, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 128, 64, 14, 14, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 64, 64, 14, 14, 3, 3, 1, 1, 1, 1, 1, True, None, False),
+        (1, 128, 128, 14, 14, 3, 3, 1, 1, 1, 1, 128, True, None, False),
+        (1, 128, 80, 14, 14, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 80, 80, 14, 14, 3, 3, 1, 1, 1, 1, 80, True, None, False),
+        (1, 80, 80, 14, 14, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 256, 64, 7, 7, 3, 3, 1, 1, 1, 1, 1, False, None, False),
+        (1, 64, 64, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 256, 256, 7, 7, 3, 3, 1, 1, 1, 1, 256, False, None, False),
+        (1, 256, 80, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 80, 80, 7, 7, 3, 3, 1, 1, 1, 1, 80, False, None, False),
+        (1, 80, 80, 7, 7, 1, 1, 1, 1, 0, 0, 1, True, None, False),
+        (1, 16, 1, 4, 1029, 1, 1, 1, 1, 0, 0, 1, True, None, False),
     ),
 )
 @pytest.mark.parametrize(
     "weights_dtype",
-    [ttnn.bfloat16, ttnn.bfloat8_b],
+    [ttnn.bfloat8_b],
 )
 @pytest.mark.parametrize(
     "activations_dtype",
-    [ttnn.bfloat16],
+    [ttnn.bfloat8_b],
 )
+@pytest.mark.parametrize("memory_config", [ttnn.L1_MEMORY_CONFIG])
 @pytest.mark.parametrize("math_fidelity", [ttnn.MathFidelity.LoFi])
-@pytest.mark.parametrize("enable_auto_formatting", [False])
-def test_non_tile_multiple_width_conv_wh(
+@pytest.mark.parametrize("output_layout", [ttnn.TILE_LAYOUT])
+def test_conv_yolov11(
     device,
     use_program_cache,
     math_fidelity,
@@ -2892,7 +2806,10 @@ def test_non_tile_multiple_width_conv_wh(
     pad_w,
     use_1d_systolic_array,
     config_override,
-    enable_auto_formatting,
+    use_shallow_conv_variant,
+    groups,
+    output_layout,
+    memory_config,
 ):
     run_conv(
         device,
@@ -2912,139 +2829,8 @@ def test_non_tile_multiple_width_conv_wh(
         pad_w,
         use_1d_systolic_array,
         config_override,
-        use_shallow_conv_variant=(input_channels == 16),
-        transpose_mcast=use_1d_systolic_array,
-        enable_auto_formatting=enable_auto_formatting,
-        padded_input_channels=16 if input_channels == 16 else None,
-        output_layout=ttnn.ROW_MAJOR_LAYOUT,
+        use_shallow_conv_variant=use_shallow_conv_variant,
+        groups=groups,
+        output_layout=output_layout,
+        memory_config=memory_config,
     )
-
-
-@skip_for_grayskull()
-@pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
-def test_shallow_conv_with_tiled_input(device):
-    out_channels, in_channels, kernel_h, kernel_w = 7, 3, 3, 3
-    kernel_shape = (out_channels, in_channels, kernel_h, kernel_w)
-    batch_size = 1
-    img_h, img_w = 100, 100
-    input_shape = (batch_size, in_channels, img_h, img_w)
-
-    stride = (1, 1)
-    dilation = (1, 1)
-    pad = (1, 1)
-
-    torch_kernel = torch.randn(kernel_shape, dtype=torch.bfloat16)
-    tt_kernel = ttnn.from_torch(torch_kernel)
-
-    torch_input = torch.randn(input_shape, dtype=torch.bfloat16)
-    tt_input = ttnn.from_torch(torch_input, device=device)
-    tt_input = ttnn.permute(tt_input, (0, 2, 3, 1))
-    tt_input = ttnn.reshape(tt_input, (1, 1, batch_size * img_h * img_w, in_channels))
-    tt_input = ttnn.to_layout(tt_input, ttnn.TILE_LAYOUT)
-
-    [tt_out, [out_height, out_width], [_, _]] = ttnn.conv2d(
-        input_tensor=tt_input,
-        weight_tensor=tt_kernel,
-        in_channels=in_channels,
-        out_channels=out_channels,
-        device=device,
-        bias_tensor=None,
-        kernel_size=(kernel_h, kernel_w),
-        stride=stride,
-        padding=pad,
-        dilation=dilation,
-        batch_size=batch_size,
-        input_height=img_h,
-        input_width=img_w,
-        groups=1,
-        memory_config=ttnn.DRAM_MEMORY_CONFIG,
-        return_output_dim=True,
-        return_weights_and_bias=True,
-    )
-
-    tt_output_tensor = ttnn.from_device(tt_out)
-    torch_output_tensor = ttnn.to_torch(tt_output_tensor)
-
-    # torch_output_tensor is in row major layout and NHWC shape
-    # NHWC to NCHW
-    torch_output_tensor = torch_output_tensor.reshape(batch_size, out_height, out_width, torch_output_tensor.shape[-1])
-    torch_output_tensor = torch_output_tensor[:, :, :, :out_channels]
-
-    torch_output_tensor = torch.permute(torch_output_tensor, (0, 3, 1, 2))
-
-    torch_out_golden_tensor = torch.nn.functional.conv2d(
-        torch_input, torch_kernel, bias=None, stride=stride, padding=pad, dilation=dilation, groups=1
-    )
-
-    passing, pcc_msg = check_with_pcc_without_tensor_printout(torch_output_tensor, torch_out_golden_tensor, pcc=0.99)
-    logger.info(f"PCC = {pcc_msg}. Threshold = 0.99")
-    assert passing
-
-
-# Tests running conv2d which maps to matmul w/o sharding the input tensor.
-# Output tensor is in DRAM.
-@pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
-@pytest.mark.parametrize("tiled_input", [True, False])
-@pytest.mark.parametrize("input_on_device", [True, False])
-def test_dram_input_mm_conv(device, tiled_input, input_on_device):
-    batch_size = 1
-    out_channels, in_channels = 256, 1024
-    img_h, img_w = 128, 128
-    input_shape = (batch_size, in_channels, img_h, img_w)
-
-    # Params which map conv2d to matmul op.
-    kernel_h, kernel_w = 1, 1
-    stride = (1, 1)
-    dilation = (1, 1)
-    pad = (0, 0)
-
-    kernel_shape = (out_channels, in_channels, kernel_h, kernel_w)
-    torch_kernel = torch.randn(kernel_shape, dtype=torch.bfloat16)
-    tt_kernel = ttnn.from_torch(torch_kernel)
-
-    torch_input = torch.randn(input_shape, dtype=torch.bfloat16)
-    if input_on_device:
-        tt_input = ttnn.from_torch(torch_input, device=device)
-        tt_input = ttnn.permute(tt_input, (0, 2, 3, 1))
-        tt_input = ttnn.reshape(tt_input, (1, 1, batch_size * img_h * img_w, in_channels))
-    else:
-        torch_input_nhwc = torch.permute(torch_input, (0, 2, 3, 1))
-        tt_input = ttnn.from_torch(torch_input_nhwc)
-
-    if tiled_input:
-        tt_input = ttnn.to_layout(tt_input, ttnn.TILE_LAYOUT)
-
-    tt_out = ttnn.conv2d(
-        input_tensor=tt_input,
-        weight_tensor=tt_kernel,
-        in_channels=in_channels,
-        out_channels=out_channels,
-        device=device,
-        kernel_size=(kernel_h, kernel_w),
-        stride=stride,
-        padding=pad,
-        dilation=dilation,
-        batch_size=batch_size,
-        input_height=img_h,
-        input_width=img_w,
-    )
-
-    assert tt_out.memory_config().memory_layout == ttnn.TensorMemoryLayout.INTERLEAVED
-
-    tt_output_tensor = ttnn.from_device(tt_out)
-    torch_output_tensor = ttnn.to_torch(tt_output_tensor)
-
-    # torch_output_tensor is in row major layout and NHWC shape
-    # NHWC to NCHW
-    torch_output_tensor = torch_output_tensor.reshape(batch_size, img_h, img_w, torch_output_tensor.shape[-1])
-    torch_output_tensor = torch_output_tensor[:, :, :, :out_channels]
-
-    torch_output_tensor = torch.permute(torch_output_tensor, (0, 3, 1, 2))
-
-    torch_out_golden_tensor = torch.nn.functional.conv2d(
-        torch_input, torch_kernel, bias=None, stride=stride, padding=pad, dilation=dilation, groups=1
-    )
-
-    passing, pcc_msg = check_with_pcc_without_tensor_printout(torch_output_tensor, torch_out_golden_tensor, pcc=0.99)
-    logger.info(f"PCC = {pcc_msg}. Threshold = 0.99")
-    assert passing

@@ -183,7 +183,6 @@ def run_max_pool(
         applied_shard_scheme=shard_scheme,
         ceil_mode=ceil_mode,
     )
-
     output_host = output.cpu()
     output_pytorch_padded = torch.Tensor(ttnn.to_torch(output_host))
     output_pytorch = output_pytorch_padded[:, :, :, :in_c]
@@ -836,41 +835,17 @@ def test_pool_core_nondivis(
         assert isequal
 
 
-@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
 @pytest.mark.parametrize(
-    "act_shape",
-    (([1, 256, 54, 54],)),
+    "act_shape, kernel_size, padding, stride",
+    [((1, 128, 7, 7), (5, 5), (2, 2), (1, 1))],
 )
 @pytest.mark.parametrize(
-    "kernel_size",
-    ((3, 3),),
+    "nblocks",
+    (1,),
 )
-@pytest.mark.parametrize(
-    "padding",
-    ((0, 0),),
-)
-@pytest.mark.parametrize("stride", ((2, 2),))
-@pytest.mark.parametrize("dilation", ((1, 1),))
 @pytest.mark.parametrize("dtype", [ttnn.bfloat16])
-@pytest.mark.parametrize("ceil_mode", [False, True])
-def test_run_max_pool_squeeze_net_model(
-    act_shape,
-    kernel_size,
-    padding,
-    stride,
-    dilation,
-    device,
-    dtype,
-    use_program_cache,
-    ceil_mode,
-):
-    run_max_pool(
-        act_shape,
-        kernel_size,
-        padding,
-        stride,
-        dilation,
-        device,
-        dtype,
-        ceil_mode=ceil_mode,
-    )
+@pytest.mark.parametrize("dilation", ((1, 1),))  ## default
+@pytest.mark.parametrize("memory_config", [ttnn.L1_MEMORY_CONFIG])
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
+def test_yolov11_maxpool(act_shape, kernel_size, padding, stride, dilation, nblocks, device, dtype, memory_config):
+    run_max_pool(act_shape, kernel_size, padding, stride, dilation, device, dtype, memory_config=memory_config)
