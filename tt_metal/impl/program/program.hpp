@@ -141,10 +141,12 @@ class Program {
     ProgramConfig& get_program_config(uint32_t programmable_core_type_index);
 
     // debug/test
-    uint32_t get_sem_base_addr(Device *device, CoreCoord logical_core, CoreType core_type) const;
-    uint32_t get_cb_base_addr(Device *device, CoreCoord logical_core, CoreType core_type) const;
+    uint32_t get_sem_base_addr(Device *device, CoreCoord logical_core, CoreType core_type);
+    uint32_t get_cb_base_addr(Device *device, CoreCoord logical_core, CoreType core_type);
     uint32_t get_sem_size(Device *device, CoreCoord logical_core, CoreType core_type) const;
     uint32_t get_cb_size(Device *device, CoreCoord logical_core, CoreType core_type) const;
+
+    const std::vector<uint32_t> &determine_sub_device_ids(const Device *device);
 
    private:
     std::unique_ptr<detail::Program_> pimpl_;
