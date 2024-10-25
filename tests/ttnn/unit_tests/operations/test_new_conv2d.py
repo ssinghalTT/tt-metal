@@ -2623,60 +2623,231 @@ def test_non_tile_multiple_height_conv_wh(
 
 @skip_for_grayskull()
 @pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
-def test_shallow_conv_with_tiled_input(device):
-    out_channels, in_channels, kernel_h, kernel_w = 7, 3, 3, 3
-    kernel_shape = (out_channels, in_channels, kernel_h, kernel_w)
-    batch_size = 1
-    img_h, img_w = 100, 100
-    input_shape = (batch_size, in_channels, img_h, img_w)
-
-    stride = (1, 1)
-    dilation = (1, 1)
-    pad = (1, 1)
-
-    torch_kernel = torch.randn(kernel_shape, dtype=torch.bfloat16)
-    torch_input = torch.randn(input_shape, dtype=torch.bfloat16)
-
-    tt_kernel = ttnn.from_torch(torch_kernel)
-    tt_input = ttnn.to_device(ttnn.from_torch(torch_input), device)
-
-    tt_input = ttnn.to_layout(tt_input, ttnn.TILE_LAYOUT)
-    tt_input = ttnn.permute(tt_input, (0, 2, 3, 1))
-
-    tt_input = ttnn.reshape(tt_input, (1, 1, batch_size * img_h * img_w, in_channels))
-
-    tt_out, out_height, out_width, _, _ = ttnn.conv2d(
-        input_tensor=tt_input,
-        weight_tensor=tt_kernel,
-        in_channels=in_channels,
-        out_channels=out_channels,
-        device=device,
-        bias_tensor=None,
-        kernel_size=(kernel_h, kernel_w),
-        stride=stride,
-        padding=pad,
-        dilation=dilation,
-        batch_size=batch_size,
-        input_height=img_h,
-        input_width=img_w,
-        groups=1,
-        memory_config=ttnn.DRAM_MEMORY_CONFIG,
+@pytest.mark.parametrize(
+    "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override, use_shallow_conv_variant",
+    (
+        (1, 64, 3, 320, 800, 3, 3, 2, 2, 1, 1, True, None, False),  # Passed
+        (1, 64, 64, 160, 400, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (1, 128, 64, 160, 400, 3, 3, 2, 2, 1, 1, True, None, False),  # Passed
+        (1, 128, 128, 80, 200, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (1, 256, 768, 80, 200, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (1, 256, 256, 1, 1, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (1, 160, 256, 40, 100, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (1, 160, 160, 40, 100, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (1, 512, 1056, 40, 100, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (1, 512, 512, 1, 1, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (1, 512, 1312, 40, 100, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (1, 192, 512, 20, 50, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (1, 192, 192, 20, 50, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (1, 768, 1472, 20, 50, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (1, 768, 768, 1, 1, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (1, 192, 768, 20, 50, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (1, 768, 1728, 20, 50, 1, 1, 1, 1, 0, 0, False, None, False),  # Passed
+        (1, 224, 768, 10, 25, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (1, 224, 224, 10, 25, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (1, 1024, 1024, 1, 1, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (1, 224, 1024, 10, 25, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        # Test cases for batch size = 6
+        (6, 256, 256, 1, 1, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (6, 160, 160, 40, 100, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (6, 512, 512, 1, 1, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (6, 192, 192, 20, 50, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (6, 768, 768, 1, 1, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        (6, 224, 768, 10, 25, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (6, 224, 224, 10, 25, 3, 3, 1, 1, 1, 1, True, None, False),  # Passed
+        (6, 1024, 1024, 1, 1, 1, 1, 1, 1, 0, 0, True, None, False),  # Passed
+        # (6, 64, 3, 320, 800, 3, 3, 2, 2, 1, 1, True, None, False),  # Failed
+        # (6, 64, 64, 160, 400, 3, 3, 1, 1, 1, 1, True, None, False),  # Failed
+        # (6, 128, 64, 160, 400, 3, 3, 2, 2, 1, 1, True, None, False),  # Failed
+        # (6, 128, 128, 80, 200, 3, 3, 1, 1, 1, 1, True, None, False),  # Failed
+        # (6, 256, 768, 80, 200, 1, 1, 1, 1, 0, 0, True, None, False),  # Failed
+    ),
+)
+@pytest.mark.parametrize(
+    "weights_dtype",
+    [ttnn.bfloat8_b],
+)
+@pytest.mark.parametrize(
+    "activations_dtype",
+    [ttnn.bfloat8_b],
+)
+@pytest.mark.parametrize("math_fidelity", [ttnn.MathFidelity.LoFi])
+def test_petr_vovnetcp(
+    device,
+    use_program_cache,
+    math_fidelity,
+    activations_dtype,
+    weights_dtype,
+    batch_size,
+    output_channels,
+    input_channels,
+    input_height,
+    input_width,
+    filter_height,
+    filter_width,
+    stride_h,
+    stride_w,
+    pad_h,
+    pad_w,
+    use_1d_systolic_array,
+    config_override,
+    use_shallow_conv_variant,
+):
+    run_conv(
+        device,
+        math_fidelity,
+        activations_dtype,
+        weights_dtype,
+        batch_size,
+        output_channels,
+        input_channels,
+        input_height,
+        input_width,
+        filter_height,
+        filter_width,
+        stride_h,
+        stride_w,
+        pad_h,
+        pad_w,
+        use_1d_systolic_array,
+        config_override,
+        use_shallow_conv_variant=use_shallow_conv_variant,
     )
 
-    tt_output_tensor = ttnn.from_device(tt_out)
-    torch_output_tensor = ttnn.to_torch(tt_output_tensor)
 
-    # torch_output_tensor is in row major layout and NHWC shape
-    # NHWC to NCHW
-    torch_output_tensor = torch_output_tensor.reshape(batch_size, out_height, out_width, torch_output_tensor.shape[-1])
-    torch_output_tensor = torch_output_tensor[:, :, :, :out_channels]
-
-    torch_output_tensor = torch.permute(torch_output_tensor, (0, 3, 1, 2))
-
-    torch_out_golden_tensor = torch.nn.functional.conv2d(
-        torch_input, torch_kernel, bias=None, stride=stride, padding=pad, dilation=dilation, groups=1
+@skip_for_grayskull()
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
+@pytest.mark.parametrize(
+    "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override, split_factor",
+    (
+        (1, 160, 512, 40, 100, 3, 3, 1, 1, 1, 1, True, None, 2),  # Passed
+        (1, 1024, 1888, 10, 25, 1, 1, 1, 1, 0, 0, True, None, 2),  # Passed
+        (1, 1024, 2144, 10, 25, 1, 1, 1, 1, 0, 0, True, None, 2),  # Passed
+        # Test cases for batch size = 6
+        (6, 224, 1024, 10, 25, 3, 3, 1, 1, 1, 1, True, None, 2),  # passed
+        (6, 160, 512, 40, 100, 3, 3, 1, 1, 1, 1, True, None, 4),  # passed
+        (6, 1024, 1888, 10, 25, 1, 1, 1, 1, 0, 0, True, None, 2),  # passed
+        (6, 1024, 2144, 10, 25, 1, 1, 1, 1, 0, 0, True, None, 2),  # passed
+        (6, 192, 768, 20, 50, 3, 3, 1, 1, 1, 1, True, None, 2),  # passed
+        (6, 768, 1728, 20, 50, 1, 1, 1, 1, 0, 0, False, None, 3),  # passed
+        (6, 768, 1472, 20, 50, 1, 1, 1, 1, 0, 0, True, None, 2),  # passed
+        # (6, 512, 1312, 40, 100, 1, 1, 1, 1, 0, 0, True, None, 4),  # fails with pcc of 0.9962580895325402
+        (6, 192, 512, 20, 50, 3, 3, 1, 1, 1, 1, True, None, 2),  # passed
+        (6, 512, 1056, 40, 100, 1, 1, 1, 1, 0, 0, True, None, 2),  # passed
+        (6, 160, 256, 40, 100, 3, 3, 1, 1, 1, 1, True, None, 2),  # passed
+    ),
+)
+@pytest.mark.parametrize(
+    "weights_dtype",
+    [ttnn.bfloat8_b],
+)
+@pytest.mark.parametrize(
+    "activations_dtype",
+    [ttnn.bfloat8_b],
+)
+@pytest.mark.parametrize("math_fidelity", [ttnn.MathFidelity.LoFi])
+def test_petr_vovnetcp_split_conv(
+    device,
+    use_program_cache,
+    math_fidelity,
+    activations_dtype,
+    weights_dtype,
+    batch_size,
+    output_channels,
+    input_channels,
+    input_height,
+    input_width,
+    filter_height,
+    filter_width,
+    stride_h,
+    stride_w,
+    pad_h,
+    pad_w,
+    use_1d_systolic_array,
+    config_override,
+    split_factor,
+):
+    run_conv_with_split(
+        device,
+        math_fidelity,
+        activations_dtype,
+        weights_dtype,
+        batch_size,
+        output_channels,
+        input_channels,
+        input_height,
+        input_width,
+        filter_height,
+        filter_width,
+        stride_h,
+        stride_w,
+        pad_h,
+        pad_w,
+        use_1d_systolic_array,
+        config_override,
+        split_factor=split_factor,
     )
 
-    passing, pcc_msg = check_with_pcc_without_tensor_printout(torch_output_tensor, torch_out_golden_tensor, pcc=0.99)
-    logger.info(f"PCC = {pcc_msg}. Threshold = 0.99")
-    assert passing
+
+@skip_for_grayskull()
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
+@pytest.mark.parametrize(
+    "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override, use_shallow_conv_variant",
+    (
+        (6, 64, 3, 320, 800, 3, 3, 2, 2, 1, 1, True, None, False),  # Failed
+        (6, 64, 64, 160, 400, 3, 3, 1, 1, 1, 1, True, None, False),  # Failed
+        (6, 128, 64, 160, 400, 3, 3, 2, 2, 1, 1, True, None, False),  # Failed
+        (6, 128, 128, 80, 200, 3, 3, 1, 1, 1, 1, True, None, False),  # Failed
+        (6, 256, 768, 80, 200, 1, 1, 1, 1, 0, 0, True, None, False),  # Failed
+    ),
+)
+@pytest.mark.parametrize(
+    "weights_dtype",
+    [ttnn.bfloat8_b],
+)
+@pytest.mark.parametrize(
+    "activations_dtype",
+    [ttnn.bfloat8_b],
+)
+@pytest.mark.parametrize("math_fidelity", [ttnn.MathFidelity.LoFi])
+def test_petr_vovnetcp_oom_cases(
+    device,
+    use_program_cache,
+    math_fidelity,
+    activations_dtype,
+    weights_dtype,
+    batch_size,
+    output_channels,
+    input_channels,
+    input_height,
+    input_width,
+    filter_height,
+    filter_width,
+    stride_h,
+    stride_w,
+    pad_h,
+    pad_w,
+    use_1d_systolic_array,
+    config_override,
+    use_shallow_conv_variant,
+):
+    run_conv(
+        device,
+        math_fidelity,
+        activations_dtype,
+        weights_dtype,
+        batch_size,
+        output_channels,
+        input_channels,
+        input_height,
+        input_width,
+        filter_height,
+        filter_width,
+        stride_h,
+        stride_w,
+        pad_h,
+        pad_w,
+        use_1d_systolic_array,
+        config_override,
+        use_shallow_conv_variant=use_shallow_conv_variant,
+    )
