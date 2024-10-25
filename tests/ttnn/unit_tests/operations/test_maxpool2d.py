@@ -35,14 +35,14 @@ def run_max_pool(
         if 2 * pad_h > kernel_h or 2 * pad_w > kernel_w:
             pytest.skip("Invalid case")
 
-    if (
-        (kernel_h == 13 and pad_h != 6)
-        or (kernel_h == 9 and pad_h != 4)
-        or (kernel_h == 5 and pad_h != 2)
-        or (kernel_h == 3 and pad_h != 1)
-        or (kernel_h == 2 and pad_h != 0)
-    ):
-        pytest.skip("kernel size and padding combination not supported")
+    # if (
+    #     (kernel_h == 13 and pad_h != 6)
+    #     or (kernel_h == 9 and pad_h != 4)
+    #     or (kernel_h == 5 and pad_h != 2)
+    #     or (kernel_h == 3 and pad_h != 1)
+    #     or (kernel_h == 2 and pad_h != 0)
+    # ):
+    #     pytest.skip("kernel size and padding combination not supported")
 
     out_h = math.floor((in_h + 2 * pad_h - (dilation_h * kernel_h - 1) - 1) / stride_h) + 1
     out_w = math.floor((in_w + 2 * pad_w - (dilation_w * kernel_w - 1) - 1) / stride_w) + 1
@@ -798,3 +798,46 @@ def test_pool_core_nondivis(
     assert isclose
     if dtype == ttnn.bfloat16:
         assert isequal
+
+
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
+@pytest.mark.parametrize(
+    "act_shape, kernel_size, stride, padding, dilation",  ## NCHW
+    (
+        (
+            # (
+            #     [1, 256, 80, 200],
+            #     (3, 3),
+            #     (2, 2),
+            #     (0, 0),
+            #     (1, 1),
+            # ),  # Passed
+            # (
+            #     [1, 512, 40, 100],
+            #     (3, 3),
+            #     (2, 2),
+            #     (0, 0),
+            #     (1, 1),
+            # ),  # Passed
+            (
+                [1, 768, 20, 50],
+                (3, 3),
+                (2, 2),
+                (0, 0),
+                (1, 1),
+            ),  # For Bfloat8_b Skipped: For BFP8_B datatype, input height * width should be multiple of 32, For Bfloat16: RuntimeError: TT_FATAL @ ../ttnn/cpp/ttnn/operations/pool/maxpool/device/max_pool2d_device_op.cpp:26: is_pow2
+        )
+    ),
+)
+@pytest.mark.parametrize("dtype", [ttnn.bfloat16, ttnn.bfloat8_b])
+def test_petr_vovnetcp(
+    act_shape,
+    kernel_size,
+    padding,
+    stride,
+    dilation,
+    device,
+    dtype,
+    use_program_cache,
+):
+    run_max_pool(act_shape, kernel_size, padding, stride, dilation, device, dtype)
