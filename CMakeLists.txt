@@ -241,15 +241,24 @@ target_link_libraries(
         compiler_warnings
         stdlib
 )
-target_compile_options(
-    compiler_flags
-    INTERFACE
-        -mavx2
-        -fPIC
-        -DFMT_HEADER_ONLY
-        -fvisibility-inlines-hidden
-        -fno-lto
+
+set(COMMON_COMPILER_FLAGS
+    -fPIC
+    -DFMT_HEADER_ONLY
+    -fvisibility-inlines-hidden
+    -fno-lto
 )
+
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
+    target_compile_options(
+        compiler_flags
+        INTERFACE
+            ${COMMON_COMPILER_FLAGS}
+            -mavx2
+    )
+else() # No ARM NEON or RISC-V vector for now...
+    target_compile_options(compiler_flags INTERFACE ${COMMON_COMPILER_FLAGS})
+endif()
 
 if(ENABLE_CODE_TIMERS)
     target_compile_options(compiler_flags INTERFACE -DTT_ENABLE_CODE_TIMERS)
