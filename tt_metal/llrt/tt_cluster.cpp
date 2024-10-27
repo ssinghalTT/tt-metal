@@ -148,6 +148,8 @@ std::filesystem::path get_cluster_desc_yaml() {
     const fs::path eth_fpath = tt_metal_dir / "third_party/umd/device/bin/silicon/x86/create-ethernet-map";
 #elif defined(__aarch64__) || defined(_M_ARM64)
     const fs::path eth_fpath = tt_metal_dir / "third_party/umd/device/bin/silicon/aarch64/create-ethernet-map";
+#elif defined(__riscv) && (__riscv_xlen == 64)
+    const fs::path eth_fpath = tt_metal_dir / "third_party/umd/device/bin/silicon/riscv64/create-ethernet-map";
 #else
 #error "Unsupported host architecture"
 #endif
