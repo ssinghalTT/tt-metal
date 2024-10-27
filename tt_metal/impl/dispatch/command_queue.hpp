@@ -318,7 +318,7 @@ class EnqueueProgramCommand : public Command {
     void assemble_device_commands(ProgramCommandSequence& program_command_sequence, std::vector<ConfigBufferEntry>& kernel_config_addrs);
     void update_device_commands(ProgramCommandSequence& cached_program_command_sequence, std::vector<ConfigBufferEntry>& kernel_config_addrs);
 
-    void write_program_command_sequence(const ProgramCommandSequence& program_command_sequence, bool stall_first);
+    void write_program_command_sequence(const ProgramCommandSequence& program_command_sequence);
 
     void process();
 

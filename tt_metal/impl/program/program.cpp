@@ -1095,6 +1095,7 @@ void Program::finalize(Device *device) {
         TT_ASSERT(offset == align(offset, hal.get_alignment(HalMemType::L1)));
 
         this->get_program_config_size(index) = offset;
+        fprintf(stderr, "Program config size: %d\n", offset);
 
         auto max_size = hal.get_dev_size(programmable_core_type, HalL1MemAddrType::KERNEL_CONFIG);
         TT_FATAL(offset < max_size,

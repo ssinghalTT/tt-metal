@@ -1321,7 +1321,7 @@ void EnqueueProgramCommand::update_device_commands(ProgramCommandSequence& cache
     cached_program_command_sequence.mcast_go_signal_cmd_ptr->wait_count = this->expected_num_workers_completed;
 }
 
-void EnqueueProgramCommand::write_program_command_sequence(const ProgramCommandSequence& program_command_sequence, bool stall_first) {
+void EnqueueProgramCommand::write_program_command_sequence(const ProgramCommandSequence& program_command_sequence) {
     uint32_t preamble_fetch_size_bytes = program_command_sequence.preamble_command_sequence.size_bytes();
 
     uint32_t stall_fetch_size_bytes = program_command_sequence.stall_command_sequence.size_bytes();
@@ -1332,8 +1332,6 @@ void EnqueueProgramCommand::write_program_command_sequence(const ProgramCommandS
 
     uint32_t program_config_buffer_data_size_bytes =
         program_command_sequence.program_config_buffer_data_size_bytes;
-
-    uint32_t program_rem_fetch_size_bytes = program_fetch_size_bytes - program_config_buffer_data_size_bytes;
 
     uint8_t* program_command_sequence_data = (uint8_t*)program_command_sequence.device_command_sequence.data();
 
@@ -1349,34 +1347,17 @@ void EnqueueProgramCommand::write_program_command_sequence(const ProgramCommandS
             program_command_sequence.preamble_command_sequence.data(), preamble_fetch_size_bytes, write_ptr);
         write_ptr += preamble_fetch_size_bytes;
 
-        if (stall_first) {
-            // Must stall before writing runtime args
-            this->manager.cq_write(
-                program_command_sequence.stall_command_sequence.data(), stall_fetch_size_bytes, write_ptr);
-            write_ptr += stall_fetch_size_bytes;
-        }
+        // Stall before writing data
+        this->manager.cq_write(
+            program_command_sequence.stall_command_sequence.data(), stall_fetch_size_bytes, write_ptr);
+        write_ptr += stall_fetch_size_bytes;
 
         for (const auto& cmds : program_command_sequence.runtime_args_command_sequences) {
             this->manager.cq_write(cmds.data(), cmds.size_bytes(), write_ptr);
             write_ptr += cmds.size_bytes();
         }
 
-        if (not stall_first) {
-            if (program_config_buffer_data_size_bytes > 0) {
-                this->manager.cq_write(program_command_sequence_data, program_config_buffer_data_size_bytes, write_ptr);
-                program_command_sequence_data += program_config_buffer_data_size_bytes;
-                write_ptr += program_config_buffer_data_size_bytes;
-            }
-
-            // Didn't stall before kernel config data, stall before remaining commands
-            this->manager.cq_write(
-                program_command_sequence.stall_command_sequence.data(), stall_fetch_size_bytes, write_ptr);
-            write_ptr += stall_fetch_size_bytes;
-
-            this->manager.cq_write(program_command_sequence_data, program_rem_fetch_size_bytes, write_ptr);
-        } else {
-            this->manager.cq_write(program_command_sequence_data, program_fetch_size_bytes, write_ptr);
-        }
+        this->manager.cq_write(program_command_sequence_data, program_fetch_size_bytes, write_ptr);
 
         this->manager.issue_queue_push_back(total_fetch_size_bytes, this->command_queue_id);
 
@@ -1395,17 +1376,15 @@ void EnqueueProgramCommand::write_program_command_sequence(const ProgramCommandS
         this->manager.fetch_queue_reserve_back(this->command_queue_id);
         this->manager.fetch_queue_write(preamble_fetch_size_bytes, this->command_queue_id);
 
-        if (stall_first) {
-            // Must stall before writing kernel config data
-            this->manager.issue_queue_reserve(stall_fetch_size_bytes, this->command_queue_id);
-            write_ptr = this->manager.get_issue_queue_write_ptr(this->command_queue_id);
-            this->manager.cq_write(
-                program_command_sequence.stall_command_sequence.data(), stall_fetch_size_bytes, write_ptr);
-            this->manager.issue_queue_push_back(stall_fetch_size_bytes, this->command_queue_id);
-            // One fetch queue entry for just the wait and stall, very inefficient
-            this->manager.fetch_queue_reserve_back(this->command_queue_id);
-            this->manager.fetch_queue_write(stall_fetch_size_bytes, this->command_queue_id);
-        }
+        // Must stall before writing kernel config data
+        this->manager.issue_queue_reserve(stall_fetch_size_bytes, this->command_queue_id);
+        write_ptr = this->manager.get_issue_queue_write_ptr(this->command_queue_id);
+        this->manager.cq_write(
+            program_command_sequence.stall_command_sequence.data(), stall_fetch_size_bytes, write_ptr);
+        this->manager.issue_queue_push_back(stall_fetch_size_bytes, this->command_queue_id);
+        // One fetch queue entry for just the wait and stall, very inefficient
+        this->manager.fetch_queue_reserve_back(this->command_queue_id);
+        this->manager.fetch_queue_write(stall_fetch_size_bytes, this->command_queue_id);
 
         // TODO: We can pack multiple RT args into one fetch q entry
         for (const auto& cmds : program_command_sequence.runtime_args_command_sequences) {
@@ -1419,45 +1398,13 @@ void EnqueueProgramCommand::write_program_command_sequence(const ProgramCommandS
             this->manager.fetch_queue_write(fetch_size_bytes, this->command_queue_id);
         }
 
-        // Insert a stall between program data that goes on the ring buffer and the rest of the data
-        // Otherwise write all data in 1 prefetch entry
-        if (not stall_first) {
-            if (program_config_buffer_data_size_bytes > 0) {
-                this->manager.issue_queue_reserve(program_config_buffer_data_size_bytes, this->command_queue_id);
-                write_ptr = this->manager.get_issue_queue_write_ptr(this->command_queue_id);
-                this->manager.cq_write(program_command_sequence_data, program_config_buffer_data_size_bytes, write_ptr);
-                this->manager.issue_queue_push_back(program_config_buffer_data_size_bytes, this->command_queue_id);
-                this->manager.fetch_queue_reserve_back(this->command_queue_id);
-                this->manager.fetch_queue_write(program_config_buffer_data_size_bytes, this->command_queue_id);
-                program_command_sequence_data += program_config_buffer_data_size_bytes;
-            }
-
-            // Didn't stall before kernel config data, stall before remaining commands
-            this->manager.issue_queue_reserve(stall_fetch_size_bytes, this->command_queue_id);
-            write_ptr = this->manager.get_issue_queue_write_ptr(this->command_queue_id);
-            this->manager.cq_write(
-                program_command_sequence.stall_command_sequence.data(), stall_fetch_size_bytes, write_ptr);
-            this->manager.issue_queue_push_back(stall_fetch_size_bytes, this->command_queue_id);
-            // One fetch queue entry for just the wait and stall, very inefficient
-            this->manager.fetch_queue_reserve_back(this->command_queue_id);
-            this->manager.fetch_queue_write(stall_fetch_size_bytes, this->command_queue_id);
-
-            this->manager.issue_queue_reserve(program_rem_fetch_size_bytes, this->command_queue_id);
-            write_ptr = this->manager.get_issue_queue_write_ptr(this->command_queue_id);
-            this->manager.cq_write(program_command_sequence_data, program_rem_fetch_size_bytes, write_ptr);
-            this->manager.issue_queue_push_back(program_rem_fetch_size_bytes, this->command_queue_id);
-            // One fetch queue entry for rest of program commands
-            this->manager.fetch_queue_reserve_back(this->command_queue_id);
-            this->manager.fetch_queue_write(program_rem_fetch_size_bytes, this->command_queue_id);
-        } else {
-            this->manager.issue_queue_reserve(program_fetch_size_bytes, this->command_queue_id);
-            write_ptr = this->manager.get_issue_queue_write_ptr(this->command_queue_id);
-            this->manager.cq_write(program_command_sequence_data, program_fetch_size_bytes, write_ptr);
-            this->manager.issue_queue_push_back(program_fetch_size_bytes, this->command_queue_id);
-            // One fetch queue entry for rest of program commands
-            this->manager.fetch_queue_reserve_back(this->command_queue_id);
-            this->manager.fetch_queue_write(program_fetch_size_bytes, this->command_queue_id);
-        }
+        this->manager.issue_queue_reserve(program_fetch_size_bytes, this->command_queue_id);
+        write_ptr = this->manager.get_issue_queue_write_ptr(this->command_queue_id);
+        this->manager.cq_write(program_command_sequence_data, program_fetch_size_bytes, write_ptr);
+        this->manager.issue_queue_push_back(program_fetch_size_bytes, this->command_queue_id);
+        // One fetch queue entry for rest of program commands
+        this->manager.fetch_queue_reserve_back(this->command_queue_id);
+        this->manager.fetch_queue_write(program_fetch_size_bytes, this->command_queue_id);
     }
 }
 
@@ -1465,9 +1412,16 @@ void EnqueueProgramCommand::process() {
 
     const std::pair<ConfigBufferSync, std::vector<ConfigBufferEntry>&> reservation =
         this->manager.get_config_buffer_mgr().reserve(program.program_config_sizes_);
-    bool stall_first = reservation.first.need_sync;
-    // Note: since present implementation always stalls, we always free up to "now"
-    this->manager.get_config_buffer_mgr().free(reservation.first.sync_count);
+    fprintf(stderr, "config size: (%d,%d)\n", program.program_config_sizes_[0], program.program_config_sizes_[1]);
+    uint32_t sync_count;
+    if (reservation.first.need_sync) {
+        sync_count = reservation.first.sync_count;
+        this->manager.get_config_buffer_mgr().free(sync_count);
+    } else {
+        // XXXXX this is wrong for a free running counter, need a value from recent past
+        // fix cfg buf mgr to return a valid value
+        sync_count = 0;
+    }
     uint32_t num_workers = 0;
     if (program.runs_on_noc_multicast_only_cores()) {
         num_workers += device->num_worker_cores();
@@ -1477,7 +1431,9 @@ void EnqueueProgramCommand::process() {
     }
     this->manager.get_config_buffer_mgr().alloc(
         this->expected_num_workers_completed + num_workers);
+    fprintf(stderr, "syncing on: %d %d %d\n", reservation.first.need_sync, reservation.first.sync_count, this->expected_num_workers_completed + num_workers);
 
+    /// XXXX make const
     std::vector<ConfigBufferEntry>& kernel_config_addrs = reservation.second;
 
     RecordProgramRun(program);
@@ -1505,7 +1461,7 @@ void EnqueueProgramCommand::process() {
             RecordKernelGroups(program, core_type, program.get_kernel_groups(index));
         }
         this->assemble_device_commands(program_command_sequence, kernel_config_addrs);
-        this->write_program_command_sequence(program_command_sequence, stall_first);
+        this->write_program_command_sequence(program_command_sequence);
         this->assemble_stall_commands(program_command_sequence, false);
         this->program.cached_program_command_sequences_.insert({command_hash, std::move(program_command_sequence)});
         program.set_cached();
@@ -1519,7 +1475,7 @@ void EnqueueProgramCommand::process() {
         auto& cached_program_command_sequence = cached_cmd_iter->second;
 
         cached_program_command_sequence.stall_command_sequence.update_cmd_sequence(
-            wait_count_offset, &this->expected_num_workers_completed, sizeof(uint32_t));
+            wait_count_offset, &sync_count, sizeof(uint32_t));
 
         cached_program_command_sequence.preamble_command_sequence.update_cmd_sequence(
             tensix_l1_write_offset_offset,
@@ -1532,7 +1488,7 @@ void EnqueueProgramCommand::process() {
                 sizeof(uint32_t));
         }
         this->update_device_commands(cached_program_command_sequence, kernel_config_addrs);
-        this->write_program_command_sequence(cached_program_command_sequence, stall_first);
+        this->write_program_command_sequence(cached_program_command_sequence);
     }
 }
 

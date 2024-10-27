@@ -61,7 +61,10 @@ const std::pair<ConfigBufferSync, std::vector<ConfigBufferEntry>&> WorkerConfigB
                 this->reservation_[idx].addr = addr;
                 break;
             }
-            TT_ASSERT(size <= this->end_addrs_[idx] - this->base_addrs_[idx]);
+            uint32_t total_size = this->end_addrs_[idx] - this->base_addrs_[idx]
+            TT_ASSERT(size <= total_size,
+                      "Kernel config buffer allocation ({}) exceeds buffer size of ({}) core core {}",
+                      size, total_size, idx);
 
             // alloc_index may be ahead or behind free_index
             // so compare to either end of buffer or next to be freed addr
