@@ -112,6 +112,15 @@ shard_width_hidden_dim_across_16_cores = hidden_size_tg // 16
 shard_width_hidden_dim_across_12_cores = hidden_size_12_pad // 12
 shard_width_hidden_dim_across_8_cores = hidden_size_tg // 8
 
+# 1D sharding info
+expand_size = 28 * 1024
+# Output expand dim fractured on 32 chips
+expand_size_32_chip = nearest_32(expand_size / 32)
+# Output expand dim fractured on 32 chips, sharded on 8 cores
+shard_expand_8_cores = nearest_32(expand_size_32_chip / 8)
+# Activation hidden dim replicated on chips, sharded on 8 cores
+shard_hidden_8_cores = nearest_32(hidden_size / 8)
+
 
 def run_prefetch_matmul_on_t3000_impl(
     t3k_mesh_device,
@@ -356,6 +365,8 @@ def run_prefetch_matmul_on_t3000_impl(
                 compute_kernel_config=compute_kernel_config,
             )
 
+    logger.info(f"{program_config=}")
+
     if enable_trace:
         # Compile the op
         tt_matmul_out_tensor = run_op()
@@ -532,6 +543,30 @@ def run_prefetch_matmul_on_t3000_impl(
             "l1",
             ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
         ),
+        # (  # FF1/3 matmul1d, 1D fractured
+        #     # "matmul_config, input_shape, N, weight_shard_dim, core_grid, max_in0_block_w, mem_config_input, mem_config_weights, mem_config_mm"
+        #     "matmul_1d_ff1_1d_fracture",
+        #     [1, 1, 32, hidden_size_24_pad],
+        #     3584 + 256,
+        #     3,
+        #     (8, 3),
+        #     4,
+        #     ttnn.MemoryConfig(
+        #         ttnn.TensorMemoryLayout.WIDTH_SHARDED,
+        #         ttnn.BufferType.L1,
+        #         ttnn.ShardSpec(
+        #             shard_spec_24_cores_grid,
+        #             [
+        #                 shard_height,
+        #                 shard_width_hidden_dim_across_24_cores,
+        #             ],
+        #             ttnn.ShardOrientation.ROW_MAJOR,
+        #             False,
+        #         ),
+        #     ),
+        #     "l1",
+        #     ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
+        # ),
         # (  # FF1/3 matmul1d
         #     "matmul_1d_ff1",
         #     [1, 1, 32, hidden_size_tg],
@@ -893,4 +928,266 @@ def test_prefetch_matmul_on_t3000(
         mem_config_input,
         mem_config_weights,
         mem_config_mm,
+    )
+
+
+def run_prefetch_matmul_on_t3000_1d_fractured_impl(
+    device,
+    matmul_type,
+    input_shape,
+    N,
+    weight_shard_dim,
+    core_grid,
+    num_devices,
+    input_dtype,
+    layout,
+    matmul_weights_dtype,
+    math_fidelity,
+    num_iters=1,
+):
+    ##### Create input tensor for the all gather #####
+    _, _, M, K = input_shape
+    K_perchip = nearest_32(K / num_devices)
+    N_perchip = nearest_32(N / num_devices)
+
+    input_core_grid = ttnn.CoreRangeSet(
+        {
+            ttnn.CoreRange(
+                ttnn.CoreCoord(0, 0),
+                ttnn.CoreCoord(core_grid[0] - 1, core_grid[1] - 1),
+            ),
+        }
+    )
+
+    mem_config_input = ttnn.MemoryConfig(
+        ttnn.TensorMemoryLayout.WIDTH_SHARDED,
+        ttnn.BufferType.L1,
+        ttnn.ShardSpec(
+            input_core_grid,
+            [
+                M,
+                nearest_32(K_perchip / input_core_grid.num_cores()),
+            ],
+            ttnn.ShardOrientation.ROW_MAJOR,
+            False,
+        ),
+    )
+
+    # Add padding to create a dummy tensor to overcome PCC issue for in-place CB
+    K_per_core = nearest_32(K_perchip / input_core_grid.num_cores())
+    input_tensor_padding = torch.randn([1, 1, M, K_per_core]).float()
+    _ = ttnn.as_tensor(
+        input_tensor_padding,
+        dtype=input_dtype,
+        layout=layout,
+        device=device,
+        memory_config=ttnn.MemoryConfig(
+            ttnn.TensorMemoryLayout.WIDTH_SHARDED,
+            ttnn.BufferType.L1,
+            ttnn.ShardSpec(
+                input_core_grid,
+                [
+                    M,
+                    K_per_core,
+                ],
+                ttnn.ShardOrientation.ROW_MAJOR,
+                False,
+            ),
+        ),
+    )
+
+    input_tensor = torch.randn(input_shape[:-1] + (K_perchip,)).float()
+    tt_input_tensor = ttnn.as_tensor(
+        input_tensor,
+        dtype=input_dtype,
+        layout=layout,
+        device=device,
+        memory_config=mem_config_input,
+    )
+    logger.info(f"Input tensor shape: {tt_input_tensor.shape}")
+
+    N_per_core = nearest_32(N_perchip / input_core_grid.num_cores())
+    ##### Config for the weight matrix #####
+    if matmul_type == "matmul_1d_gather_in0":
+        mem_config_weights = ttnn.MemoryConfig(
+            ttnn.TensorMemoryLayout.WIDTH_SHARDED,
+            ttnn.BufferType.L1,
+            ttnn.ShardSpec(
+                input_core_grid,
+                [
+                    K,
+                    N_per_core,
+                ],
+                ttnn.ShardOrientation.ROW_MAJOR,
+                False,
+            ),
+        )
+    else:
+        raise ValueError(f"Unsupported matmul_type: {matmul_type}")
+
+    ##### Create the weight matrix for the matmul #####
+    weights_tensor = torch.randn([1, 1, K, N_perchip]).float()
+    weight_tt = ttnn.as_tensor(
+        weights_tensor,
+        dtype=matmul_weights_dtype,
+        layout=layout,
+        device=device,
+        memory_config=mem_config_weights,
+    )
+    logger.info(f"Weight tensor shape: {weight_tt.shape}")
+
+    ##### Configs for ttnn.matmul #####
+    if matmul_type == "matmul_1d_gather_in0":
+        per_core_M = math.ceil(M / TILE_SIZE)
+        per_core_N = math.ceil(N_per_core / TILE_SIZE)
+        program_config = ttnn.MatmulMultiCoreReuseMultiCast1DProgramConfig(
+            compute_with_storage_grid_size=core_grid,
+            in0_block_w=max(1, math.ceil(K / 32)),  # how much inner dim you take each time
+            out_subblock_h=per_core_M,  # Must be divisible by per_core_M
+            out_subblock_w=per_core_N,  # Must be divisible by per_core_N, out_subblock_w * out_subblock_h <= 4
+            per_core_M=per_core_M,  # M / TILE_HEIGHT / Grid_Size
+            per_core_N=per_core_N,  # N / TILE_WIDTH / Grid_Size
+            mcast_in0=True,
+            gather_in0=True,
+            fused_activation=None,  # ttnn.UnaryOpType.SILU,
+            fuse_batch=True,
+        )
+    else:
+        raise ValueError(f"Unsupported matmul_type: {matmul_type}")
+
+    compute_kernel_config = ttnn.WormholeComputeKernelConfig(
+        math_fidelity=math_fidelity,
+        math_approx_mode=True,
+        fp32_dest_acc_en=True,
+        packer_l1_acc=True,
+    )
+
+    ##### Perform the torch ops #####
+    matmul_output = torch.matmul(input_tensor, weights_tensor)
+
+    ##### Perform the TT ops #####
+    def run_op():
+        if core_grid is None or isinstance(core_grid, tuple):
+            return ttnn.matmul(
+                tt_input_tensor,
+                weight_tt,
+                memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
+                program_config=program_config,
+                compute_kernel_config=compute_kernel_config,
+            )
+        else:
+            return ttnn.matmul(
+                tt_input_tensor,
+                weight_tt,
+                core_grid=core_grid,
+                memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
+                compute_kernel_config=compute_kernel_config,
+            )
+
+    logger.info(f"{program_config=}")
+
+    # if enable_trace:
+    #     # Compile the op
+    #     tt_matmul_out_tensor = run_op()
+    #     logger.info(f"Done compiling Op")
+
+    #     # Capture the trace
+    #     trace_id = ttnn.begin_trace_capture(t3k_mesh_device, cq_id=0)
+    #     for i in range(num_iters):
+    #         tt_matmul_out_tensor = run_op()
+    #     ttnn.end_trace_capture(t3k_mesh_device, trace_id, cq_id=0)
+
+    #     logger.info(f"Done capturing trace")
+
+    #     # Execute trace
+    #     ttnn.execute_trace(t3k_mesh_device, trace_id, cq_id=0, blocking=False)
+    #     logger.info(f"Done executing trace")
+
+    #     # Synchronize the devices
+    #     for d in devices:
+    #         ttnn.synchronize_device(d)
+    # else:
+    for i in range(num_iters):
+        tt_matmul_out_tensor = run_op()
+
+        ttnn.synchronize_device(device)
+
+        logger.info(f"Done iteration {i}")
+
+    print("Checking outputs for Matmul")
+    tt_mm_out = ttnn.from_device(tt_matmul_out_tensor)
+    tt_mm_out = ttnn.to_torch(tt_mm_out)
+
+    eq, output = comp_pcc(tt_mm_out, matmul_output)
+    logger.info(f"Output: {output}")
+    assert eq
+
+
+@pytest.mark.parametrize(
+    "layout",
+    [
+        ttnn.TILE_LAYOUT,
+    ],
+)
+@pytest.mark.parametrize(
+    "input_dtype, matmul_weights_dtype, math_fidelity",
+    [
+        (ttnn.bfloat16, ttnn.bfloat4_b, ttnn.MathFidelity.LoFi),
+        # (ttnn.bfloat16, ttnn.bfloat4_b, ttnn.MathFidelity.HiFi2),
+        # (ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.LoFi),
+        # (ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi2),
+        # (ttnn.bfloat8_b, ttnn.bfloat4_b, ttnn.MathFidelity.LoFi),
+        # (ttnn.bfloat8_b, ttnn.bfloat4_b, ttnn.MathFidelity.HiFi2),
+        # (ttnn.bfloat8_b, ttnn.bfloat8_b, ttnn.MathFidelity.LoFi),
+        # (ttnn.bfloat8_b, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi2),
+    ],
+)
+@pytest.mark.parametrize(
+    "matmul_type, input_shape, N, weight_shard_dim, core_grid, n_devices",
+    [
+        (
+            "matmul_1d_gather_in0",
+            (1, 1, 32, 8192),
+            28 * 1024,
+            3,
+            (8, 3),
+            32,
+        )
+    ],
+)
+@pytest.mark.parametrize(
+    "enable_async",
+    [
+        True,
+    ],
+)
+@pytest.mark.parametrize("device_params", [{"trace_region_size": 90112}], indirect=True)
+def test_prefetch_matmul_on_t3000_1d_fractured(
+    device,
+    matmul_type,
+    input_shape,
+    N,
+    weight_shard_dim,
+    core_grid,
+    n_devices,
+    input_dtype,
+    layout,
+    matmul_weights_dtype,
+    math_fidelity,
+    use_program_cache,
+    function_level_defaults,
+    enable_async,
+):
+    run_prefetch_matmul_on_t3000_1d_fractured_impl(
+        device,
+        matmul_type,
+        input_shape,
+        N,
+        weight_shard_dim,
+        core_grid,
+        n_devices,
+        input_dtype,
+        layout,
+        matmul_weights_dtype,
+        math_fidelity,
     )
