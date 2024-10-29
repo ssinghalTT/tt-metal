@@ -9,6 +9,7 @@
 #include "compute_kernel_api/pack_untilize.h"
 #include "compute_kernel_api/tile_move_copy.h"
 #include "compute_kernel_api/matmul.h"
+#include "tools/profiler/kernel_profiler.hpp"
 // #include "debug/dprint.h"
 
 #ifdef FUSE_BIAS
@@ -33,16 +34,42 @@ inline void tilize_in(
     uint32_t in_num_subblocks,
     uint32_t out_cb_id
 ) {
-    tilize_init_short(in_cb_id, in_block_w);
-    for (uint32_t in_subblock = 0; in_subblock < in_num_subblocks; ++in_subblock) {
-        for (uint32_t h = 0; h < in_subblock_h; ++h) {
-            cb_wait_front(in_cb_id, in_block_w);
-            cb_reserve_back(out_cb_id, in_block_w);
-            tilize_block(in_cb_id, in_block_w, out_cb_id);
-            cb_push_back(out_cb_id, in_block_w);
-            cb_pop_front(in_cb_id, in_block_w);
-        }
-    }
+    // DeviceZoneScopedN("TILIZE");
+    // tilize_init_short(in_cb_id, in_block_w);
+    // for (uint32_t in_subblock = 0; in_subblock < in_num_subblocks; ++in_subblock) {
+    //     for (uint32_t h = 0; h < in_subblock_h; ++h) {
+
+    //         {
+    //             DeviceZoneScopedN("TILIZE_IN_WAIT");
+    //             // moze da se zakomentarise
+    //             cb_wait_front(in_cb_id, in_block_w);
+    //         }
+
+    //         {
+    //             DeviceZoneScopedN("TILIZE_OUT_RESERVE");
+    //             // moze da se zakomentarise
+    //             cb_reserve_back(out_cb_id, in_block_w);
+    //         }
+    //         {
+    //             DeviceZoneScopedN("TILIZE_BLOCK");
+    //             tilize_block(in_cb_id, in_block_w, out_cb_id);
+    //         }
+    //         {
+    //             DeviceZoneScopedN("TILIZE_OUT_PUSH");
+    //             // ne moze da se zakomentarise
+    //             cb_push_back(out_cb_id, in_block_w);
+    //         }
+
+    //         {
+    //             DeviceZoneScopedN("TILIZE_IN_POP");
+    //             // ne moze da se zakomentarise
+    //             cb_pop_front(in_cb_id, in_block_w);
+    //         }
+    //     }
+    // }
+    int num = in_block_w * in_num_subblocks * in_subblock_h;
+    cb_push_back(out_cb_id, num);
+    cb_pop_front(in_cb_id, num);
     tilize_uninit(in_cb_id);
 } // tilize_in()
 
@@ -53,7 +80,6 @@ inline void reblock_and_untilize(
     uint32_t out_subblock_h,
     uint32_t interm_cb_id,
     uint32_t out_cb_id) {
-
     uint32_t num_tiles_in_row_of_subblocks = mulsi3(out_subblock_num_tiles, num_out_subblocks_in_col);
     cb_wait_front(interm_cb_id, num_tiles_in_row_of_subblocks);
 
@@ -204,6 +230,10 @@ void MAIN {
                 cb_wait_front(mm_in0_cb_id, in0_block_num_tiles);
                 cb_wait_front(in1_cb_id, in1_block_num_tiles);
 
+                {
+                    DeviceZoneScopedN("MATH-BLOCK");
+
+
                 if (last_out) {
                     #if defined PACK_RELU and not defined FUSE_BIAS
                     // if last block we pack the final result with relu enabled
@@ -223,17 +253,17 @@ void MAIN {
                     for (uint32_t in1_subblock_i = 0; in1_subblock_i < in1_num_subblocks; ++in1_subblock_i) {
                         if (enable_reload) {
                             // Reconfigure input
-                            copy_tile_to_dst_init_short_with_dt(in1_cb_id, matmul_partials_cb);
-                            cb_wait_front(matmul_partials_cb, out_subblock_num_tiles);
+                            //copy_tile_to_dst_init_short_with_dt(in1_cb_id, matmul_partials_cb);
+                            //cb_wait_front(matmul_partials_cb, out_subblock_num_tiles);
                             tile_regs_acquire();
 
                             uint32_t start_dst_index = 0;
                             uint32_t start_tile_index = 0;
-                            copy_block_matmul_partials(matmul_partials_cb, start_tile_index, start_dst_index, out_subblock_num_tiles);
+                            //copy_block_matmul_partials(matmul_partials_cb, start_tile_index, start_dst_index, out_subblock_num_tiles);
 
-                            cb_pop_front(matmul_partials_cb, out_subblock_num_tiles);
+                            //cb_pop_front(matmul_partials_cb, out_subblock_num_tiles);
                             // Reconfigure srcA back
-                            mm_block_init_short_with_dt(mm_in0_cb_id, in1_cb_id, matmul_partials_cb, false, out_subblock_w, out_subblock_h, in0_block_w);
+                            //mm_block_init_short_with_dt(mm_in0_cb_id, in1_cb_id, matmul_partials_cb, false, out_subblock_w, out_subblock_h, in0_block_w);
                         } else {
                             // just acquire
                             tile_regs_acquire();
@@ -283,7 +313,7 @@ void MAIN {
                         #endif
 
                         uint32_t start_dst_index = 0;
-                        matmul_pack_tile(start_dst_index, curr_matmul_out_cb, out_subblock_num_tiles);
+                        //matmul_pack_tile(start_dst_index, curr_matmul_out_cb, out_subblock_num_tiles);
 
                         tile_regs_release();
                         cb_push_back(curr_matmul_out_cb, out_subblock_num_tiles);
@@ -338,6 +368,8 @@ void MAIN {
                         #endif
                     }
                 #endif
+
+                }
 
                 cb_pop_front(mm_in0_cb_id, in0_block_num_tiles);
                 cb_pop_front(in1_cb_id, in1_block_num_tiles);

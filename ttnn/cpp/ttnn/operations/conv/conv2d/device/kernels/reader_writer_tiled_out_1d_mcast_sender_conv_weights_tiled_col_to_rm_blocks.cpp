@@ -190,16 +190,16 @@ void kernel_main() {
                         uint32_t reader_idx_2 = two_reader_indices >> 16;
 
                         act_l1_offset = reader_offset + (reader_idx_1 * conv_act_size_c_bytes);
-                        noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
+                        //noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
                         l1_write_addr_act += (coalesced_read_bytes + act_block_w_extra_align_bytes);
 
                         act_l1_offset = reader_offset + (reader_idx_2 * conv_act_size_c_bytes);
-                        noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
+                        //noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
                         l1_write_addr_act += (coalesced_read_bytes + act_block_w_extra_align_bytes);
 
                         reader_idx++;
                     }
-                    noc_async_read_barrier();
+                    //noc_async_read_barrier();
                     cb_push_back(cb_id_act_second_reader, act_block_num_tiles_read);
 
                     reader_offset += window_outer_offset;
@@ -220,20 +220,20 @@ void kernel_main() {
                             // loop over weight block tiles along w
                             for(uint32_t weight_tile_w_i = 0; weight_tile_w_i < weight_block_width_ntiles; ++weight_tile_w_i) {
                                 //DPRINT << "weight_tile_id=" << weight_tile_id << ENDL();
-                                s_weight.noc_async_read_tile(weight_tile_id, weight_write_l1_addr);
+                                //s_weight.noc_async_read_tile(weight_tile_id, weight_write_l1_addr);
                                 weight_write_l1_addr += weight_tile_nbytes;
                                 weights_block_size_bytes += weight_tile_nbytes;
                                 weight_tile_id += 1;
                             } // for weight_block_w
                             weight_row_start_tile_id += weight_stride_h;
                         } // for weight_block_h
-                        noc_async_read_barrier();
+                        //noc_async_read_barrier();
 
 #ifndef SKIP_MCAST
                         // wait until all weights mcast destinations have atomically incremented the weights semaphore_addr (i.e. its value should be weights_mcast_num_dests), then reset
                         // the semaphore_addr value back to zero for the next block
-                        noc_semaphore_wait(weights_mcast_sender_semaphore_addr_ptr, weights_mcast_num_dests);
-                        noc_semaphore_set(weights_mcast_sender_semaphore_addr_ptr, 0);
+                        // noc_semaphore_wait(weights_mcast_sender_semaphore_addr_ptr, weights_mcast_num_dests);
+                        // noc_semaphore_set(weights_mcast_sender_semaphore_addr_ptr, 0);
 
                         // Now we have the block in the CB address, we can mcast to dests!
                         uint64_t weights_multicast_data_addr = get_noc_multicast_addr(
@@ -243,7 +243,7 @@ void kernel_main() {
                             weights_mcast_dest_noc_end_y,
                             weights_start_address);
                         // num_dests must not include source, since we are NOT really doing a local copy!
-                        noc_async_write_multicast(weights_start_address, weights_multicast_data_addr, weights_block_size_bytes, weights_mcast_num_cores, false, false);
+                        //noc_async_write_multicast(weights_start_address, weights_multicast_data_addr, weights_block_size_bytes, weights_mcast_num_cores, false, false);
 
                         // Note: no need for write barrier, since these two multicasts are done on the same noc id and same vc even though cmd bufs are different
                         // Also, this only works because we are setting VCs statically (using NOC_CMD_STATIC_VC).
@@ -254,7 +254,7 @@ void kernel_main() {
 
                         // We should also multicast the flag to destinations
                         // num_dests must not include source, since we are NOT really doing a local copy!
-                        noc_semaphore_set_multicast(weights_mcast_receiver_semaphore_addr, weights_mcast_receiver_semaphore_noc_addr, weights_mcast_num_cores, false, false);
+                        //noc_semaphore_set_multicast(weights_mcast_receiver_semaphore_addr, weights_mcast_receiver_semaphore_noc_addr, weights_mcast_num_cores, false, false);
 #endif
 
                         weight_current_block_start_tile_id += weight_next_block_stride_h;
@@ -274,7 +274,7 @@ void kernel_main() {
                 uint32_t bias_start_address = bias_l1_addr;
                 uint32_t bias_block_size_bytes = 0;
                 for (uint32_t bias_tile = bias_tile_offset; bias_tile < bias_tile_offset + bias_ntiles; ++ bias_tile) {
-                    s_bias.noc_async_read_tile(bias_tile, bias_l1_addr);
+                    //s_bias.noc_async_read_tile(bias_tile, bias_l1_addr);
                     bias_l1_addr += bias_pagesize;
                     bias_block_size_bytes += bias_pagesize;
                 }
@@ -284,8 +284,8 @@ void kernel_main() {
 #ifndef SKIP_MCAST
                 // wait until all weights mcast destinations have atomically incremented the weights semaphore_addr (i.e. its value should be weights_mcast_num_dests), then reset
                 // the semaphore_addr value back to zero for the next block
-                noc_semaphore_wait(weights_mcast_sender_semaphore_addr_ptr, weights_mcast_num_dests);
-                noc_semaphore_set(weights_mcast_sender_semaphore_addr_ptr, 0);
+                // noc_semaphore_wait(weights_mcast_sender_semaphore_addr_ptr, weights_mcast_num_dests);
+                // noc_semaphore_set(weights_mcast_sender_semaphore_addr_ptr, 0);
 
                 // Now we have the block in the CB address, we can mcast to dests!
                 uint64_t bias_multicast_data_addr = get_noc_multicast_addr(
@@ -295,7 +295,7 @@ void kernel_main() {
                     weights_mcast_dest_noc_end_y,
                     bias_start_address);
                 // num_dests must not include source, since we are NOT really doing a local copy!
-                noc_async_write_multicast(bias_start_address, bias_multicast_data_addr, bias_block_size_bytes, weights_mcast_num_cores, false, false);
+                //noc_async_write_multicast(bias_start_address, bias_multicast_data_addr, bias_block_size_bytes, weights_mcast_num_cores, false, false);
 
                 // Note: no need for write barrier, since these two multicasts are done on the same noc id and same vc even though cmd bufs are different
                 // Also, this only works because we are setting VCs statically (using NOC_CMD_STATIC_VC).
@@ -306,7 +306,7 @@ void kernel_main() {
 
                 // We should also multicast the flag to destinations
                 // num_dests must not include source, since we are NOT really doing a local copy!
-                noc_semaphore_set_multicast(weights_mcast_receiver_semaphore_addr, weights_mcast_receiver_semaphore_noc_addr, weights_mcast_num_cores, false, false);
+                //noc_semaphore_set_multicast(weights_mcast_receiver_semaphore_addr, weights_mcast_receiver_semaphore_noc_addr, weights_mcast_num_cores, false, false);
 #endif
 
                 cb_push_back(bias_cb_id, bias_ntiles);
@@ -339,14 +339,14 @@ void kernel_main() {
                                 //DPRINT << "out_tile_id - " << out_tile_id << ENDL();
                                 uint64_t out_tile_noc_addr = get_noc_addr(out_tile_id, s);
                                 //DPRINT << "out_tile_id=" << out_tile_id << ENDL();
-                                noc_async_write(l1_read_addr, out_tile_noc_addr, tile_nbytes);
+                                //noc_async_write(l1_read_addr, out_tile_noc_addr, tile_nbytes);
                                 l1_read_addr += tile_nbytes;
                                 out_tile_id += out_next_tile_stride_w;
                             }
                         } // out_subblock_w (ntiles)
                         out_sb_row_start_tile_id += out_next_tile_stride_h;
                     } // out_subblock_h (ntiles)
-                    noc_async_write_barrier();
+                    //noc_async_write_barrier();
                     //DPRINT << "Done writing subblock." << ENDL();
                     cb_pop_front(cb_id_out0, out_subblock_tile_count);
                     out_sbw_start_tile_id += out_next_subblock_stride_w;

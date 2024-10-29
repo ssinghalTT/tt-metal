@@ -87,7 +87,7 @@ void kernel_main() {
 
     static_assert(coalesced_read_bytes <= NOC_MAX_BURST_SIZE);
     // set_state uses just x/y from the get_noc_addr, addr is ignored
-    noc_async_read_one_packet_set_state(get_noc_addr(act_l1_read_addr),coalesced_read_bytes);
+    //noc_async_read_one_packet_set_state(get_noc_addr(act_l1_read_addr),coalesced_read_bytes);
 
     constexpr uint32_t stride_w_bytes = dilation_w * conv_act_c_read_bytes;
 
@@ -111,30 +111,30 @@ void kernel_main() {
 
                 #if DILATION_W == 1
                 act_l1_offset = reader_offset + (reader_idx_1 * conv_act_c_read_bytes);
-                noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
+                //noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
                 l1_write_addr_act += (coalesced_read_bytes + act_block_w_extra_align_bytes);
 
                 act_l1_offset = reader_offset + (reader_idx_2 * conv_act_c_read_bytes);
-                noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
+                //noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
                 l1_write_addr_act += (coalesced_read_bytes + act_block_w_extra_align_bytes);
                 #else
                 act_l1_offset = reader_offset + (reader_idx_1 * conv_act_c_read_bytes);
                 for(uint32_t inner = 0; inner < weight_size_w; inner++) {
-                    noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
+                    //noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
                     l1_write_addr_act += conv_act_c_read_bytes;
                     act_l1_offset += stride_w_bytes;
                 }
 
                 act_l1_offset = reader_offset + (reader_idx_2 * conv_act_c_read_bytes);
                 for(uint32_t inner = 0; inner < weight_size_w; inner++) {
-                    noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
+                    //noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
                     l1_write_addr_act += conv_act_c_read_bytes;
                     act_l1_offset += stride_w_bytes;
                 }
                 #endif
                 reader_idx++;
             }
-            noc_async_read_barrier();
+            //noc_async_read_barrier();
 
             cb_push_back(cb_id_act, act_block_num_tiles_read);
 

@@ -134,7 +134,7 @@ void kernel_main() {
                 uint32_t reader_offset = act_l1_read_addr;
                 for(uint32_t block_weight_h = 0; block_weight_h < num_blocks_weight_h; block_weight_h++) {
                     // Do the second half of the reads for act
-                    noc_async_read_one_packet_set_state(get_noc_addr(act_l1_read_addr), coalesced_read_bytes);
+                    // noc_async_read_one_packet_set_state(get_noc_addr(act_l1_read_addr), coalesced_read_bytes);
                     reader_idx = start_reader_idx;
                     cb_reserve_back(cb_id_act_second_reader, act_block_num_tiles_read);
                     uint32_t l1_write_addr_act = get_write_ptr(cb_id_act_second_reader);
@@ -146,16 +146,16 @@ void kernel_main() {
                         uint32_t reader_idx_2 = two_reader_indices >> 16;
 
                         act_l1_offset = reader_offset + (reader_idx_1 * conv_act_size_c_bytes);
-                        noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
+                        //noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
                         l1_write_addr_act += (coalesced_read_bytes + act_block_w_extra_align_bytes);
 
                         act_l1_offset = reader_offset + (reader_idx_2 * conv_act_size_c_bytes);
-                        noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
+                        //noc_async_read_one_packet_with_state<true>(act_l1_offset, l1_write_addr_act);
                         l1_write_addr_act += (coalesced_read_bytes + act_block_w_extra_align_bytes);
 
                         reader_idx++;
                     }
-                    noc_async_read_barrier();
+                    //noc_async_read_barrier();
                     cb_push_back(cb_id_act_second_reader, act_block_num_tiles_read);
 
                     reader_offset += window_outer_offset;
@@ -164,13 +164,13 @@ void kernel_main() {
                     cb_reserve_back(cb_id_weight, weight_block_num_tiles);
                     if (bh == 0) {
                         // Set weights semaphore value to INVALID
-                        noc_semaphore_set(weights_mcast_receiver_semaphore_addr_ptr, INVALID);
+                        //noc_semaphore_set(weights_mcast_receiver_semaphore_addr_ptr, INVALID);
 
                         // Atomic increment source core counter
-                        noc_semaphore_inc(weights_mcast_sender_semaphore_noc_addr, 1);
+                        //noc_semaphore_inc(weights_mcast_sender_semaphore_noc_addr, 1);
 
                         // wait on weights semaphore value to become VALID (set by mcast sender after it multicasts data)
-                        noc_semaphore_wait(weights_mcast_receiver_semaphore_addr_ptr, VALID);
+                        //noc_semaphore_wait(weights_mcast_receiver_semaphore_addr_ptr, VALID);
                     }
 
                     cb_push_back(cb_id_weight, weight_block_num_tiles);
@@ -183,13 +183,13 @@ void kernel_main() {
                 cb_reserve_back(bias_cb_id, bias_ntiles);
 
                 // Set weights semaphore value to INVALID
-                noc_semaphore_set(weights_mcast_receiver_semaphore_addr_ptr, INVALID);
+                //noc_semaphore_set(weights_mcast_receiver_semaphore_addr_ptr, INVALID);
 
                 // Atomic increment source core counter
-                noc_semaphore_inc(weights_mcast_sender_semaphore_noc_addr, 1);
+                //noc_semaphore_inc(weights_mcast_sender_semaphore_noc_addr, 1);
 
                 // wait on weights semaphore value to become VALID (set by mcast sender after it multicasts data)
-                noc_semaphore_wait(weights_mcast_receiver_semaphore_addr_ptr, VALID);
+                //noc_semaphore_wait(weights_mcast_receiver_semaphore_addr_ptr, VALID);
 
                 cb_push_back(bias_cb_id, bias_ntiles);
                 load_bias = false;
@@ -221,7 +221,7 @@ void kernel_main() {
                                 //DPRINT << "out_tile_id - " << out_tile_id << ENDL();
                                 uint64_t out_tile_noc_addr = get_noc_addr(out_tile_id, s);
                                 //DPRINT << "out_tile_id=" << out_tile_id << ENDL();
-                                noc_async_write(l1_read_addr, out_tile_noc_addr, tile_nbytes);
+                                //noc_async_write(l1_read_addr, out_tile_noc_addr, tile_nbytes);
                                 l1_read_addr += tile_nbytes;
                                 out_tile_id += out_next_tile_stride_w;
                             }

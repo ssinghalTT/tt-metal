@@ -15,6 +15,8 @@
 
 using namespace ckernel;
 
+int cnt = 0;
+
 // Apply delay on odd rows of tensix cores in case of matmul.
 // We do this so that not all cores start at once, therefore reducing the chance of di/dt problems.
 // MM_STAGGER_ODD_ROWS is an externally controlled define, set up in program compilation.
@@ -22,8 +24,8 @@ inline __attribute__ ((__always_inline__)) void apply_mm_stagger(int operand) {
     #ifdef MM_STAGGER_ODD_ROWS
     static bool stagger_applied = false;
     constexpr int stagger_operand = 1;
-    constexpr int stagger_delay_in_cycles = 12288;
-    if (stagger_applied == false && operand == stagger_operand) {
+    constexpr int stagger_delay_in_cycles = 3000;
+    if ((cnt % 1 == 0) && operand == stagger_operand) {
         stagger_applied = true;
         constexpr uint32_t noc_id = 0;
         uint32_t noc_id_logical_reg = NOC_CFG_READ_REG(noc_id, NOC_ID_LOGICAL);
@@ -32,6 +34,9 @@ inline __attribute__ ((__always_inline__)) void apply_mm_stagger(int operand) {
         if (my_logical_y & 0x1) {
             wait(stagger_delay_in_cycles);
         }
+    }
+    if (operand == stagger_operand){
+        cnt++;
     }
     #endif
 }

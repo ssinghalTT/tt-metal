@@ -5,6 +5,7 @@
 #include <cstdint>
 #include "ttnn/operations/conv/conv2d/device/optimized_conv_op.hpp"
 #include "ttnn/operations/sliding_window/sliding_window.hpp"
+#include "ttnn/operations/matmul/device/matmul_op.hpp"
 #include "tt_metal/common/work_split.hpp"
 #include "tt_metal/common/constants.hpp"
 #include "tt_metal/detail/tt_metal.hpp"
@@ -729,6 +730,8 @@ operation::ProgramWithCallbacks multi_core_optimized_conv_width_sharded_v2_impl(
             .defines = writer_defines
     });
 
+    bmm_op_utils::add_stagger_defines_if_needed(device->arch(), all_cores.num_cores(), compute_defines);
+    log_info(LogOp, "Stagger path hit, width sharded conv: num_cores is: {}", all_cores.num_cores());
     auto compute_id = CreateKernel(
         program,
         compute_kernel_path,
