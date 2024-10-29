@@ -17,6 +17,21 @@
 #include "tt_metal/test_utils/print_helpers.hpp"
 #include "tt_metal/test_utils/stimulus.hpp"
 
+// Limits of SFPU input value range. These values are chosen because they
+// cover the domains of all SFPU functions used in the test
+#define GOLDEN_BOT_LIMIT    (-7.0f)
+#define GOLDEN_TOP_LIMIT    (7.0f)
+// Small values around zero for domains which have to exclude zeroes, like
+// log or reciprocal
+#define GOLDEN_NEG_EPSILON  (-0.0001f)
+#define GOLDEN_POS_EPSILON  (0.0001f)
+// Min/max values of the randomly-generated input block height/width
+#define MIN_BLOCK_DIM       (1)
+#define MAX_BLOCK_DIM       (7)
+// Number of dimensions randomly generated, can be expanded up to 4,
+// making an input a full tensor rather than a matrix
+#define NUM_DIMS            (2)
+
 using std::map;
 using std::vector;
 using namespace tt;
