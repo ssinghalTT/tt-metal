@@ -8,6 +8,7 @@
 #include "ttnn/operations/ccl/all_gather/device/all_gather_op.hpp"
 #include "tt_metal/host_api.hpp"
 #include "ttnn/operations/data_movement/reshape_view/reshape.hpp"
+#include "ttnn/cpp/ttnn/operations/ccl/ccl_fabric.hpp"
 #include <cstdint>
 
 namespace ttnn {
@@ -198,7 +199,7 @@ Tensor all_reduce(
 
             // Run the selected all-reduce operation
             Tensor result = run_all_reduce(strategy, input_tensor, binary_op_type, num_devices, num_links, output_mem_config,
-                               user_defined_num_workers, user_defined_num_buffers_per_channel, devices, topology);
+                               user_defined_num_workers, user_defined_num_buffers_per_channel, devices, topology, ttnn::ccl::OpFabricMode::TEMPORARY_EDM);
 
             return {result};
 
