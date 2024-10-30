@@ -53,12 +53,12 @@ class TtLlamaMLP_galaxy:
         w3_str = f"{self.layer_name}.feed_forward.w3.weight"
 
         # TODO: Reenable when DRAM-SHARDED PCC issues resolves
-        # w1_cache_str = f"{self.layer_name}.feed_forward.w1_galaxy_dram_shard_unpadded.weight"
-        # w2_cache_str = f"{self.layer_name}.feed_forward.w2_galaxy_dram_shard_unpadded.weight"
-        # w3_cache_str = f"{self.layer_name}.feed_forward.w3_galaxy_dram_shard_unpadded.weight"
-        w1_cache_str = f"{self.layer_name}.feed_forward.w1_galaxy_unpadded.weight"
-        w2_cache_str = f"{self.layer_name}.feed_forward.w2_galaxy_unpadded.weight"
-        w3_cache_str = f"{self.layer_name}.feed_forward.w3_galaxy_unpadded.weight"
+        w1_cache_str = f"{self.layer_name}.feed_forward.w1_galaxy_dram_shard_unpadded.weight"
+        w2_cache_str = f"{self.layer_name}.feed_forward.w2_galaxy_dram_shard_unpadded.weight"
+        w3_cache_str = f"{self.layer_name}.feed_forward.w3_galaxy_dram_shard_unpadded.weight"
+        # w1_cache_str = f"{self.layer_name}.feed_forward.w1_galaxy_unpadded.weight"
+        # w2_cache_str = f"{self.layer_name}.feed_forward.w2_galaxy_unpadded.weight"
+        # w3_cache_str = f"{self.layer_name}.feed_forward.w3_galaxy_unpadded.weight"
 
         w1_dtype = ttnn.bfloat4_b
         w2_dtype = ttnn.bfloat8_b
@@ -72,13 +72,16 @@ class TtLlamaMLP_galaxy:
             w2 = self.state_dict[w2_str].transpose(-2, -1).unsqueeze(0).unsqueeze(0)
             w3 = self.state_dict[w3_str].transpose(-2, -1).unsqueeze(0).unsqueeze(0)
 
+        load_config = self.model_config["mlp"]["decode"]
         self.w1 = ttnn.as_tensor(
             w1,
             dtype=w1_dtype,
             layout=ttnn.TILE_LAYOUT,
             device=self.mesh_device,
-            # memory_config=self.w1_mem_config,  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
-            memory_config=ttnn.DRAM_MEMORY_CONFIG,
+            memory_config=load_config["W1_MEM_CONFIG"](
+                self.mesh_device
+            ),  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
+            # memory_config=ttnn.DRAM_MEMORY_CONFIG,
             mesh_mapper=ShardTensor2dMesh(self.mesh_device, dims=(2, 3), cluster_shape=self.cluster_shape),
             cache_file_name=self.cache_path / w1_cache_str,
         )
@@ -88,8 +91,10 @@ class TtLlamaMLP_galaxy:
             dtype=w3_dtype,
             layout=ttnn.TILE_LAYOUT,
             device=self.mesh_device,
-            # memory_config=self.mlp_config["W1_MEM_CONFIG"](self.mesh_device, self.cluster_shape),  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
-            memory_config=ttnn.DRAM_MEMORY_CONFIG,
+            memory_config=load_config["W1_MEM_CONFIG"](
+                self.mesh_device
+            ),  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
+            # memory_config=ttnn.DRAM_MEMORY_CONFIG,
             mesh_mapper=ShardTensor2dMesh(self.mesh_device, dims=(2, 3), cluster_shape=self.cluster_shape),
             cache_file_name=self.cache_path / w3_cache_str,
         )
@@ -99,8 +104,10 @@ class TtLlamaMLP_galaxy:
             dtype=w2_dtype,
             layout=ttnn.TILE_LAYOUT,
             device=self.mesh_device,
-            # memory_config=self.mlp_config["W2_MEM_CONFIG"](self.mesh_device),  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
-            memory_config=ttnn.DRAM_MEMORY_CONFIG,
+            memory_config=load_config["W2_MEM_CONFIG"](
+                self.mesh_device
+            ),  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
+            # memory_config=ttnn.DRAM_MEMORY_CONFIG,
             mesh_mapper=ShardTensor2dMesh(self.mesh_device, dims=(3, 2), cluster_shape=self.cluster_shape),
             cache_file_name=self.cache_path / w2_cache_str,
         )
@@ -119,8 +126,8 @@ class TtLlamaMLP_galaxy:
         w1_out = ttnn.matmul(
             x,
             self.w1,
-            # program_config=self.mlp_config["FF1_DRAM_SHARDED_PROGCFG"],
-            core_grid=ttnn.CoreGrid(y=1, x=8),
+            program_config=self.mlp_config["FF1_DRAM_SHARDED_PROGCFG"],
+            # core_grid=ttnn.CoreGrid(y=1, x=8),
             compute_kernel_config=self.mlp_config["COMPUTE_KERNEL_LOFI"],
             dtype=ttnn.bfloat16,
             memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
@@ -129,8 +136,10 @@ class TtLlamaMLP_galaxy:
         w3_out = ttnn.matmul(
             x,
             self.w3,
-            # program_config=self.mlp_config["FF1_DRAM_SHARDED_PROGCFG"],  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
-            core_grid=ttnn.CoreGrid(y=1, x=8),
+            program_config=self.mlp_config[
+                "FF1_DRAM_SHARDED_PROGCFG"
+            ],  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
+            # core_grid=ttnn.CoreGrid(y=1, x=8),
             compute_kernel_config=self.mlp_config["COMPUTE_KERNEL_LOFI"],
             dtype=ttnn.bfloat16,
             memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
@@ -169,8 +178,10 @@ class TtLlamaMLP_galaxy:
         hidden_states = ttnn.matmul(
             hidden_states,
             self.w2,
-            # program_config=self.mlp_config["FF2_DRAM_SHARDED_PROGCFG"],  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
-            core_grid=ttnn.CoreGrid(y=1, x=8),
+            program_config=self.mlp_config[
+                "FF2_DRAM_SHARDED_PROGCFG"
+            ],  # TODO: Reenable when DRAM-SHARDED PCC issues resolves
+            # core_grid=ttnn.CoreGrid(y=1, x=8),
             compute_kernel_config=self.mlp_config["COMPUTE_KERNEL_LOFI"],
             dtype=ttnn.bfloat16,
             memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,

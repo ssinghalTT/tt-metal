@@ -234,6 +234,43 @@ def set_attention_config(model_config, max_batch_size):
         use_height_and_width_as_shard_shape=True,
     )
 
+    M, K, N = 32, 2048, 1280
+    decode_config["QKV_MEMCFG"] = lambda mesh_device: ttnn.MemoryConfig(
+        ttnn.TensorMemoryLayout.WIDTH_SHARDED,
+        ttnn.BufferType.DRAM,
+        ttnn.ShardSpec(
+            setup_weight_grid(mesh_device),
+            (K, nearest_32(N // 12)),
+            ttnn.ShardOrientation.ROW_MAJOR,
+            False,
+        ),
+    )
+
+    decode_config["SELFOUT_MEMCFG"] = lambda mesh_device: ttnn.MemoryConfig(
+        ttnn.TensorMemoryLayout.WIDTH_SHARDED,
+        ttnn.BufferType.DRAM,
+        ttnn.ShardSpec(
+            setup_weight_grid(mesh_device),
+            (1024, nearest_32(K // 12)),
+            ttnn.ShardOrientation.ROW_MAJOR,
+            False,
+        ),
+    )
+
+    decode_config["FUSED_QKV_DRAM_SHARDED_PROGCFG"] = ttnn.MatmulMultiCoreReuseMultiCastDRAMShardedProgramConfig(
+        in0_block_w=K // 32 // 32,  # K = 8192 / TILE_WIDTH=32 / Grid_Size is based on compute_with_storage_grid_size
+        per_core_M=M // 32,  # M / TILE_HEIGHT = 32 / 32
+        per_core_N=N // 32 // 40,  # N / TILE_WIDTH / Grid_Size is based on compute_with_storage_grid_size
+        fused_activation=None,
+    )
+
+    decode_config["SELFOUT_DRAM_SHARDED_PROGCFG"] = ttnn.MatmulMultiCoreReuseMultiCastDRAMShardedProgramConfig(
+        in0_block_w=1024 // 32 // 32,  # K = 8192 / TILE_WIDTH=32 / Grid_Size is based on compute_with_storage_grid_size
+        per_core_M=M // 32,  # M / TILE_HEIGHT = 32 / 32
+        per_core_N=2048 // 32 // 32,  # N / TILE_WIDTH / Grid_Size is based on compute_with_storage_grid_size
+        fused_activation=None,
+    )
+
     # Set prefill config
     prefill_config = {}
 

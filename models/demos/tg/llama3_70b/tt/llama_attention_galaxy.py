@@ -151,12 +151,13 @@ class TtLlamaAttention_galaxy:
         assert not hasattr(self, "qkv_list"), "qkv_list is already an attribute of this object"
         assert not hasattr(self, "wo_list"), "wo_list is already an attribute of this object"
         # Load weights
-        wqkv_cache_str = f"{self.layer_name}.attention.wqkv_fused_galaxy_2d.weight"
+        load_weight_config = self.model_config["attention"]["decode"]
+        wqkv_cache_str = f"{self.layer_name}.attention.wqkv_fused_galaxy_2d_dram_sharded.weight"
         wq_str = f"{self.layer_name}.attention.wq.weight"
         wk_str = f"{self.layer_name}.attention.wk.weight"
         wv_str = f"{self.layer_name}.attention.wv.weight"
         wo_str = f"{self.layer_name}.attention.wo.weight"
-        wo_cache_str = f"{self.layer_name}.attention.wo_galaxy_2d.weight"
+        wo_cache_str = f"{self.layer_name}.attention.wo_galaxy_2d_dram_sharded.weight"
 
         qkv_cat = None
         pt_wo = None
@@ -205,7 +206,8 @@ class TtLlamaAttention_galaxy:
             dtype=ttnn.bfloat8_b,
             layout=ttnn.TILE_LAYOUT,
             device=self.mesh_device,
-            memory_config=ttnn.DRAM_MEMORY_CONFIG,
+            # memory_config=ttnn.DRAM_MEMORY_CONFIG,
+            memory_config=load_weight_config["QKV_MEMCFG"](self.mesh_device),
             mesh_mapper=ShardTensor2dMesh(self.mesh_device, dims=(2, 3), cluster_shape=self.cluster_shape),
             cache_file_name=self.cache_path / wqkv_cache_str,
         )
@@ -215,7 +217,8 @@ class TtLlamaAttention_galaxy:
             dtype=ttnn.bfloat8_b,
             layout=ttnn.TILE_LAYOUT,
             device=self.mesh_device,
-            memory_config=ttnn.DRAM_MEMORY_CONFIG,
+            # memory_config=ttnn.DRAM_MEMORY_CONFIG,
+            memory_config=load_weight_config["SELFOUT_MEMCFG"](self.mesh_device),
             mesh_mapper=ShardTensor2dMesh(self.mesh_device, dims=(3, 2), cluster_shape=self.cluster_shape),
             cache_file_name=self.cache_path / wo_cache_str,
         )
@@ -251,7 +254,7 @@ class TtLlamaAttention_galaxy:
         fused_query_key_value = ttnn.matmul(
             xs,
             self.qkv,
-            program_config=self.attention_config["FUSED_QKV_MM_PROGCFG"],
+            program_config=self.attention_config["FUSED_QKV_DRAM_SHARDED_PROGCFG"],
             dtype=ttnn.bfloat16,
             memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
             compute_kernel_config=self.attention_config["COMPUTE_KERNEL_QKV"],
@@ -389,7 +392,7 @@ class TtLlamaAttention_galaxy:
         )
         attn_output = ttnn.to_memory_config(attn_output, ttnn.L1_MEMORY_CONFIG)
         # user_selection_matrix = [1, 1, 32, 128]
-        # user_selection_matrix @ activation -> [1, 1, 32, 128] * [1, 1, 128, 2048] -> [1, 1, 32, 2048]
+        # user_selection_matrix @ activation -> [1, 1, 32, 128] * [1, 1, 128, 1024] -> [1, 1, 32, 1024]
         attn_output = ttnn.matmul(
             self.user_selection_matrix,
             attn_output,
@@ -397,11 +400,12 @@ class TtLlamaAttention_galaxy:
             dtype=ttnn.bfloat16,
             memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
         )
-
+        # attn_output: [1, 1, 32, 1024] * [1, 1, 1024, 2048] -> [1, 1, 32, 2048]
         attn_output = ttnn.matmul(
             attn_output,
             self.wo,
-            core_grid=ttnn.CoreGrid(y=4, x=8),
+            program_config=self.attention_config["SELFOUT_DRAM_SHARDED_PROGCFG"],
+            # core_grid=ttnn.CoreGrid(y=4, x=8),
             memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
             dtype=ttnn.bfloat16,
             compute_kernel_config=self.attention_config["COMPUTE_KERNEL_SELFOUT"],
