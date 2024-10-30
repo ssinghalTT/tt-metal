@@ -11,8 +11,13 @@ from tt_metal.tools.profiler.process_device_log import import_device_profile_log
 
 parser = argparse.ArgumentParser(description="Timing analysis.")
 parser.add_argument("--input-file", type=str, help="Input file with profiler logs")
+parser.add_argument("--output-file", type=str, help="Output files prefix")
+parser.add_argument("--num-blocks", type=str, help="Number of blocks")
+
 args = parser.parse_args()
 file_name = Path(args.input_file).stem
+output_file_name = args.output_file
+num_blocks = int(args.num_blocks)
 
 devices_data = import_device_profile_log(args.input_file)
 
@@ -26,7 +31,7 @@ for device in devices_data["devices"].keys():
 
         start_time_per_block = []
 
-        for i in range(71):
+        for i in range(num_blocks):
             start_time_per_block.append(core_math[i][1])
 
         start_time_per_core.append(start_time_per_block)
@@ -56,11 +61,11 @@ for device in devices_data["devices"].keys():
     # Block start time diff matrix is calculated as diff between core start time for block and mean value of start time of all cores for that block
     # This matrix can be used as heatmap to show how latencies are disctributed over the cores
     block_start_diff = pd.DataFrame(start_time_per_core)
-    block_start_diff -= block_start_diff.mean()
+    block_start_diff -= block_start_diff.median()
     block_start_diff.index = [f"Core {str(core):>8}" for core in cores]
-    block_start_diff.columns = [f"BlockID{block:03d}" for block in range(71)]
+    block_start_diff.columns = [f"BlockID{block:03d}" for block in range(num_blocks)]
     block_start_diff.to_csv(
-        f"{file_name}-block-start-diff-{device}.csv",
+        f"{output_file_name}-block-start-diff-{device}.csv",
         index=True,
         index_label="Core ( X,  Y)",
         header=True,
@@ -69,7 +74,7 @@ for device in devices_data["devices"].keys():
 
     sns.set(font_scale=0.2)
     sns.heatmap(block_start_diff, cmap="RdYlGn")
-    plt.savefig(f"{file_name}-block-start-diff-{device}.pdf")
+    plt.savefig(f"{output_file_name}-block-start-diff-{device}.pdf")
     plt.clf()
 
     # Standard deviation of start time per block among all cores
@@ -79,4 +84,4 @@ for device in devices_data["devices"].keys():
 
     stddevs = stddevs.round(3)
     stddevs = pd.DataFrame({"Block ID": stddevs.index, "stddev": stddevs.values})
-    stddevs.to_csv(f"{file_name}-stddevs-{device}.csv", index=False)
+    stddevs.to_csv(f"{output_file_name}-stddevs-{device}.csv", index=False)

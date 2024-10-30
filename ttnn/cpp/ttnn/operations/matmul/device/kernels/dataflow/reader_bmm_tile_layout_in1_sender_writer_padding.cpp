@@ -8,6 +8,7 @@
 #include "hostdevcommon/common_values.hpp"
 #include "ttnn/cpp/ttnn/operations/ccl/kernel_common/worker_sync_utils.hpp"
 #include "tools/profiler/kernel_profiler.hpp"
+#include "debug/dprint.h"
 
 void kernel_main() {
     // READER
@@ -341,7 +342,6 @@ void kernel_main() {
                 noc_semaphore_wait(in1_sync_receiver_semaphore_addr_ptr, VALID);
             }
 
-            // Compensate for mcast delay and core 0,0 not waiting on the semaphore
             ckernel::wait(in1_sync_wait_time);
 #endif
 

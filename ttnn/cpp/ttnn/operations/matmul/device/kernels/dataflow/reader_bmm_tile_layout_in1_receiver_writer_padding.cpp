@@ -6,6 +6,8 @@
 
 #include "dataflow_api.h"
 #include "hostdevcommon/common_values.hpp"
+#include "debug/dprint.h"
+#include "ckernel.h"
 
 #include "tools/profiler/kernel_profiler.hpp"
 
@@ -20,14 +22,17 @@ void kernel_main() {
     const uint32_t out_tensor_addr = get_arg_val<uint32_t>(2);
     uint32_t out_tensor_start_tile_id = get_arg_val<uint32_t>(3);
 
+    // in1 sync args
+    const uint32_t in1_sync_wait_time = get_arg_val<uint32_t>(4);
+
     // padding args (WRITER)
-    const uint32_t out_num_nonzero_subblocks_h = get_arg_val<uint32_t>(4);
-    const uint32_t out_last_subblock_h = get_arg_val<uint32_t>(5);
-    const uint32_t padded_block_tiles_h_skip = get_arg_val<uint32_t>(6);
-    const uint32_t out_num_nonzero_subblocks_w = get_arg_val<uint32_t>(7);
-    const uint32_t out_last_subblock_w = get_arg_val<uint32_t>(8);
-    const uint32_t padded_subblock_tiles_addr_skip = get_arg_val<uint32_t>(9);
-    const uint32_t padded_block_tiles_w_skip = get_arg_val<uint32_t>(10);
+    const uint32_t out_num_nonzero_subblocks_h = get_arg_val<uint32_t>(5);
+    const uint32_t out_last_subblock_h = get_arg_val<uint32_t>(6);
+    const uint32_t padded_block_tiles_h_skip = get_arg_val<uint32_t>(7);
+    const uint32_t out_num_nonzero_subblocks_w = get_arg_val<uint32_t>(8);
+    const uint32_t out_last_subblock_w = get_arg_val<uint32_t>(9);
+    const uint32_t padded_subblock_tiles_addr_skip = get_arg_val<uint32_t>(10);
+    const uint32_t padded_block_tiles_w_skip = get_arg_val<uint32_t>(11);
 
     // COMPILE TIME ARGS
     // interleaved accessor args
@@ -41,30 +46,44 @@ void kernel_main() {
     // in1 mcast args
     uint32_t in1_mcast_sender_semaphore_addr = get_semaphore(get_compile_time_arg_val(3));
     uint32_t in1_mcast_receiver_semaphore_addr = get_semaphore(get_compile_time_arg_val(4));
+
+    // in1 sync args
+    uint32_t in1_sync_sender_semaphore_addr = get_semaphore(get_compile_time_arg_val(5));
+    uint32_t in1_sync_receiver_semaphore_addr = get_semaphore(get_compile_time_arg_val(6));
+
     // batch args
-    constexpr uint32_t batch = get_compile_time_arg_val(5);
+    constexpr uint32_t batch = get_compile_time_arg_val(7);
 
     // WRITER
     // out tensor args
-    constexpr uint32_t out_tensor_stride_w = get_compile_time_arg_val(6);
-    constexpr uint32_t out_tensor_stride_h = get_compile_time_arg_val(7);
-    constexpr uint32_t out_tensor_next_subblock_stride_w = get_compile_time_arg_val(8);
-    constexpr uint32_t out_tensor_next_subblock_stride_h = get_compile_time_arg_val(9);
+    constexpr uint32_t out_tensor_stride_w = get_compile_time_arg_val(8);
+    constexpr uint32_t out_tensor_stride_h = get_compile_time_arg_val(9);
+    constexpr uint32_t out_tensor_next_subblock_stride_w = get_compile_time_arg_val(10);
+    constexpr uint32_t out_tensor_next_subblock_stride_h = get_compile_time_arg_val(11);
 
     // out subblock args
-    constexpr uint32_t out_subblock_w = get_compile_time_arg_val(10);
-    constexpr uint32_t out_subblock_h = get_compile_time_arg_val(11);
-    constexpr uint32_t out_subblock_tile_count = get_compile_time_arg_val(12);
+    constexpr uint32_t out_subblock_w = get_compile_time_arg_val(12);
+    constexpr uint32_t out_subblock_h = get_compile_time_arg_val(13);
+    constexpr uint32_t out_subblock_tile_count = get_compile_time_arg_val(14);
 
     // batch args
-    constexpr uint32_t MtNt = get_compile_time_arg_val(13);  // if 0
+    constexpr uint32_t MtNt = get_compile_time_arg_val(15);  // if 0
     // Don't need batch; same as batch from READER args
 
 #ifdef FUSE_BIAS
     // in3 block args
-    constexpr uint32_t in3_block_w = get_compile_time_arg_val(14);
+    constexpr uint32_t in3_block_w = get_compile_time_arg_val(16);
 
     constexpr uint32_t cb_id_in3 = 3;
+#endif
+
+#ifdef SYNC_AFTER_IN1_DRAM
+    volatile tt_l1_ptr uint32_t* in1_sync_receiver_semaphore_addr_ptr =
+        reinterpret_cast<volatile tt_l1_ptr uint32_t*>(in1_sync_receiver_semaphore_addr);
+    *(in1_sync_receiver_semaphore_addr_ptr) = VALID;
+
+    const uint64_t in1_sync_sender_semaphore_addr_counter =
+        get_noc_addr(1, 1, in1_sync_sender_semaphore_addr);
 #endif
 
     // WRITER
@@ -107,6 +126,15 @@ void kernel_main() {
 
             // wait on in1 semaphore value to become VALID (set by mcast sender after it multicasts data)
             noc_semaphore_wait(in1_mcast_receiver_semaphore_addr_ptr, VALID);
+
+#ifdef SYNC_AFTER_IN1_DRAM
+            // Sync cores after all of them receive current in1 block
+            noc_semaphore_set(in1_sync_receiver_semaphore_addr_ptr, INVALID);
+            noc_semaphore_inc(in1_sync_sender_semaphore_addr_counter, 1);
+            noc_semaphore_wait(in1_sync_receiver_semaphore_addr_ptr, VALID);
+
+            ckernel::wait(in1_sync_wait_time);
+#endif
 
             cb_push_back(cb_id_in1, in1_block_num_tiles);
             }
