@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <ranges>
 
 #include "common/bfloat8.hpp"
 #include "common/bfloat16.hpp"
@@ -63,14 +64,18 @@ std::vector<T> slice_vec(std::vector<T> const &v, int m, int n) {
     return vec;
 }
 
-void get_max_page_size_and_num_pages(uint32_t num_tiles, uint32_t tile_size, uint32_t& page_size, uint32_t& num_pages) {
-    uint64_t total_size = static_cast<uint64_t>(num_tiles) * tile_size;
+void get_max_page_size_and_num_pages(uint32_t num_tiles_w, uint32_t num_tiles_h, uint32_t tile_size, uint32_t& page_size, uint32_t& num_pages, uint32_t& num_pages_w_per_receiver) {
+    uint64_t half_row_bytes = static_cast<uint64_t>(num_tiles_w / 2) * tile_size;
+    TT_ASSERT(num_tiles_w % 2 == 0, "num_tiles_w {} must be divisible by 2", num_tiles_w);
 
     page_size = (8192 / tile_size) * tile_size;
-    while (total_size % page_size != 0 && page_size >= tile_size) {
+    // Each receiver core receives half the data, so each receiver cores's block size is half of the total block size
+    while (half_row_bytes % page_size != 0 && page_size > tile_size) {
         page_size -= tile_size;
     }
-    num_pages = total_size / page_size;
+    TT_ASSERT(page_size % tile_size == 0, "page_size must be a multiple of tile_size!");
+    num_pages = num_tiles_w * num_tiles_h * tile_size / page_size;
+    num_pages_w_per_receiver = half_row_bytes / page_size;
 }
 
 std::tuple<tt_metal::Program, tt_metal::KernelHandle, uint32_t> create_program(
@@ -101,8 +106,11 @@ std::tuple<tt_metal::Program, tt_metal::KernelHandle, uint32_t> create_program(
     // DRAM reader CB
     uint32_t reader_cb_index = 0;
     uint32_t reader_cb_size = block_h * block_w * single_tile_size * 3;
-    uint32_t page_size, num_pages;
-    get_max_page_size_and_num_pages(block_num_tiles, single_tile_size, page_size, num_pages);
+    uint32_t page_size, num_pages, num_pages_w_per_receiver;
+    get_max_page_size_and_num_pages(block_w, block_h, single_tile_size, page_size, num_pages, num_pages_w_per_receiver);
+
+    log_info("Input block size: {}x{}, num_blocks: {}", block_h, block_w, num_blocks);
+    log_info("Pages set up as page_size: {}, num_pages: {}, num_pages_w_per_receiver: {}", page_size, num_pages, num_pages_w_per_receiver);
 
     uint32_t reader_cb_addr = device->get_base_allocator_addr(HalMemType::L1);
     tt_metal::CircularBufferConfig reader_cb_config =
@@ -132,7 +140,8 @@ std::tuple<tt_metal::Program, tt_metal::KernelHandle, uint32_t> create_program(
 
     std::vector<uint32_t> writer_compile_time_args = {
         (std::uint32_t) num_blocks,
-        (std::uint32_t) num_pages,
+        (std::uint32_t) num_pages_w_per_receiver,
+        (std::uint32_t) block_h,
         (std::uint32_t) block_num_tiles,
         (std::uint32_t) page_size,
         (std::uint32_t) tt_metal::NOC::RISCV_0_default
@@ -174,13 +183,19 @@ std::tuple<tt_metal::Program, tt_metal::KernelHandle, uint32_t> create_program(
 
         tt_metal::SetRuntimeArgs(program, reader_kernel, core, reader_rt_args);
 
-        auto writer_core = all_l1_writer_cores_ordered[i];
-        auto writer_core_phy = device->worker_core_from_logical_core(writer_core);
+        auto writer_core1 = all_l1_writer_cores_ordered[i*2];
+        auto writer_core_phy1 = device->worker_core_from_logical_core(writer_core1);
+        auto writer_core2 = all_l1_writer_cores_ordered[(i*2)+1];
+        auto writer_core_phy2 = device->worker_core_from_logical_core(writer_core2);
 
         std::vector<uint32_t> writer_rt_args = {
             (std::uint32_t) (vc + 2) & 0x3,
-            (std::uint32_t) writer_core_phy.x,
-            (std::uint32_t) writer_core_phy.y
+            // First L1 writer core coordinates
+            (std::uint32_t) writer_core_phy1.x,
+            (std::uint32_t) writer_core_phy1.y,
+            // Second L1 writer core coordinates
+            (std::uint32_t) writer_core_phy2.x,
+            (std::uint32_t) writer_core_phy2.y
         };
 
         tt_metal::SetRuntimeArgs(program, writer_kernel, core, writer_rt_args);
@@ -193,58 +208,71 @@ bool validation(
     tt_metal::Device *device,
     tt_metal::Buffer &input_buffer,
     std::vector<uint32_t> &input_vec,
-    const uint32_t &num_cores,
+    uint32_t num_cores,
     std::vector<CoreCoord> &all_cores,
-    const uint32_t &num_tiles_per_core,
-    const uint32_t &cb_addr,
-    const uint32_t &single_tile_size,
+    uint32_t num_tiles_per_core,
+    uint32_t cb_addr,
+    uint32_t single_tile_size,
     uint32_t num_tiles_cb,
     uint32_t df,
     uint32_t num_banks,
     uint32_t num_blocks,
-    uint32_t block_h,
-    uint32_t block_w,
-    uint32_t num_datum_per_slice) {
+    uint32_t block_h, // block_h per core
+    uint32_t block_w, // block_w per core
+    uint32_t block_w_per_receiver,
+    uint32_t datums_per_tile) { // 32x32
+
+    log_info("Validating results");
 
     uint32_t core_id = 0;
-    for (auto core: all_cores) {
+    uint32_t num_datum_per_block = block_h * block_w * num_cores * datums_per_tile;
+    uint32_t last_block_offset = (num_blocks - 1) * num_datum_per_block;
+    uint32_t tiles_per_core = block_h * block_w_per_receiver; // Num slices=tiles per core to verify
+    for (auto core: all_cores | std::views::take(num_cores*2)) {
+
+        uint32_t dram_bank_id = core_id / 2; // A pair of two cores share a dram bank
+        uint32_t tile_stride_over_dram_banks = dram_bank_id * datums_per_tile;
+        uint32_t is_second_core = core_id % 2;
+         // Second core in a dram bank pair has an offset of half a block from that dram bank
+        uint32_t receiver_core_pair_offset = is_second_core * datums_per_tile * block_w_per_receiver * num_banks;
+        uint32_t input_start_index_for_core = last_block_offset + tile_stride_over_dram_banks + receiver_core_pair_offset;
+
         std::vector<uint32_t> result_vec;
         tt_metal::detail::ReadFromDeviceL1(
-            device, core, cb_addr, num_tiles_cb * single_tile_size, result_vec);
-
-        uint32_t num_datum_per_block = block_h * block_w * num_datum_per_slice;
-        uint32_t tensor_slice_stride = core_id * num_datum_per_slice;
-        uint32_t last_block_offset = (num_blocks - 1) * num_datum_per_block * num_banks;
-        uint32_t start_index = tensor_slice_stride + last_block_offset;
-        uint32_t num_slices = block_h * block_w;
+            device, core, cb_addr, num_tiles_cb / 2 * single_tile_size, result_vec);
 
         if (df == 0) {
-            auto result_bfp8 = unpack_bfp8_tiles_into_float_vec(result_vec, true, true);
+            TT_ASSERT(false, "BFP8 validation not yet implemented");
+/*            auto result_bfp8 = unpack_bfp8_tiles_into_float_vec(result_vec, true, true);
             auto input_bfp8 = unpack_bfp8_tiles_into_float_vec(input_vec, true, true);
 
-            for (uint32_t i=0; i < num_slices; ++i) {
-                uint32_t input_step = start_index + i * num_datum_per_slice * num_banks;
-                std::vector<float> input_slice(input_bfp8.begin() + input_step, input_bfp8.begin() + input_step + num_datum_per_slice);
-                uint32_t result_step = i * num_datum_per_slice;
-                std::vector<float> result_slice(result_bfp8.begin() + result_step, result_bfp8.begin() + result_step + num_datum_per_slice);
+            for (uint32_t i=0; i < tiles_per_core; ++i) {
+                uint32_t input_step = input_start_index_for_core + i * datums_per_tile * num_banks;
+                std::vector<float> input_slice(input_bfp8.begin() + input_step, input_bfp8.begin() + input_step + datums_per_tile);
+                uint32_t result_step = i * datums_per_tile;
+                std::vector<float> result_slice(result_bfp8.begin() + result_step, result_bfp8.begin() + result_step + datums_per_tile);
 
                 if (input_slice != result_slice) {
                     return false;
                 }
-            }
-
+            }*/
         } else {
             auto result_bf16 = unpack_uint32_vec_into_bfloat16_vec(result_vec);
             auto input_bf16 = unpack_uint32_vec_into_bfloat16_vec(input_vec);
 
-            for (uint32_t i=0; i < num_slices; ++i) {
-                uint32_t input_step = start_index + i * num_datum_per_slice * num_banks;
-                std::vector<bfloat16> input_slice(input_bf16.begin() + input_step, input_bf16.begin() + input_step + num_datum_per_slice);
-                uint32_t result_step = i * num_datum_per_slice;
-                std::vector<bfloat16> result_slice(result_bf16.begin() + result_step, result_bf16.begin() + result_step + num_datum_per_slice);
+            for (uint32_t r=0; r < block_h; ++r) {
+                for (uint32_t c=0; c < block_w_per_receiver; ++c) {
+                    uint32_t one_row_bytes = block_w * datums_per_tile * num_banks;
+                    uint32_t input_step = input_start_index_for_core + r * one_row_bytes + c * datums_per_tile * num_banks; // We stride over num_banks becuase DRAM is stored round robin across all banks
+                    std::vector<bfloat16> input_slice(input_bf16.begin() + input_step, input_bf16.begin() + input_step + datums_per_tile);
+                    uint32_t result_step = r * (datums_per_tile*block_w_per_receiver) + c * datums_per_tile;
+                    std::vector<bfloat16> result_slice(result_bf16.begin() + result_step, result_bf16.begin() + result_step + datums_per_tile);
 
-                if (input_slice != result_slice) {
-                    return false;
+                    // log_info("core {} @ ({}, {}) Expected {} Observed {}", core, c, r, input_slice[0].to_float(), result_slice[0].to_float());
+
+                    if (input_slice != result_slice) {
+                        return false;
+                    }
                 }
             }
         }
@@ -673,9 +701,12 @@ void get_l1_writer_core_coords_wormhole_b0(
     for (int i = 0; i < all_dram_reader_cores.size(); ++i) {
         auto dram_reader_core = all_dram_reader_cores[i];
         auto dram_reader_core_phy = device->worker_core_from_logical_core(dram_reader_core);
-        uint32_t adj_core_x = dram_reader_core_phy.x + 1;
-        uint32_t adj_core_y = dram_reader_core_phy.y;
-        adj_core_physical.push_back(CoreCoord(adj_core_x, adj_core_y));
+        uint32_t adj_core_x1 = dram_reader_core_phy.x + 1;
+        uint32_t adj_core_y1 = dram_reader_core_phy.y;
+        adj_core_physical.push_back(CoreCoord(adj_core_x1, adj_core_y1));
+        uint32_t adj_core_x2 = dram_reader_core_phy.x + 2;
+        uint32_t adj_core_y2 = dram_reader_core_phy.y;
+        adj_core_physical.push_back(CoreCoord(adj_core_x2, adj_core_y2));
     }
 
     // find the logical coord from physical coord
@@ -789,6 +820,7 @@ int main(int argc, char **argv) {
         uint32_t nt = n / 32;
         uint32_t block_h = kt / num_blocks;
         uint32_t block_w = nt / num_banks;
+        uint32_t block_w_per_receiver = block_w / 2;
         uint32_t num_datum_per_slice = 32 * 32;
 
         uint32_t single_tile_size = tt_metal::detail::TileSize(tile_format);
@@ -847,7 +879,7 @@ int main(int argc, char **argv) {
         log_info(
             LogTest,
             "Measuring DRAM bandwidth for input_size = {} bytes ({:.3f} MB, "
-            "{} tiles), using {} cores",
+            "{} tiles), using {} DRAM reading cores",
             input_size,
             static_cast<double>(input_size) / 1024 / 1024,
             num_tiles,
@@ -856,18 +888,34 @@ int main(int argc, char **argv) {
         ////////////////////////////////////////////////////////////////////////////
         //                      Input Setup
         ////////////////////////////////////////////////////////////////////////////
+        // DEBUGGING: Create a vector of bfloat16s where each element contains the tile number
+        uint32_t num_input_elements = k * n;
         std::vector<uint32_t> input_vec;
-        if (tile_format == tt::DataFormat::Bfp8_b) {
-            // input_vec = create_constant_vector_of_bfp8(
-            //     input_size, 100, true);
-            input_vec = create_random_vector_of_bfp8(
-                input_size, true, 100, 1234);
-        } else {
-            // input_vec = create_constant_vector_of_bfloat16(
-            //     input_size * total_banks / num_banks, 100);
-            input_vec = create_random_vector_of_bfloat16(
-                input_size, 100, 1234);
+        input_vec.resize(num_input_elements/2); // num_input_elements/2 because we pack into fp32 instead of bf16
+        for (uint32_t i = 0; i < num_input_elements/2; i++) {
+            uint32_t tile_value1 = i / 512; // Integer division to get tile number
+            uint32_t tile_value2 = (i + 1) / 512; // Integer division to get tile number
+            bfloat16 num_1_bfloat16 = bfloat16(static_cast<float>(tile_value1));
+            bfloat16 num_2_bfloat16 = bfloat16(static_cast<float>(tile_value2));
+            input_vec[i] = pack_two_bfloat16_into_uint32(std::pair<bfloat16, bfloat16>(num_1_bfloat16, num_2_bfloat16));
         }
+
+        auto input_bf16 = unpack_uint32_vec_into_bfloat16_vec(input_vec);
+        // for (uint32_t i = 0; i < num_input_elements; i+=1024) {
+        //     log_info(LogTest, "input_vec[{}] = {}", i, input_bf16[i].to_float());
+        // }
+
+        // if (tile_format == tt::DataFormat::Bfp8_b) {
+        //     // input_vec = create_constant_vector_of_bfp8(
+        //     //     input_size, 100, true);
+        //     input_vec = create_random_vector_of_bfp8(
+        //         input_size, true, 100, 1234);
+        // } else {
+        //     // input_vec = create_constant_vector_of_bfloat16(
+        //     //     input_size * total_banks / num_banks, 100);
+        //     input_vec = create_random_vector_of_bfloat16(
+        //         input_size, 100, 1234);
+        // }
 
         tt_metal::Buffer input_buffer(
             device, input_vec.size() * sizeof(uint32_t), single_tile_size, tt_metal::BufferType::DRAM);
@@ -922,7 +970,12 @@ int main(int argc, char **argv) {
             num_blocks,
             block_h,
             block_w,
+            block_w_per_receiver,
             num_datum_per_slice);
+
+        if (!pass) {
+            log_info(LogTest, "Validation failed");
+        }
 
         pass &= tt_metal::CloseDevice(device);
     } catch (const std::exception &e) {

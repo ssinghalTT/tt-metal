@@ -657,6 +657,7 @@ def test_matmul_single_core_sharded(
     [
         ("wormhole_b0", 1000, np.array([32768, 12 * 128]), 1, 8, 0, 12, 0),
         ("wormhole_b0", 1000, np.array([32768, 12 * 128]), 1, 8, 1, 12, 0),
+        ("wormhole_b0", 1000, np.array([2048, 3840]), 1, 4, 1, 12, 0),  # Padded FF1 shapes for llama 70b on TG
     ],
 )
 def test_dram_read_12_core(arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id):
@@ -699,6 +700,46 @@ def test_dram_read_12_core(arch, freq, test_vector, num_tests, nblock, data_form
     [
         ("grayskull", 1202, np.array([32768 * 2, 8 * 128]), 1, 64, 1, 8, 0),
         ("wormhole_b0", 1000, np.array([32768 * 2, 12 * 128]), 1, 64, 1, 12, 0),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 3840]),
+            1,
+            64,
+            1,
+            12,
+            0,
+        ),  # Padded FF1/FF3 shapes for llama 70b: 8192/4 devices = 2048 x ceil(28*1024/8 devices/12/32)*12*32 = 3840 (need to be divisible by 32 tile size and 12 dram banks)
+        (
+            "wormhole_b0",
+            1000,
+            np.array([3584, 2304]),
+            1,
+            56,
+            1,
+            12,
+            0,
+        ),  # Padded FF2 shapes for llama 70b: 28*1024/8 devices = 3584 x ceil(8192/4 devices/12/32)*12*32 = 2304 (need to be divisible by 32 tile size and 12 dram banks)
+        (
+            "wormhole_b0",
+            1000,
+            np.array([1024, 2304]),
+            1,
+            16,
+            1,
+            12,
+            0,
+        ),  # Padded Dense Out shapes for llama 70b: 8192/8 devices = 1024 x ceil(8192/4 devices/12/32)*12*32 = 2304 (need to be divisible by 32 tile size and 12 dram banks)
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 1536]),
+            1,
+            8,
+            1,
+            12,
+            0,
+        ),  # Padded QKV shapes for llama 70b: 8192/4 devices = 2048 x ceil(10240/8 devices/12/32)*12*32 = 1536 (need to be divisible by 32 tile size and 12 dram banks)
         ("blackhole", 800, np.array([32768 * 8, 8 * 128]), 1, 256, 1, 8, 0),
     ],
 )
