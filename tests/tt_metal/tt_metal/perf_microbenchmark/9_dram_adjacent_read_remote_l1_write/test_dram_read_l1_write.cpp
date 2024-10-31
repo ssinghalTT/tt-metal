@@ -190,10 +190,10 @@ std::tuple<tt_metal::Program, tt_metal::KernelHandle, uint32_t> create_program(
 
         std::vector<uint32_t> writer_rt_args = {
             (std::uint32_t) (vc + 2) & 0x3,
-            // First L1 writer core coordinates
+            // First L1 receiver core coordinates
             (std::uint32_t) writer_core_phy1.x,
             (std::uint32_t) writer_core_phy1.y,
-            // Second L1 writer core coordinates
+            // Second L1 receiver core coordinates
             (std::uint32_t) writer_core_phy2.x,
             (std::uint32_t) writer_core_phy2.y
         };
@@ -222,8 +222,6 @@ bool validation(
     uint32_t block_w_per_receiver,
     uint32_t datums_per_tile) { // 32x32
 
-    log_info("Validating results");
-
     uint32_t core_id = 0;
     uint32_t num_datum_per_block = block_h * block_w * num_cores * datums_per_tile;
     uint32_t last_block_offset = (num_blocks - 1) * num_datum_per_block;
@@ -242,20 +240,24 @@ bool validation(
             device, core, cb_addr, num_tiles_cb / 2 * single_tile_size, result_vec);
 
         if (df == 0) {
-            TT_ASSERT(false, "BFP8 validation not yet implemented");
-/*            auto result_bfp8 = unpack_bfp8_tiles_into_float_vec(result_vec, true, true);
+            auto result_bfp8 = unpack_bfp8_tiles_into_float_vec(result_vec, true, true);
             auto input_bfp8 = unpack_bfp8_tiles_into_float_vec(input_vec, true, true);
 
-            for (uint32_t i=0; i < tiles_per_core; ++i) {
-                uint32_t input_step = input_start_index_for_core + i * datums_per_tile * num_banks;
-                std::vector<float> input_slice(input_bfp8.begin() + input_step, input_bfp8.begin() + input_step + datums_per_tile);
-                uint32_t result_step = i * datums_per_tile;
-                std::vector<float> result_slice(result_bfp8.begin() + result_step, result_bfp8.begin() + result_step + datums_per_tile);
+            for (uint32_t r=0; r < block_h; ++r) {
+                for (uint32_t c=0; c < block_w_per_receiver; ++c) {
+                    uint32_t one_row_bytes = block_w * datums_per_tile * num_banks;
+                    uint32_t input_step = input_start_index_for_core + r * one_row_bytes + c * datums_per_tile * num_banks; // We stride over num_banks becuase DRAM is stored round robin across all banks
+                    std::vector<float> input_slice(input_bfp8.begin() + input_step, input_bfp8.begin() + input_step + datums_per_tile);
+                    uint32_t result_step = r * (datums_per_tile*block_w_per_receiver) + c * datums_per_tile;
+                    std::vector<float> result_slice(result_bfp8.begin() + result_step, result_bfp8.begin() + result_step + datums_per_tile);
 
-                if (input_slice != result_slice) {
-                    return false;
+                    // log_info("core {} @ ({}, {}) Expected {} Observed {}", core, c, r, input_slice[0].to_float(), result_slice[0].to_float());
+
+                    if (input_slice != result_slice) {
+                        return false;
+                    }
                 }
-            }*/
+            }
         } else {
             auto result_bf16 = unpack_uint32_vec_into_bfloat16_vec(result_vec);
             auto input_bf16 = unpack_uint32_vec_into_bfloat16_vec(input_vec);
@@ -278,6 +280,7 @@ bool validation(
         }
         core_id ++;
     }
+    log_info("Validation passed.");
     return true;
 }
 
@@ -889,33 +892,34 @@ int main(int argc, char **argv) {
         //                      Input Setup
         ////////////////////////////////////////////////////////////////////////////
         // DEBUGGING: Create a vector of bfloat16s where each element contains the tile number
-        uint32_t num_input_elements = k * n;
+
         std::vector<uint32_t> input_vec;
-        input_vec.resize(num_input_elements/2); // num_input_elements/2 because we pack into fp32 instead of bf16
-        for (uint32_t i = 0; i < num_input_elements/2; i++) {
-            uint32_t tile_value1 = i / 512; // Integer division to get tile number
-            uint32_t tile_value2 = (i + 1) / 512; // Integer division to get tile number
-            bfloat16 num_1_bfloat16 = bfloat16(static_cast<float>(tile_value1));
-            bfloat16 num_2_bfloat16 = bfloat16(static_cast<float>(tile_value2));
-            input_vec[i] = pack_two_bfloat16_into_uint32(std::pair<bfloat16, bfloat16>(num_1_bfloat16, num_2_bfloat16));
+        if (tile_format == tt::DataFormat::Bfp8_b) {
+            // input_vec = create_constant_vector_of_bfp8(
+            //     input_size, 100, true);
+            input_vec = create_random_vector_of_bfp8(
+                input_size, true, 100, 1234);
+        } else {
+            // // Debugging: Create a vector of bfloat16s where each element contains the tile number
+            // uint32_t num_input_elements = k * n;
+            // input_vec.resize(num_input_elements/2); // num_input_elements/2 because we pack into fp32 instead of bf16
+            // for (uint32_t i = 0; i < num_input_elements/2; i++) {
+            //     uint32_t tile_value1 = i / 512; // Integer division to get tile number
+            //     uint32_t tile_value2 = (i + 1) / 512; // Integer division to get tile number
+            //     bfloat16 num_1_bfloat16 = bfloat16(static_cast<float>(tile_value1));
+            //     bfloat16 num_2_bfloat16 = bfloat16(static_cast<float>(tile_value2));
+            //     input_vec[i] = pack_two_bfloat16_into_uint32(std::pair<bfloat16, bfloat16>(num_1_bfloat16, num_2_bfloat16));
+            // }
+
+            // auto input_bf16 = unpack_uint32_vec_into_bfloat16_vec(input_vec);
+            // // for (uint32_t i = 0; i < num_input_elements; i+=1024) {
+            // //     log_info(LogTest, "input_vec[{}] = {}", i, input_bf16[i].to_float());
+            // // }
+
+            // Use random vector
+            input_vec = create_random_vector_of_bfloat16(
+                input_size, 100, 1234);
         }
-
-        auto input_bf16 = unpack_uint32_vec_into_bfloat16_vec(input_vec);
-        // for (uint32_t i = 0; i < num_input_elements; i+=1024) {
-        //     log_info(LogTest, "input_vec[{}] = {}", i, input_bf16[i].to_float());
-        // }
-
-        // if (tile_format == tt::DataFormat::Bfp8_b) {
-        //     // input_vec = create_constant_vector_of_bfp8(
-        //     //     input_size, 100, true);
-        //     input_vec = create_random_vector_of_bfp8(
-        //         input_size, true, 100, 1234);
-        // } else {
-        //     // input_vec = create_constant_vector_of_bfloat16(
-        //     //     input_size * total_banks / num_banks, 100);
-        //     input_vec = create_random_vector_of_bfloat16(
-        //         input_size, 100, 1234);
-        // }
 
         tt_metal::Buffer input_buffer(
             device, input_vec.size() * sizeof(uint32_t), single_tile_size, tt_metal::BufferType::DRAM);
