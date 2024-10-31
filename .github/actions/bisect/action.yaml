@@ -25,6 +25,14 @@ runs:
         echo "Passing commit: $RUN_ID"
         echo "passed_commit=$RUN_ID" >> $GITHUB_ENV
 
+    - name: Fetch full history
+      if: env.passed_commit
+      shell: bash
+      run: |
+        set -euo pipefail
+        git fetch --deepen=100
+        git fetch origin ${{ env.passed_commit }}
+
     - name: Start Git Bisect
       if: env.passed_commit
       shell: bash
@@ -32,7 +40,7 @@ runs:
         set -euo pipefail
         # Initialize git bisect
         git bisect start
-        git bisect bad $GITHUB_SHA  # Current (failing) commit
+        git bisect bad ${{ github.sha }}  # Current (failing) commit
         git bisect good ${{ env.passed_commit }}
 
         # Run the bisect process

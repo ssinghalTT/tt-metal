@@ -40,4 +40,14 @@ jobs:
           source ${{ github.workspace }}/python_env/bin/activate
           cd $TT_METAL_HOME
           export PYTHONPATH=$TT_METAL_HOME
+          exit 1
           ${{ matrix.test-group.cmd }}
+      - name: Bisect failure (if previous step failed)
+        if: failure()
+        uses: ./.github/actions/bisect
+        with:
+          cmd: |
+            source ${{ github.workspace }}/python_env/bin/activate
+            cd $TT_METAL_HOME
+            export PYTHONPATH=$TT_METAL_HOME
+            ${{ matrix.test-group.cmd }}
