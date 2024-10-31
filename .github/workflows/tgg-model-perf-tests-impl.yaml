@@ -55,48 +55,58 @@ jobs:
           export PYTHONPATH=$TT_METAL_HOME
           exit 1
           ${{ matrix.test-group.cmd }}
-      - name: Get Recent Passing Commit (if previous step failed)
+      - name: Bisect failure (if previous step failed)
         if: failure()
-        id: get-passing-commit
-        shell: bash
-        run: |
-          set -euo pipefail
-          workflow_ref="${{ github.workflow_ref}}"
-          workflow_filename=$(basename "${workflow_ref%%@*}")
-
-          # Get the last passing workflow run on the main branch
-          # RESULTS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${workflow_filename}/runs?branch=main&status=completed" )
-          # echo "Results: $RESULTS"
-          # SUCCESS_RESULTS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${workflow_filename}/runs?branch=main&status=success" )
-          # echo "Results: $SUCCESS_RESULTS"
-
-          RUN_ID=$(curl -s "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${workflow_filename}/runs?branch=main&status=success" \
-            | jq -r '.workflow_runs[0].head_sha')
-          if [ -z "$RUN_ID" ]; then
-            echo "No passing run found on main."
-            exit 1
-          fi
-          echo "Passing commit: $RUN_ID"
-          echo "passed_commit=$RUN_ID" >> $GITHUB_ENV
-
-      - name: Start Git Bisect
-        if: env.passed_commit
-        run: |
-          # Initialize git bisect
-          git bisect start
-          git bisect bad $GITHUB_SHA  # Current (failing) commit
-          git bisect good ${{ env.passed_commit }}
-
-          # Run the bisect process
-          echo "TODO: run bisect"
-          exit 1
-          git bisect run bash -c "
-            set -e
+        uses: ./.github/actions/bisect
+        with:
+          cmd: |
             source ${{ github.workspace }}/python_env/bin/activate
-            cd \$TT_METAL_HOME
-            export PYTHONPATH=\$TT_METAL_HOME
+            cd $TT_METAL_HOME
+            export PYTHONPATH=$TT_METAL_HOME
             ${{ matrix.test-group.cmd }}
-          "
+
+      #- name: Get Recent Passing Commit (if previous step failed)
+      #  if: failure()
+      #  id: get-passing-commit
+      #  shell: bash
+      #  run: |
+      #    set -euo pipefail
+      #    workflow_ref="${{ github.workflow_ref}}"
+      #    workflow_filename=$(basename "${workflow_ref%%@*}")
+
+      #    # Get the last passing workflow run on the main branch
+      #    # RESULTS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${workflow_filename}/runs?branch=main&status=completed" )
+      #    # echo "Results: $RESULTS"
+      #    # SUCCESS_RESULTS=$(curl -s "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${workflow_filename}/runs?branch=main&status=success" )
+      #    # echo "Results: $SUCCESS_RESULTS"
+
+      #    RUN_ID=$(curl -s "https://api.github.com/repos/${{ github.repository }}/actions/workflows/${workflow_filename}/runs?branch=main&status=success" \
+      #      | jq -r '.workflow_runs[0].head_sha')
+      #    if [ -z "$RUN_ID" ]; then
+      #      echo "No passing run found on main."
+      #      exit 1
+      #    fi
+      #    echo "Passing commit: $RUN_ID"
+      #    echo "passed_commit=$RUN_ID" >> $GITHUB_ENV
+
+      #- name: Start Git Bisect
+      #  if: env.passed_commit
+      #  run: |
+      #    # Initialize git bisect
+      #    git bisect start
+      #    git bisect bad $GITHUB_SHA  # Current (failing) commit
+      #    git bisect good ${{ env.passed_commit }}
+
+      #    # Run the bisect process
+      #    echo "TODO: run bisect"
+      #    exit 1
+      #    git bisect run bash -c "
+      #      set -e
+      #      source ${{ github.workspace }}/python_env/bin/activate
+      #      cd \$TT_METAL_HOME
+      #      export PYTHONPATH=\$TT_METAL_HOME
+      #      ${{ matrix.test-group.cmd }}
+      #    "
 
       - name: Check perf report exists
         id: check-perf-report
