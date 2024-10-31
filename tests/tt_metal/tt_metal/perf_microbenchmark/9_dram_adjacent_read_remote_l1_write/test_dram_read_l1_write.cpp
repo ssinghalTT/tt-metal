@@ -203,6 +203,38 @@ std::tuple<tt_metal::Program, tt_metal::KernelHandle, uint32_t> create_program(
     return {std::move(program), reader_kernel, reader_cb_addr};
 }
 
+template <typename T>
+bool validate_data(
+    const std::vector<T>& result_data,
+    const std::vector<T>& input_data,
+    uint32_t block_h,
+    uint32_t block_w_per_receiver,
+    uint32_t block_w,
+    uint32_t datums_per_tile,
+    uint32_t num_banks,
+    uint32_t input_start_index_for_core)
+{
+    for (uint32_t r = 0; r < block_h; ++r) {
+        for (uint32_t c = 0; c < block_w_per_receiver; ++c) {
+            uint32_t one_row_bytes = block_w * datums_per_tile * num_banks;
+            uint32_t input_step = input_start_index_for_core + r * one_row_bytes + c * datums_per_tile * num_banks;
+            auto input_begin = input_data.begin() + input_step;
+            auto input_end = input_begin + datums_per_tile;
+            std::vector<T> input_slice(input_begin, input_end);
+
+            uint32_t result_step = r * (datums_per_tile * block_w_per_receiver) + c * datums_per_tile;
+            auto result_begin = result_data.begin() + result_step;
+            auto result_end = result_begin + datums_per_tile;
+            std::vector<T> result_slice(result_begin, result_end);
+
+            if (input_slice != result_slice) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
 
 bool validation(
     tt_metal::Device *device,
@@ -242,40 +274,18 @@ bool validation(
         if (df == 0) {
             auto result_bfp8 = unpack_bfp8_tiles_into_float_vec(result_vec, true, true);
             auto input_bfp8 = unpack_bfp8_tiles_into_float_vec(input_vec, true, true);
-
-            for (uint32_t r=0; r < block_h; ++r) {
-                for (uint32_t c=0; c < block_w_per_receiver; ++c) {
-                    uint32_t one_row_bytes = block_w * datums_per_tile * num_banks;
-                    uint32_t input_step = input_start_index_for_core + r * one_row_bytes + c * datums_per_tile * num_banks; // We stride over num_banks becuase DRAM is stored round robin across all banks
-                    std::vector<float> input_slice(input_bfp8.begin() + input_step, input_bfp8.begin() + input_step + datums_per_tile);
-                    uint32_t result_step = r * (datums_per_tile*block_w_per_receiver) + c * datums_per_tile;
-                    std::vector<float> result_slice(result_bfp8.begin() + result_step, result_bfp8.begin() + result_step + datums_per_tile);
-
-                    // log_info("core {} @ ({}, {}) Expected {} Observed {}", core, c, r, input_slice[0].to_float(), result_slice[0].to_float());
-
-                    if (input_slice != result_slice) {
-                        return false;
-                    }
-                }
+            if (!validate_data<float>(
+                result_bfp8, input_bfp8, block_h, block_w_per_receiver, block_w,
+                datums_per_tile, num_banks, input_start_index_for_core)) {
+                return false;
             }
         } else {
             auto result_bf16 = unpack_uint32_vec_into_bfloat16_vec(result_vec);
             auto input_bf16 = unpack_uint32_vec_into_bfloat16_vec(input_vec);
-
-            for (uint32_t r=0; r < block_h; ++r) {
-                for (uint32_t c=0; c < block_w_per_receiver; ++c) {
-                    uint32_t one_row_bytes = block_w * datums_per_tile * num_banks;
-                    uint32_t input_step = input_start_index_for_core + r * one_row_bytes + c * datums_per_tile * num_banks; // We stride over num_banks becuase DRAM is stored round robin across all banks
-                    std::vector<bfloat16> input_slice(input_bf16.begin() + input_step, input_bf16.begin() + input_step + datums_per_tile);
-                    uint32_t result_step = r * (datums_per_tile*block_w_per_receiver) + c * datums_per_tile;
-                    std::vector<bfloat16> result_slice(result_bf16.begin() + result_step, result_bf16.begin() + result_step + datums_per_tile);
-
-                    // log_info("core {} @ ({}, {}) Expected {} Observed {}", core, c, r, input_slice[0].to_float(), result_slice[0].to_float());
-
-                    if (input_slice != result_slice) {
-                        return false;
-                    }
-                }
+            if (!validate_data<bfloat16>(
+                result_bf16, input_bf16, block_h, block_w_per_receiver, block_w,
+                datums_per_tile, num_banks, input_start_index_for_core)) {
+                return false;
             }
         }
         core_id ++;
