@@ -684,6 +684,7 @@ def test_matmul_single_core_sharded(
     [
         ("wormhole_b0", 1000, np.array([32768, 12 * 128]), 1, 8, 0, 12, 0),
         ("wormhole_b0", 1000, np.array([32768, 12 * 128]), 1, 8, 1, 12, 0),
+        ("wormhole_b0", 1000, np.array([2048, 3840]), 1, 4, 1, 12, 0),  # Padded FF1 shapes for llama 70b on TG
     ],
 )
 def test_dram_read_12_core(arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id):
@@ -724,9 +725,203 @@ def test_dram_read_12_core(arch, freq, test_vector, num_tests, nblock, data_form
 @pytest.mark.parametrize(
     "arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id",
     [
-        ("grayskull", 1202, np.array([32768 * 2, 8 * 128]), 1, 64, 1, 8, 0),
-        ("wormhole_b0", 1000, np.array([32768 * 2, 12 * 128]), 1, 64, 1, 12, 0),
-        ("blackhole", 800, np.array([32768 * 8, 8 * 128]), 1, 256, 1, 8, 0),
+        ("grayskull", 1202, np.array([32768 * 2, 8 * 128]), 1, 64, 2, 8, 0),
+        ("wormhole_b0", 1000, np.array([32768 * 2, 12 * 128]), 1, 64, 2, 12, 0),
+        ("blackhole", 800, np.array([32768 * 8, 8 * 128]), 1, 256, 2, 8, 0),
+        # FF1/FF3 shapes for TG llama 70b
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 3840]),
+            1,
+            64,
+            0,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 3840]),
+            1,
+            32,
+            0,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 3840]),
+            1,
+            16,
+            0,
+            12,
+            0,
+        ),  # 244 GB/s
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 3840]),
+            1,
+            8,
+            0,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 3840]),
+            1,
+            4,
+            0,
+            12,
+            0,
+        ),
+        # FF2 shapes for TG llama 70b
+        (
+            "wormhole_b0",
+            1000,
+            np.array([3584, 2304]),
+            1,
+            112,
+            1,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([3584, 2304]),
+            1,
+            56,
+            1,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([3584, 2304]),
+            1,
+            28,
+            1,
+            12,
+            0,
+        ),  # 255 GB/s
+        (
+            "wormhole_b0",
+            1000,
+            np.array([3584, 2304]),
+            1,
+            14,
+            1,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([3584, 2304]),
+            1,
+            7,
+            1,
+            12,
+            0,
+        ),
+        # Dense Out shapes for TG llama 70b
+        (
+            "wormhole_b0",
+            1000,
+            np.array([1024, 2304]),
+            1,
+            32,
+            1,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([1024, 2304]),
+            1,
+            16,
+            1,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([1024, 2304]),
+            1,
+            8,
+            1,
+            12,
+            0,
+        ),  # 226 GB/s
+        (
+            "wormhole_b0",
+            1000,
+            np.array([1024, 2304]),
+            1,
+            4,
+            1,
+            12,
+            0,
+        ),
+        # QKV shapes for TG llama 70b
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 1536]),
+            1,
+            64,
+            1,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 1536]),
+            1,
+            32,
+            1,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 1536]),
+            1,
+            16,
+            1,
+            12,
+            0,
+        ),  # 232 GB/s
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 1536]),
+            1,
+            8,
+            1,
+            12,
+            0,
+        ),
+        (
+            "wormhole_b0",
+            1000,
+            np.array([2048, 1536]),
+            1,
+            4,
+            1,
+            12,
+            0,
+        ),
     ],
 )
 def test_dram_read_l1_write_core(arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id):
@@ -737,9 +932,11 @@ def test_dram_read_l1_write_core(arch, freq, test_vector, num_tests, nblock, dat
     for _ in range(num_tests):
         k = int(test_vector[0])
         n = int(test_vector[1])
-        if data_format == 0:
+        if data_format == 0:  # BFP4
+            input_size = k * n * (512 + 64) // 1024
+        elif data_format == 1:  # BFP8
             input_size = k * n * 1088 // 1024
-        elif data_format == 1:
+        elif data_format == 2:  # BFLOAT16
             input_size = k * n * 2048 // 1024
         run_dram_read_l1_write_cmd(k, n, nblock, data_format, num_banks, bank_start_id)
         cycle = profile_results_kernel_duration()
