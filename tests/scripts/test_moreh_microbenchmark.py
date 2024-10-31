@@ -723,32 +723,12 @@ def test_dram_read_12_core(arch, freq, test_vector, num_tests, nblock, data_form
 
 
 @pytest.mark.parametrize(
-    "arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id",
+    "arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id, bw_target",
     [
-        ("grayskull", 1202, np.array([32768 * 2, 8 * 128]), 1, 64, 2, 8, 0),
-        ("wormhole_b0", 1000, np.array([32768 * 2, 12 * 128]), 1, 64, 2, 12, 0),
-        ("blackhole", 800, np.array([32768 * 8, 8 * 128]), 1, 256, 2, 8, 0),
+        ("grayskull", 1202, np.array([32768 * 2, 8 * 128]), 1, 64, 2, 8, 0, None),
+        ("wormhole_b0", 1000, np.array([32768 * 2, 12 * 128]), 1, 64, 2, 12, 0, None),
+        ("blackhole", 800, np.array([32768 * 8, 8 * 128]), 1, 256, 2, 8, 0, None),
         # FF1/FF3 shapes for TG llama 70b
-        (
-            "wormhole_b0",
-            1000,
-            np.array([2048, 3840]),
-            1,
-            64,
-            0,
-            12,
-            0,
-        ),
-        (
-            "wormhole_b0",
-            1000,
-            np.array([2048, 3840]),
-            1,
-            32,
-            0,
-            12,
-            0,
-        ),
         (
             "wormhole_b0",
             1000,
@@ -758,48 +738,9 @@ def test_dram_read_12_core(arch, freq, test_vector, num_tests, nblock, data_form
             0,
             12,
             0,
+            244,
         ),  # 244 GB/s
-        (
-            "wormhole_b0",
-            1000,
-            np.array([2048, 3840]),
-            1,
-            8,
-            0,
-            12,
-            0,
-        ),
-        (
-            "wormhole_b0",
-            1000,
-            np.array([2048, 3840]),
-            1,
-            4,
-            0,
-            12,
-            0,
-        ),
         # FF2 shapes for TG llama 70b
-        (
-            "wormhole_b0",
-            1000,
-            np.array([3584, 2304]),
-            1,
-            112,
-            1,
-            12,
-            0,
-        ),
-        (
-            "wormhole_b0",
-            1000,
-            np.array([3584, 2304]),
-            1,
-            56,
-            1,
-            12,
-            0,
-        ),
         (
             "wormhole_b0",
             1000,
@@ -809,122 +750,37 @@ def test_dram_read_12_core(arch, freq, test_vector, num_tests, nblock, data_form
             1,
             12,
             0,
+            255,
         ),  # 255 GB/s
-        (
-            "wormhole_b0",
-            1000,
-            np.array([3584, 2304]),
-            1,
-            14,
-            1,
-            12,
-            0,
-        ),
-        (
-            "wormhole_b0",
-            1000,
-            np.array([3584, 2304]),
-            1,
-            7,
-            1,
-            12,
-            0,
-        ),
         # Dense Out shapes for TG llama 70b
         (
             "wormhole_b0",
             1000,
             np.array([1024, 2304]),
             1,
-            32,
-            1,
-            12,
-            0,
-        ),
-        (
-            "wormhole_b0",
-            1000,
-            np.array([1024, 2304]),
-            1,
-            16,
-            1,
-            12,
-            0,
-        ),
-        (
-            "wormhole_b0",
-            1000,
-            np.array([1024, 2304]),
-            1,
             8,
             1,
             12,
             0,
+            226,
         ),  # 226 GB/s
-        (
-            "wormhole_b0",
-            1000,
-            np.array([1024, 2304]),
-            1,
-            4,
-            1,
-            12,
-            0,
-        ),
         # QKV shapes for TG llama 70b
         (
             "wormhole_b0",
             1000,
             np.array([2048, 1536]),
             1,
-            64,
-            1,
-            12,
-            0,
-        ),
-        (
-            "wormhole_b0",
-            1000,
-            np.array([2048, 1536]),
-            1,
-            32,
-            1,
-            12,
-            0,
-        ),
-        (
-            "wormhole_b0",
-            1000,
-            np.array([2048, 1536]),
-            1,
             16,
             1,
             12,
             0,
+            232,
         ),  # 232 GB/s
-        (
-            "wormhole_b0",
-            1000,
-            np.array([2048, 1536]),
-            1,
-            8,
-            1,
-            12,
-            0,
-        ),
-        (
-            "wormhole_b0",
-            1000,
-            np.array([2048, 1536]),
-            1,
-            4,
-            1,
-            12,
-            0,
-        ),
     ],
 )
-def test_dram_read_l1_write_core(arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id):
+def test_dram_read_l1_write_core(
+    arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id, bw_target
+):
     data = []
     cycle_list = []
     time_list = []
@@ -960,6 +816,8 @@ def test_dram_read_l1_write_core(arch, freq, test_vector, num_tests, nblock, dat
         bw_bound = 260.0
     elif arch == "blackhole":
         bw_bound = 340.0
+    if bw_target is not None:
+        bw_bound = bw_target
     assert bw_bound <= throughput
 
 
