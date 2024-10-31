@@ -12,6 +12,7 @@
 #include <vector>
 #include <ranges>
 
+#include "common/bfloat4.hpp"
 #include "common/bfloat8.hpp"
 #include "common/bfloat16.hpp"
 #include "common/tt_backend_api_types.hpp"
@@ -271,7 +272,15 @@ bool validation(
         tt_metal::detail::ReadFromDeviceL1(
             device, core, cb_addr, num_tiles_cb / 2 * single_tile_size, result_vec);
 
-        if (df == 0) {
+        if (df == 0) { // BFP4
+            auto result_bfp4 = unpack_bfp4_tiles_into_float_vec(result_vec, true, true);
+            auto input_bfp4 = unpack_bfp4_tiles_into_float_vec(input_vec, true, true);
+            if (!validate_data<float>(
+                result_bfp4, input_bfp4, block_h, block_w_per_receiver, block_w,
+                datums_per_tile, num_banks, input_start_index_for_core)) {
+                return false;
+            }
+        } else if (df == 1) { // BFP8
             auto result_bfp8 = unpack_bfp8_tiles_into_float_vec(result_vec, true, true);
             auto input_bfp8 = unpack_bfp8_tiles_into_float_vec(input_vec, true, true);
             if (!validate_data<float>(
@@ -279,7 +288,7 @@ bool validation(
                 datums_per_tile, num_banks, input_start_index_for_core)) {
                 return false;
             }
-        } else {
+        } else if (df == 2) { // BFLOAT16
             auto result_bf16 = unpack_uint32_vec_into_bfloat16_vec(result_vec);
             auto input_bf16 = unpack_uint32_vec_into_bfloat16_vec(input_vec);
             if (!validate_data<bfloat16>(
@@ -750,7 +759,7 @@ int main(int argc, char **argv) {
     bool pass = true;
     bool use_device_profiler = false;
     bool bypass_check = false;
-    uint32_t df = 0;
+    uint32_t df = 2;
     std::vector<double> dram_bandwidth;
     uint32_t num_tests = 1;
     uint32_t num_blocks = 8;
@@ -786,7 +795,7 @@ int main(int argc, char **argv) {
                 test_args::has_command_option_and_remaining_args(input_args, "--bypass-check");
 
             std::tie(df, input_args) =
-                test_args::get_command_option_uint32_and_remaining_args(input_args, "--data-type", 0);
+                test_args::get_command_option_uint32_and_remaining_args(input_args, "--data-type", 2);
 
             std::tie(num_banks, input_args) =
                 test_args::get_command_option_uint32_and_remaining_args(input_args, "--num-banks", 12);
@@ -820,10 +829,13 @@ int main(int argc, char **argv) {
         ////////////////////////////////////////////////////////////////////////////
         uint32_t input_size = 0;
         tt::DataFormat tile_format = tt::DataFormat::Bfp8_b;
-        if (df == 0) {
+        if (df == 0) { // BFP4
+            input_size = k * n * (512+64) / 1024;
+            tile_format = tt::DataFormat::Bfp4_b;
+        } else if (df == 1) { // BFP8
             input_size = k * n * 1088 / 1024;
             tile_format = tt::DataFormat::Bfp8_b;
-        } else if (df == 1) {
+        } else if (df == 2) { // BFLOAT16
             input_size = k * n * 2;
             tile_format = tt::DataFormat::Float16_b;
         } else {
@@ -904,11 +916,14 @@ int main(int argc, char **argv) {
         // DEBUGGING: Create a vector of bfloat16s where each element contains the tile number
 
         std::vector<uint32_t> input_vec;
-        if (tile_format == tt::DataFormat::Bfp8_b) {
+        if (tile_format == tt::DataFormat::Bfp4_b) {
+            input_vec = create_random_vector_of_bfp4(
+                input_size, false, 100, 1234);
+        } else if (tile_format == tt::DataFormat::Bfp8_b) {
             // input_vec = create_constant_vector_of_bfp8(
             //     input_size, 100, true);
             input_vec = create_random_vector_of_bfp8(
-                input_size, true, 100, 1234);
+                input_size, false, 100, 1234);
         } else {
             // // Debugging: Create a vector of bfloat16s where each element contains the tile number
             // uint32_t num_input_elements = k * n;
