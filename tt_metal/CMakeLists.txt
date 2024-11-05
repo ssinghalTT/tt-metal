@@ -47,6 +47,7 @@ target_include_directories(
         ${UMD_HOME}
         ${PROJECT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}
+        include
 )
 target_compile_options(tt_metal PUBLIC -Wno-int-to-pointer-cast)
 add_dependencies(tt_metal hw_toolchain)
@@ -58,6 +59,10 @@ set_target_properties(
             "${PROJECT_BINARY_DIR}/lib"
         ADDITIONAL_CLEAN_FILES
             "${PROJECT_BINARY_DIR}/lib;${PROJECT_BINARY_DIR}/obj"
+)
+
+include_directories(
+    include # Con: this is a "magic" directory that targets in subdirs receive without seeing an explanation for
 )
 
 add_subdirectory(hw)
