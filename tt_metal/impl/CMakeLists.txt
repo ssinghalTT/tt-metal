@@ -29,6 +29,7 @@ add_library(Metalium::Metal::Impl ALIAS impl)
 target_link_libraries(
     impl
     PRIVATE
+        Metalium::Metal::API
         Boost::smart_ptr
         range-v3::range-v3
 )

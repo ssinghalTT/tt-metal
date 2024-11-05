@@ -16,6 +16,8 @@ target_link_libraries(
         fmt::fmt-header-only
         span
         Metalium::Metal::STL
+    PRIVATE
+        Metalium::Metal::API
 )
 
 target_include_directories(

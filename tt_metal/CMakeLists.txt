@@ -11,6 +11,7 @@ target_sources(
 target_link_libraries(
     tt_metal
     PUBLIC
+        Metalium::Metal::API
         metal_header_directories
         Metalium::Metal::Impl
         Metalium::Metal::STL
@@ -60,6 +61,7 @@ set_target_properties(
             "${PROJECT_BINARY_DIR}/lib;${PROJECT_BINARY_DIR}/obj"
 )
 
+add_subdirectory(include)
 add_subdirectory(hw)
 add_subdirectory(common)
 add_subdirectory(jit_build)
