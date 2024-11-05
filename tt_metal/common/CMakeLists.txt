@@ -24,4 +24,6 @@ target_include_directories(
         ${UMD_HOME}
         ${PROJECT_SOURCE_DIR}
         ${PROJECT_SOURCE_DIR}/tt_metal
+    PRIVATE
+        ../include # Ugly: breaks encapsulation
 )

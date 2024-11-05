@@ -39,6 +39,8 @@ target_include_directories(
     PUBLIC
         ${PROJECT_SOURCE_DIR}/tt_metal
         ${CMAKE_CURRENT_SOURCE_DIR}
+    PRIVATE
+        ../include # Ugly: breaks encapsulation
 )
 
 target_compile_options(impl PUBLIC -Wno-int-to-pointer-cast)
