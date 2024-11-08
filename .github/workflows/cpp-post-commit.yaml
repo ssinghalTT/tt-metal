@@ -57,7 +57,6 @@ jobs:
       - ${{ inputs.runner-label }}
       - cloud-virtual-machine
       - P100
-      - in-service
     steps:
       - uses: tenstorrent-metal/metal-workflows/.github/actions/checkout-with-submodule-lfs@v2.0.0
       - name: Set up dynamic env vars for build

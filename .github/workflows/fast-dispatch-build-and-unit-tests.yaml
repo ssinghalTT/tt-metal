@@ -61,7 +61,6 @@ jobs:
       - ${{ inputs.runner-label }}
       - P100
       - cloud-virtual-machine
-      - in-service
     steps:
       - uses: tenstorrent-metal/metal-workflows/.github/actions/checkout-with-submodule-lfs@v2.0.0
       - uses: actions/download-artifact@v4
