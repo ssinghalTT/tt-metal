@@ -39,6 +39,7 @@ jobs:
     name: ${{ inputs.arch }} ${{ inputs.runner-label }}
     runs-on:
       - ${{ inputs.runner-label }}
+      - P100
       - cloud-virtual-machine
       - in-service
     env:

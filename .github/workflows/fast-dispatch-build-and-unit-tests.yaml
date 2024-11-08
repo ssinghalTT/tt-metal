@@ -59,6 +59,7 @@ jobs:
       LOGURU_LEVEL: INFO
     runs-on:
       - ${{ inputs.runner-label }}
+      - P100
       - cloud-virtual-machine
       - in-service
     steps:
