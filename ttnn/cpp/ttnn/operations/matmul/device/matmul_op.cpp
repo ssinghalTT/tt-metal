@@ -1400,8 +1400,8 @@ void Matmul::validate(
                 TT_FATAL(
                     program_config.per_core_N % program_config.out_subblock_w == 0,
                     "per_core_N must be divisible by out_subblock_w");
-                uint32_t available_reg_count = 8; // ttnn::get_dest_reg_count(
-                        // this->compute_kernel_config.value(), this->output_tile.value().get_tile_shape());
+                uint32_t available_reg_count = ttnn::get_dest_reg_count(
+                        this->compute_kernel_config.value(), this->output_tile.value().get_tile_shape());
                 TT_FATAL(
                     (program_config.out_subblock_w * program_config.out_subblock_h) <= available_reg_count,
                     "out_subblock_w {} times out_subblock_h {} needs to be at most {} to fit in hardware",
