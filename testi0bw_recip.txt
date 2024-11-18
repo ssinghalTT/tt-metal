@@ -1,0 +1,2089 @@
+============================= test session starts ==============================
+platform linux -- Python 3.8.10, pytest-7.2.2, pluggy-1.5.0 -- /home/ubuntu/Kalai/tt-metal/python_env/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/ubuntu/Kalai/tt-metal, configfile: pytest.ini
+plugins: dash-2.15.0, split-0.8.2, timeout-2.2.0, anyio-4.4.0, xdist-3.6.1
+timeout: 300.0s
+timeout method: signal
+timeout func_only: False
+collecting ... collected 1 item
+
+tests/ttnn/unit_tests/operations/eltwise/test_i0_bw_pcc.py::test_i0_bw_recip_range[shapes=[1, 1, 32, 32]] [38;2;000;128;000m                 Device[0m | [1m[38;2;100;149;237mINFO    [0m | Opening user mode device driver
+
+[32m2024-11-20 10:28:34.777[0m | [1m[38;2;100;149;237mINFO    [0m | [36mSiliconDriver  [0m - Detected 1 PCI device : [0]
+[32m2024-11-20 10:28:34.790[0m | [1m[38;2;255;165;000mWARNING [0m | [36mSiliconDriver  [0m - init_detect_tt_device_numanodes(): Could not determine NumaNodeSet for TT device (physical_device_id: 0 pci_bus_id: 0000:07:00.0)
+[32m2024-11-20 10:28:34.790[0m | [1m[38;2;255;165;000mWARNING [0m | [36mSiliconDriver  [0m - Could not find NumaNodeSet for TT Device (physical_device_id: 0 pci_bus_id: 0000:07:00.0)
+[32m2024-11-20 10:28:34.791[0m | [1m[38;2;255;165;000mWARNING [0m | [36mSiliconDriver  [0m - bind_area_memory_nodeset(): Unable to determine TT Device to NumaNode mapping for physical_device_id: 0. Skipping membind.
+[32m2024-11-20 10:28:34.791[0m | [1m[38;2;255;165;000mWARNING [0m | [36mSiliconDriver  [0m - ---- ttSiliconDevice::init_hugepage: bind_area_to_memory_nodeset() failed (physical_device_id: 0 ch: 0). Hugepage allocation is not on NumaNode matching TT Device. Side-Effect is decreased Device->Host perf (Issue #893).
+[32m2024-11-20 10:28:34.797[0m | [1m[38;2;100;149;237mINFO    [0m | [36mSiliconDriver  [0m - Software version 6.0.0, Ethernet FW version 6.9.0 (Device 0)
+[38;2;000;128;000m                  Metal[0m | [1m[38;2;100;149;237mINFO    [0m | Initializing device 0. Program cache is NOT enabled
+[38;2;000;128;000m                  Metal[0m | [1m[38;2;100;149;237mINFO    [0m | AI CLK for device 0 is:   1000 MHz
+0-0-0-0 input: -0.006535762920975685 	 TT_out: TorchTensor(-153.) 	 torch: -153.00433349609375
+
+0-0-0-1 input: 0.008559037931263447 	 TT_out: TorchTensor(116.8125) 	 torch: 116.83556365966797
+
+0-0-0-2 input: 0.005106255412101746 	 TT_out: TorchTensor(195.7500) 	 torch: 195.83822631835938
+
+0-0-0-3 input: -1.2277625501155853e-05 	 TT_out: TorchTensor(-81408.) 	 torch: -81448.9765625
+
+0-0-0-4 input: 0.006688332185149193 	 TT_out: TorchTensor(149.5000) 	 torch: 149.51409912109375
+
+0-0-0-5 input: -0.003523539751768112 	 TT_out: TorchTensor(-283.7500) 	 torch: -283.8055114746094
+
+0-0-0-6 input: 0.004308857023715973 	 TT_out: TorchTensor(232.) 	 torch: 232.08010864257812
+
+0-0-0-7 input: 0.0083075612783432 	 TT_out: TorchTensor(120.3125) 	 torch: 120.37226867675781
+
+0-0-0-8 input: -0.001206536777317524 	 TT_out: TorchTensor(-828.5000) 	 torch: -828.8184814453125
+
+0-0-0-9 input: -0.003049292601644993 	 TT_out: TorchTensor(-327.7500) 	 torch: -327.9449157714844
+
+0-0-0-10 input: 0.005945883225649595 	 TT_out: TorchTensor(168.1250) 	 torch: 168.18359375
+
+0-0-0-11 input: 0.007807960733771324 	 TT_out: TorchTensor(127.8750) 	 torch: 128.0744171142578
+
+0-0-0-12 input: 0.004266852512955666 	 TT_out: TorchTensor(234.2500) 	 torch: 234.3647918701172
+
+0-0-0-13 input: 0.00720742903649807 	 TT_out: TorchTensor(138.6250) 	 torch: 138.7457275390625
+
+0-0-0-14 input: 0.003228619694709778 	 TT_out: TorchTensor(309.5000) 	 torch: 309.7298889160156
+
+0-0-0-15 input: -0.005698908120393753 	 TT_out: TorchTensor(-175.3750) 	 torch: -175.4722137451172
+
+0-0-0-16 input: 0.006541963201016188 	 TT_out: TorchTensor(152.7500) 	 torch: 152.85931396484375
+
+0-0-0-17 input: 0.003642978146672249 	 TT_out: TorchTensor(274.2500) 	 torch: 274.50067138671875
+
+0-0-0-18 input: 0.0008512064814567566 	 TT_out: TorchTensor(1174.) 	 torch: 1174.8031005859375
+
+0-0-0-19 input: 0.0043449499644339085 	 TT_out: TorchTensor(230.1250) 	 torch: 230.15225219726562
+
+0-0-0-20 input: -0.0011757966130971909 	 TT_out: TorchTensor(-850.) 	 torch: -850.4872436523438
+
+0-0-0-21 input: -0.008223341777920723 	 TT_out: TorchTensor(-121.5625) 	 torch: -121.60506439208984
+
+0-0-0-22 input: 0.003824428655207157 	 TT_out: TorchTensor(261.2500) 	 torch: 261.4769592285156
+
+0-0-0-23 input: -0.003144427202641964 	 TT_out: TorchTensor(-318.) 	 torch: -318.02294921875
+
+0-0-0-24 input: -0.008580468595027924 	 TT_out: TorchTensor(-116.5000) 	 torch: -116.54375457763672
+
+0-0-0-25 input: 0.00700773298740387 	 TT_out: TorchTensor(142.6250) 	 torch: 142.69949340820312
+
+0-0-0-26 input: -0.005704585462808609 	 TT_out: TorchTensor(-175.2500) 	 torch: -175.29757690429688
+
+0-0-0-27 input: 0.0002290746197104454 	 TT_out: TorchTensor(4364.) 	 torch: 4365.3896484375
+
+0-0-0-28 input: 0.007353860419243574 	 TT_out: TorchTensor(135.8750) 	 torch: 135.98300170898438
+
+0-0-0-29 input: 0.0043681529350578785 	 TT_out: TorchTensor(228.8750) 	 torch: 228.92971801757812
+
+0-0-0-30 input: 0.004029441624879837 	 TT_out: TorchTensor(248.1250) 	 torch: 248.17333984375
+
+0-0-0-31 input: 0.006890788674354553 	 TT_out: TorchTensor(145.) 	 torch: 145.12127685546875
+
+0-0-1-0 input: 2.6378780603408813e-05 	 TT_out: TorchTensor(37888.) 	 torch: 37909.2578125
+
+0-0-1-1 input: -0.002252013422548771 	 TT_out: TorchTensor(-444.) 	 torch: -444.0470886230469
+
+0-0-1-2 input: -0.003800774924457073 	 TT_out: TorchTensor(-262.7500) 	 torch: -263.104248046875
+
+0-0-1-3 input: -0.0030382871627807617 	 TT_out: TorchTensor(-329.) 	 torch: -329.1328125
+
+0-0-1-4 input: -0.006478503346443176 	 TT_out: TorchTensor(-154.2500) 	 torch: -154.3566436767578
+
+0-0-1-5 input: 0.008848031982779503 	 TT_out: TorchTensor(113.) 	 torch: 113.01948547363281
+
+0-0-1-6 input: -0.0003126980736851692 	 TT_out: TorchTensor(-3196.) 	 torch: -3197.972900390625
+
+0-0-1-7 input: -0.007644904777407646 	 TT_out: TorchTensor(-130.6250) 	 torch: -130.8060760498047
+
+0-0-1-8 input: 0.005185017827898264 	 TT_out: TorchTensor(192.7500) 	 torch: 192.86337280273438
+
+0-0-1-9 input: 0.0010177083313465118 	 TT_out: TorchTensor(982.5000) 	 torch: 982.5997924804688
+
+0-0-1-10 input: 0.008891787379980087 	 TT_out: TorchTensor(112.4375) 	 torch: 112.46332550048828
+
+0-0-1-11 input: 0.005403274670243263 	 TT_out: TorchTensor(185.) 	 torch: 185.0729522705078
+
+0-0-1-12 input: -0.002256939187645912 	 TT_out: TorchTensor(-443.) 	 torch: -443.07794189453125
+
+0-0-1-13 input: 0.0028432821854948997 	 TT_out: TorchTensor(351.5000) 	 torch: 351.7062072753906
+
+0-0-1-14 input: 0.002593033015727997 	 TT_out: TorchTensor(385.5000) 	 torch: 385.6487731933594
+
+0-0-1-15 input: 0.002161613665521145 	 TT_out: TorchTensor(462.5000) 	 torch: 462.61737060546875
+
+0-0-1-16 input: -0.003223869949579239 	 TT_out: TorchTensor(-310.) 	 torch: -310.18621826171875
+
+0-0-1-17 input: -0.008710477501153946 	 TT_out: TorchTensor(-114.7500) 	 torch: -114.80426788330078
+
+0-0-1-18 input: -0.006454451009631157 	 TT_out: TorchTensor(-154.8750) 	 torch: -154.9318389892578
+
+0-0-1-19 input: -0.0022644251585006714 	 TT_out: TorchTensor(-441.5000) 	 torch: -441.6131896972656
+
+0-0-1-20 input: -0.0009195432066917419 	 TT_out: TorchTensor(-1087.) 	 torch: -1087.4964599609375
+
+0-0-1-21 input: 0.007994412444531918 	 TT_out: TorchTensor(125.0625) 	 torch: 125.08736419677734
+
+0-0-1-22 input: -0.00430716760456562 	 TT_out: TorchTensor(-232.1250) 	 torch: -232.171142578125
+
+0-0-1-23 input: 0.006908130832016468 	 TT_out: TorchTensor(144.7500) 	 torch: 144.7569580078125
+
+0-0-1-24 input: 0.006141055375337601 	 TT_out: TorchTensor(162.7500) 	 torch: 162.8384552001953
+
+0-0-1-25 input: 0.008717547170817852 	 TT_out: TorchTensor(114.6875) 	 torch: 114.71116638183594
+
+0-0-1-26 input: -0.002874632366001606 	 TT_out: TorchTensor(-347.7500) 	 torch: -347.8705749511719
+
+0-0-1-27 input: -0.003915410488843918 	 TT_out: TorchTensor(-255.3750) 	 torch: -255.40106201171875
+
+0-0-1-28 input: 0.003257918171584606 	 TT_out: TorchTensor(306.7500) 	 torch: 306.9444885253906
+
+0-0-1-29 input: -4.587322473526001e-05 	 TT_out: TorchTensor(-21792.) 	 torch: -21799.208984375
+
+0-0-1-30 input: -0.008443402126431465 	 TT_out: TorchTensor(-118.3750) 	 torch: -118.4356689453125
+
+0-0-1-31 input: 0.0032554538920521736 	 TT_out: TorchTensor(307.) 	 torch: 307.17681884765625
+
+0-0-2-0 input: -0.00036252662539482117 	 TT_out: TorchTensor(-2758.) 	 torch: -2758.41796875
+
+0-0-2-1 input: -0.003153645433485508 	 TT_out: TorchTensor(-317.) 	 torch: -317.0933532714844
+
+0-0-2-2 input: -0.0022260844707489014 	 TT_out: TorchTensor(-449.) 	 torch: -449.21923828125
+
+0-0-2-3 input: -0.00045803003013134 	 TT_out: TorchTensor(-2182.) 	 torch: -2183.262939453125
+
+0-0-2-4 input: -0.007789095863699913 	 TT_out: TorchTensor(-128.1250) 	 torch: -128.38461303710938
+
+0-0-2-5 input: 0.006454059854149818 	 TT_out: TorchTensor(154.8750) 	 torch: 154.9412384033203
+
+0-0-2-6 input: 0.0011312002316117287 	 TT_out: TorchTensor(884.) 	 torch: 884.0167846679688
+
+0-0-2-7 input: -0.0010164044797420502 	 TT_out: TorchTensor(-983.5000) 	 torch: -983.8602905273438
+
+0-0-2-8 input: 0.008006461896002293 	 TT_out: TorchTensor(124.8750) 	 torch: 124.89911651611328
+
+0-0-2-9 input: 0.0036615347489714622 	 TT_out: TorchTensor(273.) 	 torch: 273.1095275878906
+
+0-0-2-10 input: -0.0021352600306272507 	 TT_out: TorchTensor(-468.2500) 	 torch: -468.3270263671875
+
+0-0-2-11 input: -0.0005696099251508713 	 TT_out: TorchTensor(-1755.) 	 torch: -1755.58740234375
+
+0-0-2-12 input: -0.008426126092672348 	 TT_out: TorchTensor(-118.6250) 	 torch: -118.67849731445312
+
+0-0-2-13 input: 0.0027029807679355145 	 TT_out: TorchTensor(369.7500) 	 torch: 369.9619445800781
+
+0-0-2-14 input: -0.006589196622371674 	 TT_out: TorchTensor(-151.7500) 	 torch: -151.76356506347656
+
+0-0-2-15 input: -0.005070743151009083 	 TT_out: TorchTensor(-197.1250) 	 torch: -197.20974731445312
+
+0-0-2-16 input: -0.007972894236445427 	 TT_out: TorchTensor(-125.3750) 	 torch: -125.42496490478516
+
+0-0-2-17 input: 0.005096824839711189 	 TT_out: TorchTensor(196.1250) 	 torch: 196.20057678222656
+
+0-0-2-18 input: -0.0034516463056206703 	 TT_out: TorchTensor(-289.5000) 	 torch: -289.7168273925781
+
+0-0-2-19 input: 0.002245519310235977 	 TT_out: TorchTensor(445.2500) 	 torch: 445.331298828125
+
+0-0-2-20 input: -0.003568863496184349 	 TT_out: TorchTensor(-280.) 	 torch: -280.20123291015625
+
+0-0-2-21 input: 0.008565899915993214 	 TT_out: TorchTensor(116.6875) 	 torch: 116.7419662475586
+
+0-0-2-22 input: -0.0038579776883125305 	 TT_out: TorchTensor(-258.7500) 	 torch: -259.2031555175781
+
+0-0-2-23 input: -0.004150244407355785 	 TT_out: TorchTensor(-240.8750) 	 torch: -240.9496612548828
+
+0-0-2-24 input: 0.00039647333323955536 	 TT_out: TorchTensor(2522.) 	 torch: 2522.23779296875
+
+0-0-2-25 input: 0.0026745260693132877 	 TT_out: TorchTensor(373.7500) 	 torch: 373.89801025390625
+
+0-0-2-26 input: 0.004307470750063658 	 TT_out: TorchTensor(232.1250) 	 torch: 232.15480041503906
+
+0-0-2-27 input: -0.0064869411289691925 	 TT_out: TorchTensor(-154.1250) 	 torch: -154.15586853027344
+
+0-0-2-28 input: 0.0028638564981520176 	 TT_out: TorchTensor(349.) 	 torch: 349.17950439453125
+
+0-0-2-29 input: 0.004037818871438503 	 TT_out: TorchTensor(247.6250) 	 torch: 247.65846252441406
+
+0-0-2-30 input: 0.003021419048309326 	 TT_out: TorchTensor(330.7500) 	 torch: 330.9703063964844
+
+0-0-2-31 input: -0.0026774657890200615 	 TT_out: TorchTensor(-373.2500) 	 torch: -373.48748779296875
+
+0-0-3-0 input: -0.0068557970225811005 	 TT_out: TorchTensor(-145.7500) 	 torch: -145.86195373535156
+
+0-0-3-1 input: 0.00485890731215477 	 TT_out: TorchTensor(205.7500) 	 torch: 205.80758666992188
+
+0-0-3-2 input: 0.004445670172572136 	 TT_out: TorchTensor(224.8750) 	 torch: 224.93795776367188
+
+0-0-3-3 input: -0.0029186177998781204 	 TT_out: TorchTensor(-342.5000) 	 torch: -342.6279296875
+
+0-0-3-4 input: 0.004174175672233105 	 TT_out: TorchTensor(239.5000) 	 torch: 239.56825256347656
+
+0-0-3-5 input: 0.008523394353687763 	 TT_out: TorchTensor(117.3125) 	 torch: 117.32415008544922
+
+0-0-3-6 input: -0.0039027919992804527 	 TT_out: TorchTensor(-255.7500) 	 torch: -256.2268371582031
+
+0-0-3-7 input: -0.0021961145102977753 	 TT_out: TorchTensor(-455.2500) 	 torch: -455.34967041015625
+
+0-0-3-8 input: -0.008189322426915169 	 TT_out: TorchTensor(-122.0625) 	 torch: -122.11022186279297
+
+0-0-3-9 input: 0.005438884720206261 	 TT_out: TorchTensor(183.7500) 	 torch: 183.86122131347656
+
+0-0-3-10 input: -0.00507719162851572 	 TT_out: TorchTensor(-196.8750) 	 torch: -196.9592742919922
+
+0-0-3-11 input: 0.007872951216995716 	 TT_out: TorchTensor(127.) 	 torch: 127.01717376708984
+
+0-0-3-12 input: 0.005043115001171827 	 TT_out: TorchTensor(198.2500) 	 torch: 198.29014587402344
+
+0-0-3-13 input: -0.00659475103020668 	 TT_out: TorchTensor(-151.6250) 	 torch: -151.6357421875
+
+0-0-3-14 input: 0.0017601493746042252 	 TT_out: TorchTensor(568.) 	 torch: 568.1336059570312
+
+0-0-3-15 input: -0.0011903494596481323 	 TT_out: TorchTensor(-840.) 	 torch: -840.0894165039062
+
+0-0-3-16 input: 0.006317424587905407 	 TT_out: TorchTensor(158.2500) 	 torch: 158.2923583984375
+
+0-0-3-17 input: -0.0006519164890050888 	 TT_out: TorchTensor(-1533.) 	 torch: -1533.9388427734375
+
+0-0-3-18 input: -0.0023758215829730034 	 TT_out: TorchTensor(-420.7500) 	 torch: -420.9070129394531
+
+0-0-3-19 input: -0.005512842908501625 	 TT_out: TorchTensor(-181.3750) 	 torch: -181.3946075439453
+
+0-0-3-20 input: 0.003622889518737793 	 TT_out: TorchTensor(275.7500) 	 torch: 276.02276611328125
+
+0-0-3-21 input: -0.0066823456436395645 	 TT_out: TorchTensor(-149.6250) 	 torch: -149.64805603027344
+
+0-0-3-22 input: 0.0034014121629297733 	 TT_out: TorchTensor(293.7500) 	 torch: 293.99554443359375
+
+0-0-3-23 input: -0.006119484081864357 	 TT_out: TorchTensor(-163.3750) 	 torch: -163.4124755859375
+
+0-0-3-24 input: 0.006211243569850922 	 TT_out: TorchTensor(160.8750) 	 torch: 160.99835205078125
+
+0-0-3-25 input: 0.0014441250823438168 	 TT_out: TorchTensor(692.) 	 torch: 692.4608154296875
+
+0-0-3-26 input: 0.003787416499108076 	 TT_out: TorchTensor(263.7500) 	 torch: 264.0322265625
+
+0-0-3-27 input: 0.0027201641350984573 	 TT_out: TorchTensor(367.5000) 	 torch: 367.6248779296875
+
+0-0-3-28 input: 0.00214127404615283 	 TT_out: TorchTensor(467.) 	 torch: 467.0116882324219
+
+0-0-3-29 input: 0.0030606212094426155 	 TT_out: TorchTensor(326.5000) 	 torch: 326.7310485839844
+
+0-0-3-30 input: 0.0008810264989733696 	 TT_out: TorchTensor(1134.) 	 torch: 1135.0396728515625
+
+0-0-3-31 input: 0.006895137019455433 	 TT_out: TorchTensor(145.) 	 torch: 145.02975463867188
+
+0-0-4-0 input: -0.005493054166436195 	 TT_out: TorchTensor(-182.) 	 torch: -182.04808044433594
+
+0-0-4-1 input: -0.0007880385965108871 	 TT_out: TorchTensor(-1268.) 	 torch: -1268.973388671875
+
+0-0-4-2 input: -0.005433211103081703 	 TT_out: TorchTensor(-184.) 	 torch: -184.05322265625
+
+0-0-4-3 input: 0.001707952469587326 	 TT_out: TorchTensor(585.) 	 torch: 585.4963989257812
+
+0-0-4-4 input: 0.0028540934436023235 	 TT_out: TorchTensor(350.2500) 	 torch: 350.37396240234375
+
+0-0-4-5 input: 0.005825298838317394 	 TT_out: TorchTensor(171.6250) 	 torch: 171.66500854492188
+
+0-0-4-6 input: -0.0010666046291589737 	 TT_out: TorchTensor(-937.5000) 	 torch: -937.5545043945312
+
+0-0-4-7 input: -0.005254128947854042 	 TT_out: TorchTensor(-190.2500) 	 torch: -190.32650756835938
+
+0-0-4-8 input: 0.004163946956396103 	 TT_out: TorchTensor(240.1250) 	 torch: 240.15675354003906
+
+0-0-4-9 input: -0.007857898250222206 	 TT_out: TorchTensor(-127.2500) 	 torch: -127.26049041748047
+
+0-0-4-10 input: -0.004588427022099495 	 TT_out: TorchTensor(-217.8750) 	 torch: -217.93960571289062
+
+0-0-4-11 input: 0.004731314722448587 	 TT_out: TorchTensor(211.2500) 	 torch: 211.3577423095703
+
+0-0-4-12 input: 0.0013076434843242168 	 TT_out: TorchTensor(764.5000) 	 torch: 764.7344360351562
+
+0-0-4-13 input: 0.008873932994902134 	 TT_out: TorchTensor(112.6875) 	 torch: 112.68960571289062
+
+0-0-4-14 input: 0.0024203481152653694 	 TT_out: TorchTensor(413.) 	 torch: 413.1636962890625
+
+0-0-4-15 input: 0.005848455708473921 	 TT_out: TorchTensor(170.8750) 	 torch: 170.9853057861328
+
+0-0-4-16 input: 0.00735382828861475 	 TT_out: TorchTensor(135.8750) 	 torch: 135.9835968017578
+
+0-0-4-17 input: 0.006547922268509865 	 TT_out: TorchTensor(152.6250) 	 torch: 152.72019958496094
+
+0-0-4-18 input: 0.008113310672342777 	 TT_out: TorchTensor(123.2500) 	 torch: 123.2542495727539
+
+0-0-4-19 input: 0.0018022446893155575 	 TT_out: TorchTensor(554.5000) 	 torch: 554.8635864257812
+
+0-0-4-20 input: 0.0003703730180859566 	 TT_out: TorchTensor(2698.) 	 torch: 2699.980712890625
+
+0-0-4-21 input: 0.0042309570126235485 	 TT_out: TorchTensor(236.2500) 	 torch: 236.3531494140625
+
+0-0-4-22 input: -0.0007200688123703003 	 TT_out: TorchTensor(-1388.) 	 torch: -1388.756103515625
+
+0-0-4-23 input: 0.0035946727730333805 	 TT_out: TorchTensor(278.) 	 torch: 278.189453125
+
+0-0-4-24 input: -0.004928632639348507 	 TT_out: TorchTensor(-202.8750) 	 torch: -202.89602661132812
+
+0-0-4-25 input: 0.008474716916680336 	 TT_out: TorchTensor(117.9375) 	 torch: 117.99803924560547
+
+0-0-4-26 input: 0.0026665502227842808 	 TT_out: TorchTensor(375.) 	 torch: 375.0163879394531
+
+0-0-4-27 input: 0.004463080782443285 	 TT_out: TorchTensor(224.) 	 torch: 224.0604705810547
+
+0-0-4-28 input: 0.006343284621834755 	 TT_out: TorchTensor(157.6250) 	 torch: 157.64703369140625
+
+0-0-4-29 input: 0.007838922552764416 	 TT_out: TorchTensor(127.5625) 	 torch: 127.56855010986328
+
+0-0-4-30 input: -1.7549842596054077e-05 	 TT_out: TorchTensor(-56960.) 	 torch: -56980.56640625
+
+0-0-4-31 input: 0.005533149465918541 	 TT_out: TorchTensor(180.6250) 	 torch: 180.72889709472656
+
+0-0-5-0 input: -0.007617246359586716 	 TT_out: TorchTensor(-131.1250) 	 torch: -131.28103637695312
+
+0-0-5-1 input: 0.005842395126819611 	 TT_out: TorchTensor(171.1250) 	 torch: 171.1626739501953
+
+0-0-5-2 input: 0.0031613241881132126 	 TT_out: TorchTensor(316.2500) 	 torch: 316.3231506347656
+
+0-0-5-3 input: 0.008193396963179111 	 TT_out: TorchTensor(122.) 	 torch: 122.04949951171875
+
+0-0-5-4 input: 0.004628910217434168 	 TT_out: TorchTensor(216.) 	 torch: 216.0335693359375
+
+0-0-5-5 input: -0.0039776964113116264 	 TT_out: TorchTensor(-251.3750) 	 torch: -251.40179443359375
+
+0-0-5-6 input: -0.0008608149364590645 	 TT_out: TorchTensor(-1161.) 	 torch: -1161.6898193359375
+
+0-0-5-7 input: 7.560010999441147e-05 	 TT_out: TorchTensor(13224.) 	 torch: 13227.494140625
+
+0-0-5-8 input: -0.0032704100012779236 	 TT_out: TorchTensor(-305.7500) 	 torch: -305.7720642089844
+
+0-0-5-9 input: 0.003604586236178875 	 TT_out: TorchTensor(277.2500) 	 torch: 277.4243469238281
+
+0-0-5-10 input: 0.007034790236502886 	 TT_out: TorchTensor(142.1250) 	 torch: 142.15065002441406
+
+0-0-5-11 input: 0.003591094631701708 	 TT_out: TorchTensor(278.2500) 	 torch: 278.46661376953125
+
+0-0-5-12 input: -0.008428703993558884 	 TT_out: TorchTensor(-118.6250) 	 torch: -118.64220428466797
+
+0-0-5-13 input: 0.000868101604282856 	 TT_out: TorchTensor(1151.) 	 torch: 1151.9388427734375
+
+0-0-5-14 input: -0.003932076506316662 	 TT_out: TorchTensor(-254.2500) 	 torch: -254.3185577392578
+
+0-0-5-15 input: -0.0013978220522403717 	 TT_out: TorchTensor(-715.) 	 torch: -715.3986206054688
+
+0-0-5-16 input: -0.002588219940662384 	 TT_out: TorchTensor(-386.2500) 	 torch: -386.3659362792969
+
+0-0-5-17 input: -0.00045682303607463837 	 TT_out: TorchTensor(-2188.) 	 torch: -2189.031494140625
+
+0-0-5-18 input: 0.005474607460200787 	 TT_out: TorchTensor(182.6250) 	 torch: 182.6614990234375
+
+0-0-5-19 input: 0.004324897658079863 	 TT_out: TorchTensor(231.1250) 	 torch: 231.21934509277344
+
+0-0-5-20 input: 0.0037537869065999985 	 TT_out: TorchTensor(266.2500) 	 torch: 266.39764404296875
+
+0-0-5-21 input: 0.0011970624327659607 	 TT_out: TorchTensor(835.) 	 torch: 835.3782958984375
+
+0-0-5-22 input: -0.00169331394135952 	 TT_out: TorchTensor(-590.5000) 	 torch: -590.5579223632812
+
+0-0-5-23 input: 0.007444910705089569 	 TT_out: TorchTensor(134.2500) 	 torch: 134.3199462890625
+
+0-0-5-24 input: 0.00013285968452692032 	 TT_out: TorchTensor(7524.) 	 torch: 7526.73779296875
+
+0-0-5-25 input: 0.005894273053854704 	 TT_out: TorchTensor(169.6250) 	 torch: 169.6562042236328
+
+0-0-5-26 input: -0.00380045548081398 	 TT_out: TorchTensor(-262.7500) 	 torch: -263.1263427734375
+
+0-0-5-27 input: -0.0008398778736591339 	 TT_out: TorchTensor(-1190.) 	 torch: -1190.6492919921875
+
+0-0-5-28 input: 0.0028285342268645763 	 TT_out: TorchTensor(353.5000) 	 torch: 353.5400085449219
+
+0-0-5-29 input: -0.0032217921689152718 	 TT_out: TorchTensor(-310.2500) 	 torch: -310.3862609863281
+
+0-0-5-30 input: -0.00638790987432003 	 TT_out: TorchTensor(-156.5000) 	 torch: -156.5457305908203
+
+0-0-5-31 input: 0.0033051366917788982 	 TT_out: TorchTensor(302.5000) 	 torch: 302.5593566894531
+
+0-0-6-0 input: 0.004762392956763506 	 TT_out: TorchTensor(209.8750) 	 torch: 209.9784698486328
+
+0-0-6-1 input: 0.008919697254896164 	 TT_out: TorchTensor(112.0625) 	 torch: 112.1114273071289
+
+0-0-6-2 input: -0.0001198919489979744 	 TT_out: TorchTensor(-8328.) 	 torch: -8340.84375
+
+0-0-6-3 input: 0.0026729973033070564 	 TT_out: TorchTensor(374.) 	 torch: 374.11187744140625
+
+0-0-6-4 input: 0.0041746594943106174 	 TT_out: TorchTensor(239.5000) 	 torch: 239.54049682617188
+
+0-0-6-5 input: -0.006224204786121845 	 TT_out: TorchTensor(-160.6250) 	 torch: -160.66310119628906
+
+0-0-6-6 input: -0.002487760968506336 	 TT_out: TorchTensor(-401.7500) 	 torch: -401.9678649902344
+
+0-0-6-7 input: -0.008109970018267632 	 TT_out: TorchTensor(-123.2500) 	 torch: -123.30501556396484
+
+0-0-6-8 input: 0.004263712093234062 	 TT_out: TorchTensor(234.5000) 	 torch: 234.53741455078125
+
+0-0-6-9 input: 0.0015865792520344257 	 TT_out: TorchTensor(630.) 	 torch: 630.2868041992188
+
+0-0-6-10 input: -0.002933558076620102 	 TT_out: TorchTensor(-340.7500) 	 torch: -340.8829650878906
+
+0-0-6-11 input: -0.007256209850311279 	 TT_out: TorchTensor(-137.7500) 	 torch: -137.81298828125
+
+0-0-6-12 input: -0.0020129159092903137 	 TT_out: TorchTensor(-496.7500) 	 torch: -496.791748046875
+
+0-0-6-13 input: -0.0023103728890419006 	 TT_out: TorchTensor(-432.7500) 	 torch: -432.83056640625
+
+0-0-6-14 input: 0.005794226657599211 	 TT_out: TorchTensor(172.5000) 	 torch: 172.58558654785156
+
+0-0-6-15 input: -0.004947228357195854 	 TT_out: TorchTensor(-202.1250) 	 torch: -202.1333770751953
+
+0-0-6-16 input: 0.004674384370446205 	 TT_out: TorchTensor(213.8750) 	 torch: 213.93191528320312
+
+0-0-6-17 input: -0.005585632286965847 	 TT_out: TorchTensor(-179.) 	 torch: -179.03076171875
+
+0-0-6-18 input: -0.004517413675785065 	 TT_out: TorchTensor(-221.2500) 	 torch: -221.3656005859375
+
+0-0-6-19 input: 0.003655268345028162 	 TT_out: TorchTensor(273.5000) 	 torch: 273.5777282714844
+
+0-0-6-20 input: -0.0051511116325855255 	 TT_out: TorchTensor(-194.1250) 	 torch: -194.1328582763672
+
+0-0-6-21 input: 0.003446865826845169 	 TT_out: TorchTensor(290.) 	 torch: 290.1186218261719
+
+0-0-6-22 input: -0.0033771060407161713 	 TT_out: TorchTensor(-296.) 	 torch: -296.11151123046875
+
+0-0-6-23 input: -0.0025484589859843254 	 TT_out: TorchTensor(-392.2500) 	 torch: -392.39398193359375
+
+0-0-6-24 input: 0.007272028364241123 	 TT_out: TorchTensor(137.3750) 	 torch: 137.51321411132812
+
+0-0-6-25 input: -0.0030415765941143036 	 TT_out: TorchTensor(-328.7500) 	 torch: -328.77685546875
+
+0-0-6-26 input: -0.0020404215902090073 	 TT_out: TorchTensor(-490.) 	 torch: -490.09478759765625
+
+0-0-6-27 input: 0.0011599231511354446 	 TT_out: TorchTensor(862.) 	 torch: 862.1260986328125
+
+0-0-6-28 input: -0.005146407522261143 	 TT_out: TorchTensor(-194.2500) 	 torch: -194.310302734375
+
+0-0-6-29 input: -0.0008869944140315056 	 TT_out: TorchTensor(-1127.) 	 torch: -1127.40283203125
+
+0-0-6-30 input: 0.004544583614915609 	 TT_out: TorchTensor(220.) 	 torch: 220.0421600341797
+
+0-0-6-31 input: 0.007847568951547146 	 TT_out: TorchTensor(127.3750) 	 torch: 127.4280014038086
+
+0-0-7-0 input: 0.0018576281145215034 	 TT_out: TorchTensor(538.) 	 torch: 538.3208618164062
+
+0-0-7-1 input: -0.004294116050004959 	 TT_out: TorchTensor(-232.8750) 	 torch: -232.87680053710938
+
+0-0-7-2 input: -0.0013039680197834969 	 TT_out: TorchTensor(-766.5000) 	 torch: -766.8899536132812
+
+0-0-7-3 input: -0.0038524456322193146 	 TT_out: TorchTensor(-259.2500) 	 torch: -259.57537841796875
+
+0-0-7-4 input: 0.0047428663820028305 	 TT_out: TorchTensor(210.7500) 	 torch: 210.84295654296875
+
+0-0-7-5 input: -0.003338833339512348 	 TT_out: TorchTensor(-299.5000) 	 torch: -299.5058288574219
+
+0-0-7-6 input: -0.008876295760273933 	 TT_out: TorchTensor(-112.6250) 	 torch: -112.65960693359375
+
+0-0-7-7 input: -0.006662823259830475 	 TT_out: TorchTensor(-150.) 	 torch: -150.08653259277344
+
+0-0-7-8 input: 0.004332337062805891 	 TT_out: TorchTensor(230.7500) 	 torch: 230.82229614257812
+
+0-0-7-9 input: -0.0018837293609976768 	 TT_out: TorchTensor(-530.5000) 	 torch: -530.86181640625
+
+0-0-7-10 input: -0.002148464322090149 	 TT_out: TorchTensor(-465.2500) 	 torch: -465.44873046875
+
+0-0-7-11 input: -0.0036548711359500885 	 TT_out: TorchTensor(-273.5000) 	 torch: -273.6074523925781
+
+0-0-7-12 input: -0.0014677876606583595 	 TT_out: TorchTensor(-681.) 	 torch: -681.2974853515625
+
+0-0-7-13 input: -0.006764814257621765 	 TT_out: TorchTensor(-147.7500) 	 torch: -147.82371520996094
+
+0-0-7-14 input: 0.001095837913453579 	 TT_out: TorchTensor(912.5000) 	 torch: 912.543701171875
+
+0-0-7-15 input: -0.0044746436178684235 	 TT_out: TorchTensor(-223.3750) 	 torch: -223.4814910888672
+
+0-0-7-16 input: 0.0034255916252732277 	 TT_out: TorchTensor(291.7500) 	 torch: 291.9203796386719
+
+0-0-7-17 input: 0.008731158450245857 	 TT_out: TorchTensor(114.5000) 	 torch: 114.53234100341797
+
+0-0-7-18 input: 0.0024244505912065506 	 TT_out: TorchTensor(412.2500) 	 torch: 412.4645690917969
+
+0-0-7-19 input: 0.008094984106719494 	 TT_out: TorchTensor(123.5000) 	 torch: 123.53328704833984
+
+0-0-7-20 input: -0.005683322437107563 	 TT_out: TorchTensor(-175.8750) 	 torch: -175.9534149169922
+
+0-0-7-21 input: -0.007999151945114136 	 TT_out: TorchTensor(-125.) 	 torch: -125.01325225830078
+
+0-0-7-22 input: -0.004282867535948753 	 TT_out: TorchTensor(-233.3750) 	 torch: -233.48841857910156
+
+0-0-7-23 input: -0.003124489448964596 	 TT_out: TorchTensor(-320.) 	 torch: -320.0522766113281
+
+0-0-7-24 input: -0.004290101118385792 	 TT_out: TorchTensor(-233.) 	 torch: -233.09474182128906
+
+0-0-7-25 input: 0.0074713281355798244 	 TT_out: TorchTensor(133.7500) 	 torch: 133.8450164794922
+
+0-0-7-26 input: -0.005540019832551479 	 TT_out: TorchTensor(-180.5000) 	 torch: -180.50477600097656
+
+0-0-7-27 input: -0.00023144762963056564 	 TT_out: TorchTensor(-4316.) 	 torch: -4320.6318359375
+
+0-0-7-28 input: -0.008430695161223412 	 TT_out: TorchTensor(-118.5625) 	 torch: -118.61418151855469
+
+0-0-7-29 input: -0.0021567456424236298 	 TT_out: TorchTensor(-463.5000) 	 torch: -463.6615295410156
+
+0-0-7-30 input: -0.00864364393055439 	 TT_out: TorchTensor(-115.6875) 	 torch: -115.69194793701172
+
+0-0-7-31 input: -0.0027103181928396225 	 TT_out: TorchTensor(-368.7500) 	 torch: -368.9603576660156
+
+0-0-8-0 input: 0.004560763482004404 	 TT_out: TorchTensor(219.2500) 	 torch: 219.26153564453125
+
+0-0-8-1 input: -0.005943057127296925 	 TT_out: TorchTensor(-168.2500) 	 torch: -168.26356506347656
+
+0-0-8-2 input: 0.005208299495279789 	 TT_out: TorchTensor(192.) 	 torch: 192.00125122070312
+
+0-0-8-3 input: -0.004548610188066959 	 TT_out: TorchTensor(-219.7500) 	 torch: -219.8473663330078
+
+0-0-8-4 input: 0.0018897620029747486 	 TT_out: TorchTensor(528.5000) 	 torch: 529.1671752929688
+
+0-0-8-5 input: -0.00036182813346385956 	 TT_out: TorchTensor(-2762.) 	 torch: -2763.7431640625
+
+0-0-8-6 input: 0.0032840901985764503 	 TT_out: TorchTensor(304.2500) 	 torch: 304.4983215332031
+
+0-0-8-7 input: -0.008736934512853622 	 TT_out: TorchTensor(-114.4375) 	 torch: -114.45661926269531
+
+0-0-8-8 input: 0.0057003432884812355 	 TT_out: TorchTensor(175.3750) 	 torch: 175.4280242919922
+
+0-0-8-9 input: 0.005067044403403997 	 TT_out: TorchTensor(197.2500) 	 torch: 197.3537139892578
+
+0-0-8-10 input: -0.0060054827481508255 	 TT_out: TorchTensor(-166.5000) 	 torch: -166.51451110839844
+
+0-0-8-11 input: 0.003623086027801037 	 TT_out: TorchTensor(275.7500) 	 torch: 276.0078125
+
+0-0-8-12 input: -0.005646884441375732 	 TT_out: TorchTensor(-177.) 	 torch: -177.08880615234375
+
+0-0-8-13 input: -0.00475954357534647 	 TT_out: TorchTensor(-210.) 	 torch: -210.10418701171875
+
+0-0-8-14 input: -0.007631586864590645 	 TT_out: TorchTensor(-130.8750) 	 torch: -131.0343475341797
+
+0-0-8-15 input: 0.008961488492786884 	 TT_out: TorchTensor(111.5625) 	 torch: 111.58860778808594
+
+0-0-8-16 input: 0.006945398636162281 	 TT_out: TorchTensor(143.8750) 	 torch: 143.98020935058594
+
+0-0-8-17 input: -0.008563246577978134 	 TT_out: TorchTensor(-116.7500) 	 torch: -116.77813720703125
+
+0-0-8-18 input: 0.00758000835776329 	 TT_out: TorchTensor(131.7500) 	 torch: 131.9259796142578
+
+0-0-8-19 input: 0.0054822503589093685 	 TT_out: TorchTensor(182.3750) 	 torch: 182.40684509277344
+
+0-0-8-20 input: -0.00014440901577472687 	 TT_out: TorchTensor(-6924.) 	 torch: -6924.775390625
+
+0-0-8-21 input: -0.00229017436504364 	 TT_out: TorchTensor(-436.5000) 	 torch: -436.6479797363281
+
+0-0-8-22 input: 0.002304262015968561 	 TT_out: TorchTensor(433.7500) 	 torch: 433.9784240722656
+
+0-0-8-23 input: -0.0013239020481705666 	 TT_out: TorchTensor(-755.) 	 torch: -755.3428955078125
+
+0-0-8-24 input: -0.000999721698462963 	 TT_out: TorchTensor(-1000.) 	 torch: -1000.2783813476562
+
+0-0-8-25 input: -0.00486574973911047 	 TT_out: TorchTensor(-205.5000) 	 torch: -205.51817321777344
+
+0-0-8-26 input: -0.002931159920990467 	 TT_out: TorchTensor(-341.) 	 torch: -341.161865234375
+
+0-0-8-27 input: -0.00558115728199482 	 TT_out: TorchTensor(-179.1250) 	 torch: -179.17431640625
+
+0-0-8-28 input: -0.00041043199598789215 	 TT_out: TorchTensor(-2436.) 	 torch: -2436.457275390625
+
+0-0-8-29 input: 0.007815646938979626 	 TT_out: TorchTensor(127.9375) 	 torch: 127.9484634399414
+
+0-0-8-30 input: -0.003430040553212166 	 TT_out: TorchTensor(-291.5000) 	 torch: -291.541748046875
+
+0-0-8-31 input: -0.0034746387973427773 	 TT_out: TorchTensor(-287.7500) 	 torch: -287.7997131347656
+
+0-0-9-0 input: 0.003486696630716324 	 TT_out: TorchTensor(286.7500) 	 torch: 286.8044128417969
+
+0-0-9-1 input: -0.004199070855975151 	 TT_out: TorchTensor(-238.1250) 	 torch: -238.14791870117188
+
+0-0-9-2 input: -0.005720046348869801 	 TT_out: TorchTensor(-174.7500) 	 torch: -174.82376098632812
+
+0-0-9-3 input: 0.006575733423233032 	 TT_out: TorchTensor(152.) 	 torch: 152.0742950439453
+
+0-0-9-4 input: 0.006270155776292086 	 TT_out: TorchTensor(159.3750) 	 torch: 159.4856719970703
+
+0-0-9-5 input: 0.0031337630935013294 	 TT_out: TorchTensor(319.) 	 torch: 319.10516357421875
+
+0-0-9-6 input: 0.006668342277407646 	 TT_out: TorchTensor(149.8750) 	 torch: 149.96231079101562
+
+0-0-9-7 input: 0.0018342845141887665 	 TT_out: TorchTensor(545.) 	 torch: 545.1716918945312
+
+0-0-9-8 input: -0.0030198348686099052 	 TT_out: TorchTensor(-331.) 	 torch: -331.1439208984375
+
+0-0-9-9 input: 0.00812128372490406 	 TT_out: TorchTensor(123.1250) 	 torch: 123.13323974609375
+
+0-0-9-10 input: -0.004155202768743038 	 TT_out: TorchTensor(-240.6250) 	 torch: -240.66213989257812
+
+0-0-9-11 input: 0.0065650613978505135 	 TT_out: TorchTensor(152.2500) 	 torch: 152.32150268554688
+
+0-0-9-12 input: 0.004868507385253906 	 TT_out: TorchTensor(205.3750) 	 torch: 205.40176391601562
+
+0-0-9-13 input: 0.0002367030829191208 	 TT_out: TorchTensor(4220.) 	 torch: 4224.7021484375
+
+0-0-9-14 input: 0.0013663237914443016 	 TT_out: TorchTensor(731.5000) 	 torch: 731.8909301757812
+
+0-0-9-15 input: 0.0016079801134765148 	 TT_out: TorchTensor(621.5000) 	 torch: 621.8982543945312
+
+0-0-9-16 input: -0.00890735350549221 	 TT_out: TorchTensor(-112.2500) 	 torch: -112.26679229736328
+
+0-0-9-17 input: 0.008941112086176872 	 TT_out: TorchTensor(111.8125) 	 torch: 111.84291076660156
+
+0-0-9-18 input: 0.0010048169642686844 	 TT_out: TorchTensor(995.) 	 torch: 995.2061157226562
+
+0-0-9-19 input: -0.0028235455974936485 	 TT_out: TorchTensor(-354.) 	 torch: -354.1646423339844
+
+0-0-9-20 input: 0.0004983041435480118 	 TT_out: TorchTensor(2006.) 	 torch: 2006.8065185546875
+
+0-0-9-21 input: 0.0005537085235118866 	 TT_out: TorchTensor(1806.) 	 torch: 1806.00439453125
+
+0-0-9-22 input: 0.008455391973257065 	 TT_out: TorchTensor(118.2500) 	 torch: 118.26773071289062
+
+0-0-9-23 input: -0.004027168266475201 	 TT_out: TorchTensor(-248.2500) 	 torch: -248.31344604492188
+
+0-0-9-24 input: -0.00010850466787815094 	 TT_out: TorchTensor(-9208.) 	 torch: -9216.193359375
+
+0-0-9-25 input: 0.004568931646645069 	 TT_out: TorchTensor(218.7500) 	 torch: 218.8695526123047
+
+0-0-9-26 input: 0.0014927866868674755 	 TT_out: TorchTensor(669.5000) 	 torch: 669.8880615234375
+
+0-0-9-27 input: -0.002214559353888035 	 TT_out: TorchTensor(-451.5000) 	 torch: -451.5570983886719
+
+0-0-9-28 input: 0.0022114673629403114 	 TT_out: TorchTensor(452.) 	 torch: 452.1884460449219
+
+0-0-9-29 input: -0.006821909919381142 	 TT_out: TorchTensor(-146.5000) 	 torch: -146.58651733398438
+
+0-0-9-30 input: -0.004930655471980572 	 TT_out: TorchTensor(-202.7500) 	 torch: -202.8127899169922
+
+0-0-9-31 input: 0.002565372735261917 	 TT_out: TorchTensor(389.7500) 	 torch: 389.8069152832031
+
+0-0-10-0 input: 0.005456929095089436 	 TT_out: TorchTensor(183.2500) 	 torch: 183.2532501220703
+
+0-0-10-1 input: -0.006067516282200813 	 TT_out: TorchTensor(-164.7500) 	 torch: -164.8120880126953
+
+0-0-10-2 input: 0.0013878014869987965 	 TT_out: TorchTensor(720.5000) 	 torch: 720.5641479492188
+
+0-0-10-3 input: 0.003384226467460394 	 TT_out: TorchTensor(295.2500) 	 torch: 295.4884948730469
+
+0-0-10-4 input: 0.006369961891323328 	 TT_out: TorchTensor(156.8750) 	 torch: 156.98681640625
+
+0-0-10-5 input: -0.003011251799762249 	 TT_out: TorchTensor(-332.) 	 torch: -332.0877990722656
+
+0-0-10-6 input: 0.002635085489600897 	 TT_out: TorchTensor(379.2500) 	 torch: 379.49432373046875
+
+0-0-10-7 input: -0.008877722546458244 	 TT_out: TorchTensor(-112.6250) 	 torch: -112.6415023803711
+
+0-0-10-8 input: 0.005631664767861366 	 TT_out: TorchTensor(177.5000) 	 torch: 177.5673828125
+
+0-0-10-9 input: 0.0023926859721541405 	 TT_out: TorchTensor(417.7500) 	 torch: 417.9403381347656
+
+0-0-10-10 input: 0.004340045619755983 	 TT_out: TorchTensor(230.3750) 	 torch: 230.41232299804688
+
+0-0-10-11 input: -0.007418528199195862 	 TT_out: TorchTensor(-134.7500) 	 torch: -134.79762268066406
+
+0-0-10-12 input: -0.008014919236302376 	 TT_out: TorchTensor(-124.7500) 	 torch: -124.76731872558594
+
+0-0-10-13 input: 0.0017045331187546253 	 TT_out: TorchTensor(586.5000) 	 torch: 586.6708984375
+
+0-0-10-14 input: 0.0040496173314750195 	 TT_out: TorchTensor(246.8750) 	 torch: 246.93690490722656
+
+0-0-10-15 input: -0.002328815869987011 	 TT_out: TorchTensor(-429.2500) 	 torch: -429.40277099609375
+
+0-0-10-16 input: -0.008314283564686775 	 TT_out: TorchTensor(-120.2500) 	 torch: -120.27494812011719
+
+0-0-10-17 input: -0.0057729436084628105 	 TT_out: TorchTensor(-173.1250) 	 torch: -173.2218475341797
+
+0-0-10-18 input: -0.006598396226763725 	 TT_out: TorchTensor(-151.5000) 	 torch: -151.55197143554688
+
+0-0-10-19 input: -0.007650408893823624 	 TT_out: TorchTensor(-130.5000) 	 torch: -130.71197509765625
+
+0-0-10-20 input: -2.396944910287857e-05 	 TT_out: TorchTensor(-41696.) 	 torch: -41719.7734375
+
+0-0-10-21 input: -0.00030489638447761536 	 TT_out: TorchTensor(-3278.) 	 torch: -3279.802734375
+
+0-0-10-22 input: 0.007686010096222162 	 TT_out: TorchTensor(129.8750) 	 torch: 130.1065216064453
+
+0-0-10-23 input: 0.0070195370353758335 	 TT_out: TorchTensor(142.3750) 	 torch: 142.45953369140625
+
+0-0-10-24 input: 0.0005980478599667549 	 TT_out: TorchTensor(1672.) 	 torch: 1672.10693359375
+
+0-0-10-25 input: 0.003002558834850788 	 TT_out: TorchTensor(333.) 	 torch: 333.04925537109375
+
+0-0-10-26 input: -0.004848715849220753 	 TT_out: TorchTensor(-206.1250) 	 torch: -206.24017333984375
+
+0-0-10-27 input: 0.006004331633448601 	 TT_out: TorchTensor(166.5000) 	 torch: 166.5464324951172
+
+0-0-10-28 input: -0.0022842716425657272 	 TT_out: TorchTensor(-437.7500) 	 torch: -437.77630615234375
+
+0-0-10-29 input: -0.005774322897195816 	 TT_out: TorchTensor(-173.1250) 	 torch: -173.18048095703125
+
+0-0-10-30 input: 0.005935385823249817 	 TT_out: TorchTensor(168.3750) 	 torch: 168.48104858398438
+
+0-0-10-31 input: 0.006275884807109833 	 TT_out: TorchTensor(159.2500) 	 torch: 159.340087890625
+
+0-0-11-0 input: -0.00014186184853315353 	 TT_out: TorchTensor(-7048.) 	 torch: -7049.11181640625
+
+0-0-11-1 input: -0.008532138541340828 	 TT_out: TorchTensor(-117.1875) 	 torch: -117.20391082763672
+
+0-0-11-2 input: -0.0012450898066163063 	 TT_out: TorchTensor(-803.) 	 torch: -803.1549072265625
+
+0-0-11-3 input: -0.0025215251371264458 	 TT_out: TorchTensor(-396.5000) 	 torch: -396.58538818359375
+
+0-0-11-4 input: -0.007384156808257103 	 TT_out: TorchTensor(-135.3750) 	 torch: -135.42507934570312
+
+0-0-11-5 input: 0.008561105467379093 	 TT_out: TorchTensor(116.7500) 	 torch: 116.80734252929688
+
+0-0-11-6 input: 0.005854339338839054 	 TT_out: TorchTensor(170.7500) 	 torch: 170.81346130371094
+
+0-0-11-7 input: -0.005621639080345631 	 TT_out: TorchTensor(-177.8750) 	 torch: -177.88406372070312
+
+0-0-11-8 input: -0.004674920812249184 	 TT_out: TorchTensor(-213.8750) 	 torch: -213.90736389160156
+
+0-0-11-9 input: -0.005364869721233845 	 TT_out: TorchTensor(-186.3750) 	 torch: -186.39781188964844
+
+0-0-11-10 input: -0.0005594529211521149 	 TT_out: TorchTensor(-1787.) 	 torch: -1787.46044921875
+
+0-0-11-11 input: -0.003224615938961506 	 TT_out: TorchTensor(-310.) 	 torch: -310.11444091796875
+
+0-0-11-12 input: 0.006532169878482819 	 TT_out: TorchTensor(153.) 	 torch: 153.08848571777344
+
+0-0-11-13 input: -0.0024188458919525146 	 TT_out: TorchTensor(-413.2500) 	 torch: -413.4202880859375
+
+0-0-11-14 input: 0.003089712467044592 	 TT_out: TorchTensor(323.5000) 	 torch: 323.65472412109375
+
+0-0-11-15 input: 0.00888811331242323 	 TT_out: TorchTensor(112.5000) 	 torch: 112.50981903076172
+
+0-0-11-16 input: -0.0005355682224035263 	 TT_out: TorchTensor(-1867.) 	 torch: -1867.17578125
+
+0-0-11-17 input: 0.006051132921129465 	 TT_out: TorchTensor(165.2500) 	 torch: 165.25831604003906
+
+0-0-11-18 input: 0.0026934975758194923 	 TT_out: TorchTensor(371.2500) 	 torch: 371.2644958496094
+
+0-0-11-19 input: -0.0022006817162036896 	 TT_out: TorchTensor(-454.2500) 	 torch: -454.4046325683594
+
+0-0-11-20 input: -0.0015026209875941277 	 TT_out: TorchTensor(-665.5000) 	 torch: -665.5038452148438
+
+0-0-11-21 input: -8.217059075832367e-06 	 TT_out: TorchTensor(-121664.) 	 torch: -121698.0390625
+
+0-0-11-22 input: -0.00535990484058857 	 TT_out: TorchTensor(-186.5000) 	 torch: -186.5704803466797
+
+0-0-11-23 input: -0.00847778283059597 	 TT_out: TorchTensor(-117.9375) 	 torch: -117.95536804199219
+
+0-0-11-24 input: -0.000399232842028141 	 TT_out: TorchTensor(-2504.) 	 torch: -2504.803955078125
+
+0-0-11-25 input: 0.005658986512571573 	 TT_out: TorchTensor(176.6250) 	 torch: 176.7100830078125
+
+0-0-11-26 input: 0.0015670140273869038 	 TT_out: TorchTensor(638.) 	 torch: 638.1563720703125
+
+0-0-11-27 input: -0.008525541052222252 	 TT_out: TorchTensor(-117.2500) 	 torch: -117.29460906982422
+
+0-0-11-28 input: -0.004117358475923538 	 TT_out: TorchTensor(-242.7500) 	 torch: -242.87416076660156
+
+0-0-11-29 input: 0.0015212586149573326 	 TT_out: TorchTensor(657.) 	 torch: 657.3504028320312
+
+0-0-11-30 input: -0.0035580825060606003 	 TT_out: TorchTensor(-281.) 	 torch: -281.0502624511719
+
+0-0-11-31 input: 0.0038589797914028168 	 TT_out: TorchTensor(258.7500) 	 torch: 259.1358337402344
+
+0-0-12-0 input: 0.007668661884963512 	 TT_out: TorchTensor(130.2500) 	 torch: 130.40084838867188
+
+0-0-12-1 input: 0.001947455108165741 	 TT_out: TorchTensor(512.5000) 	 torch: 513.4906616210938
+
+0-0-12-2 input: 0.0013704937882721424 	 TT_out: TorchTensor(729.5000) 	 torch: 729.6640014648438
+
+0-0-12-3 input: -0.0029728924855589867 	 TT_out: TorchTensor(-336.2500) 	 torch: -336.37274169921875
+
+0-0-12-4 input: -0.008890911936759949 	 TT_out: TorchTensor(-112.4375) 	 torch: -112.47440338134766
+
+0-0-12-5 input: -0.005022416822612286 	 TT_out: TorchTensor(-199.) 	 torch: -199.10733032226562
+
+0-0-12-6 input: 0.001951832789927721 	 TT_out: TorchTensor(511.5000) 	 torch: 512.3389892578125
+
+0-0-12-7 input: -0.0038317618891596794 	 TT_out: TorchTensor(-260.5000) 	 torch: -260.9765625
+
+0-0-12-8 input: 0.004426739178597927 	 TT_out: TorchTensor(225.8750) 	 torch: 225.89991760253906
+
+0-0-12-9 input: -0.006902726367115974 	 TT_out: TorchTensor(-144.7500) 	 torch: -144.87030029296875
+
+0-0-12-10 input: 0.0008143661543726921 	 TT_out: TorchTensor(1227.) 	 torch: 1227.9488525390625
+
+0-0-12-11 input: 0.004545678850263357 	 TT_out: TorchTensor(219.8750) 	 torch: 219.98915100097656
+
+0-0-12-12 input: 0.0012950971722602844 	 TT_out: TorchTensor(772.) 	 torch: 772.142822265625
+
+0-0-12-13 input: -0.007327575236558914 	 TT_out: TorchTensor(-136.3750) 	 torch: -136.47079467773438
+
+0-0-12-14 input: -0.003003357909619808 	 TT_out: TorchTensor(-332.7500) 	 torch: -332.9606628417969
+
+0-0-12-15 input: 0.008938426151871681 	 TT_out: TorchTensor(111.8750) 	 torch: 111.87651824951172
+
+0-0-12-16 input: -0.0027223508805036545 	 TT_out: TorchTensor(-367.2500) 	 torch: -367.32958984375
+
+0-0-12-17 input: -0.005525914952158928 	 TT_out: TorchTensor(-180.8750) 	 torch: -180.9654998779297
+
+0-0-12-18 input: -0.000491555780172348 	 TT_out: TorchTensor(-2034.) 	 torch: -2034.357177734375
+
+0-0-12-19 input: -0.008397774770855904 	 TT_out: TorchTensor(-119.0625) 	 torch: -119.07916259765625
+
+0-0-12-20 input: 0.003818739205598831 	 TT_out: TorchTensor(261.5000) 	 torch: 261.8665466308594
+
+0-0-12-21 input: -0.006708404049277306 	 TT_out: TorchTensor(-149.) 	 torch: -149.06675720214844
+
+0-0-12-22 input: -0.0003650067374110222 	 TT_out: TorchTensor(-2738.) 	 torch: -2739.675537109375
+
+0-0-12-23 input: -0.00503117498010397 	 TT_out: TorchTensor(-198.7500) 	 torch: -198.76072692871094
+
+0-0-12-24 input: -0.0025323359295725822 	 TT_out: TorchTensor(-394.7500) 	 torch: -394.8923034667969
+
+0-0-12-25 input: 0.008361279033124447 	 TT_out: TorchTensor(119.5625) 	 torch: 119.59893035888672
+
+0-0-12-26 input: -0.0016155010089278221 	 TT_out: TorchTensor(-619.) 	 torch: -619.0029907226562
+
+0-0-12-27 input: -0.0007289424538612366 	 TT_out: TorchTensor(-1371.) 	 torch: -1371.8504638671875
+
+0-0-12-28 input: -0.0019173584878444672 	 TT_out: TorchTensor(-521.) 	 torch: -521.5509033203125
+
+0-0-12-29 input: -0.005429062992334366 	 TT_out: TorchTensor(-184.1250) 	 torch: -184.19384765625
+
+0-0-12-30 input: 0.008459575474262238 	 TT_out: TorchTensor(118.1875) 	 torch: 118.20924377441406
+
+0-0-12-31 input: -0.0004524858668446541 	 TT_out: TorchTensor(-2208.) 	 torch: -2210.013671875
+
+0-0-13-0 input: 9.75700095295906e-05 	 TT_out: TorchTensor(10248.) 	 torch: 10249.05078125
+
+0-0-13-1 input: -0.006134267896413803 	 TT_out: TorchTensor(-163.) 	 torch: -163.0186309814453
+
+0-0-13-2 input: -0.005779102444648743 	 TT_out: TorchTensor(-173.) 	 torch: -173.03724670410156
+
+0-0-13-3 input: 0.006830806843936443 	 TT_out: TorchTensor(146.3750) 	 torch: 146.3955841064453
+
+0-0-13-4 input: 0.0009608259424567223 	 TT_out: TorchTensor(1039.) 	 torch: 1040.771240234375
+
+0-0-13-5 input: 0.0069866785779595375 	 TT_out: TorchTensor(143.) 	 torch: 143.12953186035156
+
+0-0-13-6 input: -0.0034762900322675705 	 TT_out: TorchTensor(-287.5000) 	 torch: -287.6629943847656
+
+0-0-13-7 input: -0.004351750016212463 	 TT_out: TorchTensor(-229.7500) 	 torch: -229.79261779785156
+
+0-0-13-8 input: 0.005538593977689743 	 TT_out: TorchTensor(180.5000) 	 torch: 180.55123901367188
+
+0-0-13-9 input: 0.006621881388127804 	 TT_out: TorchTensor(151.) 	 torch: 151.0144805908203
+
+0-0-13-10 input: -8.641090244054794e-05 	 TT_out: TorchTensor(-11568.) 	 torch: -11572.6142578125
+
+0-0-13-11 input: -0.003421209752559662 	 TT_out: TorchTensor(-292.2500) 	 torch: -292.2942810058594
+
+0-0-13-12 input: 0.002340612467378378 	 TT_out: TorchTensor(427.) 	 torch: 427.2386169433594
+
+0-0-13-13 input: -0.008567342534661293 	 TT_out: TorchTensor(-116.6875) 	 torch: -116.72230529785156
+
+0-0-13-14 input: -0.0003808196634054184 	 TT_out: TorchTensor(-2624.) 	 torch: -2625.914794921875
+
+0-0-13-15 input: 0.007214681711047888 	 TT_out: TorchTensor(138.5000) 	 torch: 138.6062469482422
+
+0-0-13-16 input: 0.00354433199390769 	 TT_out: TorchTensor(282.) 	 torch: 282.140625
+
+0-0-13-17 input: 0.008385883644223213 	 TT_out: TorchTensor(119.1875) 	 torch: 119.24801635742188
+
+0-0-13-18 input: -0.001575607806444168 	 TT_out: TorchTensor(-634.5000) 	 torch: -634.6757202148438
+
+0-0-13-19 input: -0.004852456972002983 	 TT_out: TorchTensor(-206.) 	 torch: -206.08116149902344
+
+0-0-13-20 input: -0.0021058600395917892 	 TT_out: TorchTensor(-474.7500) 	 torch: -474.8653564453125
+
+0-0-13-21 input: -0.0014034761115908623 	 TT_out: TorchTensor(-712.5000) 	 torch: -712.5166015625
+
+0-0-13-22 input: 0.004309166222810745 	 TT_out: TorchTensor(232.) 	 torch: 232.06346130371094
+
+0-0-13-23 input: -0.004337996244430542 	 TT_out: TorchTensor(-230.5000) 	 torch: -230.52117919921875
+
+0-0-13-24 input: -0.007964333519339561 	 TT_out: TorchTensor(-125.5000) 	 torch: -125.55978393554688
+
+0-0-13-25 input: 0.0019210772588849068 	 TT_out: TorchTensor(520.) 	 torch: 520.541259765625
+
+0-0-13-26 input: 0.0026309872046113014 	 TT_out: TorchTensor(380.) 	 torch: 380.0854797363281
+
+0-0-13-27 input: 0.0041243284940719604 	 TT_out: TorchTensor(242.3750) 	 torch: 242.46371459960938
+
+0-0-13-28 input: -0.00252632237970829 	 TT_out: TorchTensor(-395.7500) 	 torch: -395.8323059082031
+
+0-0-13-29 input: 0.0029548360034823418 	 TT_out: TorchTensor(338.2500) 	 torch: 338.4282531738281
+
+0-0-13-30 input: 0.007620975375175476 	 TT_out: TorchTensor(131.) 	 torch: 131.216796875
+
+0-0-13-31 input: -0.008966945111751556 	 TT_out: TorchTensor(-111.5000) 	 torch: -111.52069854736328
+
+0-0-14-0 input: -0.005702118389308453 	 TT_out: TorchTensor(-175.2500) 	 torch: -175.3734130859375
+
+0-0-14-1 input: 0.006992684677243233 	 TT_out: TorchTensor(142.8750) 	 torch: 143.006591796875
+
+0-0-14-2 input: -0.004782206378877163 	 TT_out: TorchTensor(-209.) 	 torch: -209.10850524902344
+
+0-0-14-3 input: 0.006028703413903713 	 TT_out: TorchTensor(165.7500) 	 torch: 165.87313842773438
+
+0-0-14-4 input: -0.00832592323422432 	 TT_out: TorchTensor(-120.0625) 	 torch: -120.10680389404297
+
+0-0-14-5 input: 0.005568912718445063 	 TT_out: TorchTensor(179.5000) 	 torch: 179.56826782226562
+
+0-0-14-6 input: 0.0035803443752229214 	 TT_out: TorchTensor(279.2500) 	 torch: 279.302734375
+
+0-0-14-7 input: -0.00147906132042408 	 TT_out: TorchTensor(-676.) 	 torch: -676.1044921875
+
+0-0-14-8 input: -0.0016170963644981384 	 TT_out: TorchTensor(-618.) 	 torch: -618.392333984375
+
+0-0-14-9 input: -0.005383920855820179 	 TT_out: TorchTensor(-185.6250) 	 torch: -185.7382354736328
+
+0-0-14-10 input: 0.0025766929611563683 	 TT_out: TorchTensor(388.) 	 torch: 388.0943603515625
+
+0-0-14-11 input: 0.003908042795956135 	 TT_out: TorchTensor(255.7500) 	 torch: 255.882568359375
+
+0-0-14-12 input: -0.004400043748319149 	 TT_out: TorchTensor(-227.2500) 	 torch: -227.2704620361328
+
+0-0-14-13 input: 0.001101185567677021 	 TT_out: TorchTensor(908.) 	 torch: 908.1121826171875
+
+0-0-14-14 input: 0.0005987966433167458 	 TT_out: TorchTensor(1670.) 	 torch: 1670.0159912109375
+
+0-0-14-15 input: -0.0038055824115872383 	 TT_out: TorchTensor(-262.5000) 	 torch: -262.7718811035156
+
+0-0-14-16 input: 0.005797611549496651 	 TT_out: TorchTensor(172.3750) 	 torch: 172.4848175048828
+
+0-0-14-17 input: -0.003001590259373188 	 TT_out: TorchTensor(-333.) 	 torch: -333.15673828125
+
+0-0-14-18 input: 0.00847078487277031 	 TT_out: TorchTensor(118.) 	 torch: 118.05281829833984
+
+0-0-14-19 input: 0.006306030787527561 	 TT_out: TorchTensor(158.5000) 	 torch: 158.57835388183594
+
+0-0-14-20 input: -0.0026343679055571556 	 TT_out: TorchTensor(-379.5000) 	 torch: -379.5976867675781
+
+0-0-14-21 input: -0.005119790323078632 	 TT_out: TorchTensor(-195.2500) 	 torch: -195.32049560546875
+
+0-0-14-22 input: -0.006607500836253166 	 TT_out: TorchTensor(-151.2500) 	 torch: -151.34315490722656
+
+0-0-14-23 input: 0.001658568624407053 	 TT_out: TorchTensor(602.5000) 	 torch: 602.9295043945312
+
+0-0-14-24 input: 0.002063354477286339 	 TT_out: TorchTensor(484.5000) 	 torch: 484.647705078125
+
+0-0-14-25 input: -0.004305238835513592 	 TT_out: TorchTensor(-232.2500) 	 torch: -232.275146484375
+
+0-0-14-26 input: 0.008551569655537605 	 TT_out: TorchTensor(116.8750) 	 torch: 116.9375991821289
+
+0-0-14-27 input: -0.004171993583440781 	 TT_out: TorchTensor(-239.6250) 	 torch: -239.6935577392578
+
+0-0-14-28 input: -0.006936598569154739 	 TT_out: TorchTensor(-144.1250) 	 torch: -144.16287231445312
+
+0-0-14-29 input: 0.0004221368581056595 	 TT_out: TorchTensor(2368.) 	 torch: 2368.89990234375
+
+0-0-14-30 input: 0.008101014420390129 	 TT_out: TorchTensor(123.4375) 	 torch: 123.44132995605469
+
+0-0-14-31 input: 0.00860676635056734 	 TT_out: TorchTensor(116.1250) 	 torch: 116.18765258789062
+
+0-0-15-0 input: 0.002314822282642126 	 TT_out: TorchTensor(431.7500) 	 torch: 431.99859619140625
+
+0-0-15-1 input: 0.0004590926691889763 	 TT_out: TorchTensor(2176.) 	 torch: 2178.20947265625
+
+0-0-15-2 input: -0.008694622665643692 	 TT_out: TorchTensor(-115.) 	 torch: -115.01361846923828
+
+0-0-15-3 input: -0.00482717901468277 	 TT_out: TorchTensor(-207.1250) 	 torch: -207.1603240966797
+
+0-0-15-4 input: 0.00684980396181345 	 TT_out: TorchTensor(145.8750) 	 torch: 145.9895782470703
+
+0-0-15-5 input: 0.0058506689965724945 	 TT_out: TorchTensor(170.8750) 	 torch: 170.92062377929688
+
+0-0-15-6 input: -0.003132813610136509 	 TT_out: TorchTensor(-319.) 	 torch: -319.2018737792969
+
+0-0-15-7 input: -0.005064006894826889 	 TT_out: TorchTensor(-197.3750) 	 torch: -197.4720916748047
+
+0-0-15-8 input: -0.0006194654852151871 	 TT_out: TorchTensor(-1614.) 	 torch: -1614.294921875
+
+0-0-15-9 input: 0.002169273793697357 	 TT_out: TorchTensor(460.7500) 	 torch: 460.9837646484375
+
+0-0-15-10 input: -0.004637879319489002 	 TT_out: TorchTensor(-215.5000) 	 torch: -215.61578369140625
+
+0-0-15-11 input: -0.003800308331847191 	 TT_out: TorchTensor(-262.7500) 	 torch: -263.13653564453125
+
+0-0-15-12 input: -0.006895547732710838 	 TT_out: TorchTensor(-145.) 	 torch: -145.0211181640625
+
+0-0-15-13 input: -0.0008791219443082809 	 TT_out: TorchTensor(-1137.) 	 torch: -1137.4986572265625
+
+0-0-15-14 input: -0.005781904794275761 	 TT_out: TorchTensor(-172.8750) 	 torch: -172.95338439941406
+
+0-0-15-15 input: 0.0031085298396646976 	 TT_out: TorchTensor(321.5000) 	 torch: 321.69549560546875
+
+0-0-15-16 input: 0.005620227660983801 	 TT_out: TorchTensor(177.8750) 	 torch: 177.92874145507812
+
+0-0-15-17 input: 0.001085757277905941 	 TT_out: TorchTensor(921.) 	 torch: 921.0161743164062
+
+0-0-15-18 input: -0.007103875279426575 	 TT_out: TorchTensor(-140.7500) 	 torch: -140.7682342529297
+
+0-0-15-19 input: -0.0010688398033380508 	 TT_out: TorchTensor(-935.5000) 	 torch: -935.5938720703125
+
+0-0-15-20 input: 0.005586044397205114 	 TT_out: TorchTensor(179.) 	 torch: 179.01754760742188
+
+0-0-15-21 input: 0.0014716638252139091 	 TT_out: TorchTensor(679.5000) 	 torch: 679.5029907226562
+
+0-0-15-22 input: 0.0005465149879455566 	 TT_out: TorchTensor(1829.) 	 torch: 1829.7760009765625
+
+0-0-15-23 input: -0.008392274379730225 	 TT_out: TorchTensor(-119.1250) 	 torch: -119.15721130371094
+
+0-0-15-24 input: -0.005778331309556961 	 TT_out: TorchTensor(-173.) 	 torch: -173.0603485107422
+
+0-0-15-25 input: 0.0034177200868725777 	 TT_out: TorchTensor(292.5000) 	 torch: 292.59271240234375
+
+0-0-15-26 input: -0.0015623187646269798 	 TT_out: TorchTensor(-640.) 	 torch: -640.07421875
+
+0-0-15-27 input: -0.0034017805010080338 	 TT_out: TorchTensor(-293.7500) 	 torch: -293.9637145996094
+
+0-0-15-28 input: -0.005535610020160675 	 TT_out: TorchTensor(-180.6250) 	 torch: -180.6485595703125
+
+0-0-15-29 input: 0.006814149674028158 	 TT_out: TorchTensor(146.7500) 	 torch: 146.75344848632812
+
+0-0-15-30 input: -0.007383307442069054 	 TT_out: TorchTensor(-135.3750) 	 torch: -135.44065856933594
+
+0-0-15-31 input: 0.0007897540926933289 	 TT_out: TorchTensor(1266.) 	 torch: 1266.2169189453125
+
+0-0-16-0 input: 0.0028176014311611652 	 TT_out: TorchTensor(354.7500) 	 torch: 354.91180419921875
+
+0-0-16-1 input: -0.0008078692480921745 	 TT_out: TorchTensor(-1237.) 	 torch: -1237.8240966796875
+
+0-0-16-2 input: -0.008796684443950653 	 TT_out: TorchTensor(-113.6250) 	 torch: -113.67919158935547
+
+0-0-16-3 input: -0.0020589428022503853 	 TT_out: TorchTensor(-485.5000) 	 torch: -485.6861572265625
+
+0-0-16-4 input: 0.0074960882775485516 	 TT_out: TorchTensor(133.2500) 	 torch: 133.4029083251953
+
+0-0-16-5 input: 0.004097215831279755 	 TT_out: TorchTensor(244.) 	 torch: 244.06817626953125
+
+0-0-16-6 input: -0.0013138754293322563 	 TT_out: TorchTensor(-761.) 	 torch: -761.107177734375
+
+0-0-16-7 input: 0.0077392542734742165 	 TT_out: TorchTensor(129.) 	 torch: 129.21141052246094
+
+0-0-16-8 input: 0.002032278571277857 	 TT_out: TorchTensor(492.) 	 torch: 492.05853271484375
+
+0-0-16-9 input: 0.008359299041330814 	 TT_out: TorchTensor(119.6250) 	 torch: 119.62725830078125
+
+0-0-16-10 input: -0.005020270124077797 	 TT_out: TorchTensor(-199.1250) 	 torch: -199.19247436523438
+
+0-0-16-11 input: 0.007882670499384403 	 TT_out: TorchTensor(126.8125) 	 torch: 126.86055755615234
+
+0-0-16-12 input: -0.00090022012591362 	 TT_out: TorchTensor(-1110.) 	 torch: -1110.8394775390625
+
+0-0-16-13 input: -0.007615016773343086 	 TT_out: TorchTensor(-131.1250) 	 torch: -131.31947326660156
+
+0-0-16-14 input: -0.008178746327757835 	 TT_out: TorchTensor(-122.2500) 	 torch: -122.26812744140625
+
+0-0-16-15 input: -0.0015575466677546501 	 TT_out: TorchTensor(-642.) 	 torch: -642.0353393554688
+
+0-0-16-16 input: -0.002937844954431057 	 TT_out: TorchTensor(-340.2500) 	 torch: -340.38555908203125
+
+0-0-16-17 input: -0.005915566347539425 	 TT_out: TorchTensor(-169.) 	 torch: -169.04551696777344
+
+0-0-16-18 input: 0.003242270089685917 	 TT_out: TorchTensor(308.2500) 	 torch: 308.4258728027344
+
+0-0-16-19 input: -7.962342351675034e-05 	 TT_out: TorchTensor(-12552.) 	 torch: -12559.1181640625
+
+0-0-16-20 input: 0.0020531020127236843 	 TT_out: TorchTensor(487.) 	 torch: 487.06787109375
+
+0-0-16-21 input: 0.0039777266792953014 	 TT_out: TorchTensor(251.3750) 	 torch: 251.39987182617188
+
+0-0-16-22 input: -0.0020840363577008247 	 TT_out: TorchTensor(-479.7500) 	 torch: -479.83807373046875
+
+0-0-16-23 input: -0.005125966854393482 	 TT_out: TorchTensor(-195.) 	 torch: -195.08514404296875
+
+0-0-16-24 input: 0.007960231974720955 	 TT_out: TorchTensor(125.5625) 	 torch: 125.62448120117188
+
+0-0-16-25 input: 0.008273372426629066 	 TT_out: TorchTensor(120.8125) 	 torch: 120.86969757080078
+
+0-0-16-26 input: 0.0072667100466787815 	 TT_out: TorchTensor(137.5000) 	 torch: 137.61386108398438
+
+0-0-16-27 input: 0.002548161894083023 	 TT_out: TorchTensor(392.2500) 	 torch: 392.43975830078125
+
+0-0-16-28 input: -0.005295569077134132 	 TT_out: TorchTensor(-188.7500) 	 torch: -188.8371124267578
+
+0-0-16-29 input: 0.0029766992665827274 	 TT_out: TorchTensor(335.7500) 	 torch: 335.94256591796875
+
+0-0-16-30 input: -0.0014152564108371735 	 TT_out: TorchTensor(-706.5000) 	 torch: -706.5857543945312
+
+0-0-16-31 input: 0.0015662489458918571 	 TT_out: TorchTensor(638.) 	 torch: 638.4680786132812
+
+0-0-17-0 input: 0.00841502845287323 	 TT_out: TorchTensor(118.8125) 	 torch: 118.83501434326172
+
+0-0-17-1 input: -0.004621660336852074 	 TT_out: TorchTensor(-216.2500) 	 torch: -216.37245178222656
+
+0-0-17-2 input: -0.0011606793850660324 	 TT_out: TorchTensor(-861.5000) 	 torch: -861.5643920898438
+
+0-0-17-3 input: 0.007795050740242004 	 TT_out: TorchTensor(128.) 	 torch: 128.28652954101562
+
+0-0-17-4 input: 0.00615268899127841 	 TT_out: TorchTensor(162.5000) 	 torch: 162.5305633544922
+
+0-0-17-5 input: -0.00356151070445776 	 TT_out: TorchTensor(-280.7500) 	 torch: -280.77972412109375
+
+0-0-17-6 input: -0.0060999514535069466 	 TT_out: TorchTensor(-163.8750) 	 torch: -163.93572998046875
+
+0-0-17-7 input: -0.004066319204866886 	 TT_out: TorchTensor(-245.8750) 	 torch: -245.9226531982422
+
+0-0-17-8 input: -0.0013591684401035309 	 TT_out: TorchTensor(-735.5000) 	 torch: -735.7439575195312
+
+0-0-17-9 input: 0.00824531726539135 	 TT_out: TorchTensor(121.2500) 	 torch: 121.28096008300781
+
+0-0-17-10 input: -0.0017539691179990768 	 TT_out: TorchTensor(-570.) 	 torch: -570.1354370117188
+
+0-0-17-11 input: 0.004738639108836651 	 TT_out: TorchTensor(211.) 	 torch: 211.0310516357422
+
+0-0-17-12 input: -0.007438838481903076 	 TT_out: TorchTensor(-134.3750) 	 torch: -134.42959594726562
+
+0-0-17-13 input: -0.002237359993159771 	 TT_out: TorchTensor(-446.7500) 	 torch: -446.9553527832031
+
+0-0-17-14 input: -0.0001540202647447586 	 TT_out: TorchTensor(-6492.) 	 torch: -6492.65234375
+
+0-0-17-15 input: -0.0005004182457923889 	 TT_out: TorchTensor(-1998.) 	 torch: -1998.328369140625
+
+0-0-17-16 input: 0.00018501747399568558 	 TT_out: TorchTensor(5404.) 	 torch: 5404.89501953125
+
+0-0-17-17 input: -0.0032638199627399445 	 TT_out: TorchTensor(-306.2500) 	 torch: -306.3894348144531
+
+0-0-17-18 input: 0.0072027575224637985 	 TT_out: TorchTensor(138.7500) 	 torch: 138.83572387695312
+
+0-0-17-19 input: -0.008089741691946983 	 TT_out: TorchTensor(-123.5625) 	 torch: -123.61334228515625
+
+0-0-17-20 input: 0.0003790920600295067 	 TT_out: TorchTensor(2636.) 	 torch: 2637.881591796875
+
+0-0-17-21 input: 8.533243089914322e-05 	 TT_out: TorchTensor(11712.) 	 torch: 11718.8740234375
+
+0-0-17-22 input: 0.0013276878744363785 	 TT_out: TorchTensor(753.) 	 torch: 753.1890869140625
+
+0-0-17-23 input: 0.007015448994934559 	 TT_out: TorchTensor(142.5000) 	 torch: 142.5425567626953
+
+0-0-17-24 input: -0.0018578208982944489 	 TT_out: TorchTensor(-538.) 	 torch: -538.2650146484375
+
+0-0-17-25 input: -0.004979098215699196 	 TT_out: TorchTensor(-200.7500) 	 torch: -200.83958435058594
+
+0-0-17-26 input: 0.004057494457811117 	 TT_out: TorchTensor(246.3750) 	 torch: 246.45751953125
+
+0-0-17-27 input: -0.006075803190469742 	 TT_out: TorchTensor(-164.5000) 	 torch: -164.58729553222656
+
+0-0-17-28 input: 0.007127036806195974 	 TT_out: TorchTensor(140.2500) 	 torch: 140.31076049804688
+
+0-0-17-29 input: -0.005387721583247185 	 TT_out: TorchTensor(-185.5000) 	 torch: -185.60720825195312
+
+0-0-17-30 input: -0.008412649855017662 	 TT_out: TorchTensor(-118.8125) 	 torch: -118.86861419677734
+
+0-0-17-31 input: -0.005200516432523727 	 TT_out: TorchTensor(-192.2500) 	 torch: -192.28858947753906
+
+0-0-18-0 input: 0.0052465153858065605 	 TT_out: TorchTensor(190.5000) 	 torch: 190.6027069091797
+
+0-0-18-1 input: 0.006545915734022856 	 TT_out: TorchTensor(152.7500) 	 torch: 152.7670135498047
+
+0-0-18-2 input: 0.0021924879401922226 	 TT_out: TorchTensor(456.) 	 torch: 456.10284423828125
+
+0-0-18-3 input: -0.000995052047073841 	 TT_out: TorchTensor(-1004.5000) 	 torch: -1004.9725341796875
+
+0-0-18-4 input: -0.0013851765543222427 	 TT_out: TorchTensor(-721.5000) 	 torch: -721.9296264648438
+
+0-0-18-5 input: -0.00650371890515089 	 TT_out: TorchTensor(-153.7500) 	 torch: -153.7581787109375
+
+0-0-18-6 input: 0.008613635785877705 	 TT_out: TorchTensor(116.0625) 	 torch: 116.0949935913086
+
+0-0-18-7 input: -0.0059268176555633545 	 TT_out: TorchTensor(-168.6250) 	 torch: -168.724609375
+
+0-0-18-8 input: 0.00060323067009449 	 TT_out: TorchTensor(1657.) 	 torch: 1657.7406005859375
+
+0-0-18-9 input: -0.0033768974244594574 	 TT_out: TorchTensor(-296.) 	 torch: -296.12982177734375
+
+0-0-18-10 input: -0.006336670368909836 	 TT_out: TorchTensor(-157.7500) 	 torch: -157.81158447265625
+
+0-0-18-11 input: -0.0003903815522789955 	 TT_out: TorchTensor(-2560.) 	 torch: -2561.596435546875
+
+0-0-18-12 input: 0.00711478665471077 	 TT_out: TorchTensor(140.5000) 	 torch: 140.55235290527344
+
+0-0-18-13 input: -0.0028306907042860985 	 TT_out: TorchTensor(-353.2500) 	 torch: -353.2706604003906
+
+0-0-18-14 input: 0.0025111460126936436 	 TT_out: TorchTensor(398.) 	 torch: 398.22454833984375
+
+0-0-18-15 input: -0.0031369896605610847 	 TT_out: TorchTensor(-318.7500) 	 torch: -318.7769470214844
+
+0-0-18-16 input: 0.001244372222572565 	 TT_out: TorchTensor(803.5000) 	 torch: 803.6180419921875
+
+0-0-18-17 input: 0.001178528182208538 	 TT_out: TorchTensor(848.5000) 	 torch: 848.5159912109375
+
+0-0-18-18 input: 0.004438749048858881 	 TT_out: TorchTensor(225.2500) 	 torch: 225.2886962890625
+
+0-0-18-19 input: -0.0022830041125416756 	 TT_out: TorchTensor(-438.) 	 torch: -438.01934814453125
+
+0-0-18-20 input: -0.00588875450193882 	 TT_out: TorchTensor(-169.7500) 	 torch: -169.81520080566406
+
+0-0-18-21 input: -0.005002356134355068 	 TT_out: TorchTensor(-199.8750) 	 torch: -199.90579223632812
+
+0-0-18-22 input: 0.003733445890247822 	 TT_out: TorchTensor(267.5000) 	 torch: 267.84906005859375
+
+0-0-18-23 input: -0.0026331599801778793 	 TT_out: TorchTensor(-379.7500) 	 torch: -379.7718505859375
+
+0-0-18-24 input: 0.005625397898256779 	 TT_out: TorchTensor(177.7500) 	 torch: 177.76519775390625
+
+0-0-18-25 input: -0.004570281133055687 	 TT_out: TorchTensor(-218.7500) 	 torch: -218.80491638183594
+
+0-0-18-26 input: -0.004463518969714642 	 TT_out: TorchTensor(-224.) 	 torch: -224.03848266601562
+
+0-0-18-27 input: -0.000562756322324276 	 TT_out: TorchTensor(-1776.) 	 torch: -1776.968017578125
+
+0-0-18-28 input: -0.0006186012178659439 	 TT_out: TorchTensor(-1616.) 	 torch: -1616.55029296875
+
+0-0-18-29 input: -0.0020788749679923058 	 TT_out: TorchTensor(-481.) 	 torch: -481.0294189453125
+
+0-0-18-30 input: -0.005921125411987305 	 TT_out: TorchTensor(-168.8750) 	 torch: -168.88681030273438
+
+0-0-18-31 input: -0.008197758346796036 	 TT_out: TorchTensor(-121.9375) 	 torch: -121.98456573486328
+
+0-0-19-0 input: 0.0034839781001210213 	 TT_out: TorchTensor(287.) 	 torch: 287.0281982421875
+
+0-0-19-1 input: -0.0016342578455805779 	 TT_out: TorchTensor(-611.5000) 	 torch: -611.8985595703125
+
+0-0-19-2 input: -0.00636431947350502 	 TT_out: TorchTensor(-157.1250) 	 torch: -157.12599182128906
+
+0-0-19-3 input: 0.006645238026976585 	 TT_out: TorchTensor(150.3750) 	 torch: 150.48370361328125
+
+0-0-19-4 input: 0.008181861601769924 	 TT_out: TorchTensor(122.1875) 	 torch: 122.22157287597656
+
+0-0-19-5 input: -0.0034398119896650314 	 TT_out: TorchTensor(-290.5000) 	 torch: -290.71356201171875
+
+0-0-19-6 input: 0.0076779816299676895 	 TT_out: TorchTensor(130.) 	 torch: 130.24256896972656
+
+0-0-19-7 input: 0.005316670052707195 	 TT_out: TorchTensor(188.) 	 torch: 188.08766174316406
+
+0-0-19-8 input: -0.0003328714519739151 	 TT_out: TorchTensor(-3004.) 	 torch: -3004.16259765625
+
+0-0-19-9 input: -0.00529345590621233 	 TT_out: TorchTensor(-188.8750) 	 torch: -188.91250610351562
+
+0-0-19-10 input: -0.007025664672255516 	 TT_out: TorchTensor(-142.2500) 	 torch: -142.3352813720703
+
+0-0-19-11 input: -0.005833200179040432 	 TT_out: TorchTensor(-171.3750) 	 torch: -171.43247985839844
+
+0-0-19-12 input: 0.0016432544216513634 	 TT_out: TorchTensor(608.5000) 	 torch: 608.5484619140625
+
+0-0-19-13 input: 0.004701669793576002 	 TT_out: TorchTensor(212.6250) 	 torch: 212.69039916992188
+
+0-0-19-14 input: -0.005645494908094406 	 TT_out: TorchTensor(-177.1250) 	 torch: -177.13238525390625
+
+0-0-19-15 input: 0.0014004157856106758 	 TT_out: TorchTensor(714.) 	 torch: 714.0736694335938
+
+0-0-19-16 input: -0.00027301907539367676 	 TT_out: TorchTensor(-3662.) 	 torch: -3662.747802734375
+
+0-0-19-17 input: -0.0008202604949474335 	 TT_out: TorchTensor(-1219.) 	 torch: -1219.1248779296875
+
+0-0-19-18 input: 0.001527625136077404 	 TT_out: TorchTensor(654.5000) 	 torch: 654.61083984375
+
+0-0-19-19 input: -0.006350223906338215 	 TT_out: TorchTensor(-157.3750) 	 torch: -157.47476196289062
+
+0-0-19-20 input: 0.005670506041496992 	 TT_out: TorchTensor(176.2500) 	 torch: 176.35110473632812
+
+0-0-19-21 input: -0.006000270135700703 	 TT_out: TorchTensor(-166.6250) 	 torch: -166.65916442871094
+
+0-0-19-22 input: -0.0045994119718670845 	 TT_out: TorchTensor(-217.3750) 	 torch: -217.41909790039062
+
+0-0-19-23 input: -0.007516631856560707 	 TT_out: TorchTensor(-132.8750) 	 torch: -133.03831481933594
+
+0-0-19-24 input: -0.0027463380247354507 	 TT_out: TorchTensor(-364.) 	 torch: -364.1212463378906
+
+0-0-19-25 input: -0.0025695720687508583 	 TT_out: TorchTensor(-389.) 	 torch: -389.16986083984375
+
+0-0-19-26 input: -0.0068679507821798325 	 TT_out: TorchTensor(-145.5000) 	 torch: -145.6038360595703
+
+0-0-19-27 input: 0.007239693775773048 	 TT_out: TorchTensor(138.) 	 torch: 138.1273956298828
+
+0-0-19-28 input: -0.005059363320469856 	 TT_out: TorchTensor(-197.6250) 	 torch: -197.65333557128906
+
+0-0-19-29 input: -0.0022753803059458733 	 TT_out: TorchTensor(-439.2500) 	 torch: -439.4869689941406
+
+0-0-19-30 input: 0.0021166405640542507 	 TT_out: TorchTensor(472.2500) 	 torch: 472.44677734375
+
+0-0-19-31 input: 0.00815117172896862 	 TT_out: TorchTensor(122.6250) 	 torch: 122.68174743652344
+
+0-0-20-0 input: 0.0030302167870104313 	 TT_out: TorchTensor(330.) 	 torch: 330.0093994140625
+
+0-0-20-1 input: 0.0033381623215973377 	 TT_out: TorchTensor(299.5000) 	 torch: 299.5660095214844
+
+0-0-20-2 input: -0.0035283491015434265 	 TT_out: TorchTensor(-283.2500) 	 torch: -283.4186706542969
+
+0-0-20-3 input: -0.0064510684460401535 	 TT_out: TorchTensor(-155.) 	 torch: -155.01307678222656
+
+0-0-20-4 input: 0.00021157506853342056 	 TT_out: TorchTensor(4724.) 	 torch: 4726.45458984375
+
+0-0-20-5 input: -0.007561342790722847 	 TT_out: TorchTensor(-132.1250) 	 torch: -132.25164794921875
+
+0-0-20-6 input: -0.006379296071827412 	 TT_out: TorchTensor(-156.7500) 	 torch: -156.75711059570312
+
+0-0-20-7 input: -0.005091347731649876 	 TT_out: TorchTensor(-196.3750) 	 torch: -196.41165161132812
+
+0-0-20-8 input: 0.007977568544447422 	 TT_out: TorchTensor(125.3125) 	 torch: 125.35147857666016
+
+0-0-20-9 input: -0.0008885161951184273 	 TT_out: TorchTensor(-1125.) 	 torch: -1125.471923828125
+
+0-0-20-10 input: -0.0023568570613861084 	 TT_out: TorchTensor(-424.2500) 	 torch: -424.2938537597656
+
+0-0-20-11 input: 0.008713142946362495 	 TT_out: TorchTensor(114.7500) 	 torch: 114.76914978027344
+
+0-0-20-12 input: 0.0006223935633897781 	 TT_out: TorchTensor(1606.) 	 torch: 1606.700439453125
+
+0-0-20-13 input: 0.005902578122913837 	 TT_out: TorchTensor(169.3750) 	 torch: 169.41749572753906
+
+0-0-20-14 input: -0.002939014695584774 	 TT_out: TorchTensor(-340.2500) 	 torch: -340.2500915527344
+
+0-0-20-15 input: -0.004035238176584244 	 TT_out: TorchTensor(-247.7500) 	 torch: -247.8168487548828
+
+0-0-20-16 input: -0.0017849188297986984 	 TT_out: TorchTensor(-560.) 	 torch: -560.2495727539062
+
+0-0-20-17 input: 0.006654040887951851 	 TT_out: TorchTensor(150.2500) 	 torch: 150.2846221923828
+
+0-0-20-18 input: -0.0013238117098808289 	 TT_out: TorchTensor(-755.) 	 torch: -755.3944091796875
+
+0-0-20-19 input: 0.006429547443985939 	 TT_out: TorchTensor(155.5000) 	 torch: 155.5319366455078
+
+0-0-20-20 input: -5.19556924700737e-05 	 TT_out: TorchTensor(-19232.) 	 torch: -19247.169921875
+
+0-0-20-21 input: -0.00760757178068161 	 TT_out: TorchTensor(-131.2500) 	 torch: -131.44798278808594
+
+0-0-20-22 input: 0.003428355325013399 	 TT_out: TorchTensor(291.5000) 	 torch: 291.68505859375
+
+0-0-20-23 input: 0.005850794725120068 	 TT_out: TorchTensor(170.8750) 	 torch: 170.9169464111328
+
+0-0-20-24 input: 0.00367176067084074 	 TT_out: TorchTensor(272.2500) 	 torch: 272.3489074707031
+
+0-0-20-25 input: -0.008252376690506935 	 TT_out: TorchTensor(-121.1250) 	 torch: -121.17721557617188
+
+0-0-20-26 input: 0.0006823912262916565 	 TT_out: TorchTensor(1465.) 	 torch: 1465.43505859375
+
+0-0-20-27 input: -0.0005448535084724426 	 TT_out: TorchTensor(-1835.) 	 torch: -1835.355712890625
+
+0-0-20-28 input: 0.004010439850389957 	 TT_out: TorchTensor(249.2500) 	 torch: 249.34921264648438
+
+0-0-20-29 input: -0.007640397176146507 	 TT_out: TorchTensor(-130.7500) 	 torch: -130.8832550048828
+
+0-0-20-30 input: 0.004547692835330963 	 TT_out: TorchTensor(219.8750) 	 torch: 219.8917236328125
+
+0-0-20-31 input: 0.008620711043477058 	 TT_out: TorchTensor(115.9375) 	 torch: 115.99971008300781
+
+0-0-21-0 input: -0.0048681944608688354 	 TT_out: TorchTensor(-205.3750) 	 torch: -205.4149627685547
+
+0-0-21-1 input: 0.006787250284105539 	 TT_out: TorchTensor(147.2500) 	 torch: 147.33506774902344
+
+0-0-21-2 input: -0.001344798132777214 	 TT_out: TorchTensor(-743.5000) 	 torch: -743.6060180664062
+
+0-0-21-3 input: -0.004569873213768005 	 TT_out: TorchTensor(-218.7500) 	 torch: -218.82444763183594
+
+0-0-21-4 input: 0.006743627600371838 	 TT_out: TorchTensor(148.2500) 	 torch: 148.28814697265625
+
+0-0-21-5 input: -0.00026746466755867004 	 TT_out: TorchTensor(-3738.) 	 torch: -3738.8115234375
+
+0-0-21-6 input: 0.006895218975841999 	 TT_out: TorchTensor(145.) 	 torch: 145.0280303955078
+
+0-0-21-7 input: 0.006323978304862976 	 TT_out: TorchTensor(158.1250) 	 torch: 158.12831115722656
+
+0-0-21-8 input: -0.0006203269585967064 	 TT_out: TorchTensor(-1612.) 	 torch: -1612.0531005859375
+
+0-0-21-9 input: -0.007938018068671227 	 TT_out: TorchTensor(-125.9375) 	 torch: -125.97602844238281
+
+0-0-21-10 input: 0.0077661932446062565 	 TT_out: TorchTensor(128.5000) 	 torch: 128.76321411132812
+
+0-0-21-11 input: -0.0012174267321825027 	 TT_out: TorchTensor(-821.) 	 torch: -821.4046630859375
+
+0-0-21-12 input: -0.0009750369936227798 	 TT_out: TorchTensor(-1024.) 	 torch: -1025.6021728515625
+
+0-0-21-13 input: 0.004999777767807245 	 TT_out: TorchTensor(200.) 	 torch: 200.00889587402344
+
+0-0-21-14 input: 0.0011250311508774757 	 TT_out: TorchTensor(888.5000) 	 torch: 888.8642578125
+
+0-0-21-15 input: 0.005317943636327982 	 TT_out: TorchTensor(188.) 	 torch: 188.0426025390625
+
+0-0-21-16 input: 0.008448179811239243 	 TT_out: TorchTensor(118.3125) 	 torch: 118.36869049072266
+
+0-0-21-17 input: 0.0035692574456334114 	 TT_out: TorchTensor(280.) 	 torch: 280.1703186035156
+
+0-0-21-18 input: -0.002045275643467903 	 TT_out: TorchTensor(-488.7500) 	 torch: -488.931640625
+
+0-0-21-19 input: -0.00880240835249424 	 TT_out: TorchTensor(-113.5625) 	 torch: -113.60527038574219
+
+0-0-21-20 input: 0.00621618889272213 	 TT_out: TorchTensor(160.7500) 	 torch: 160.87026977539062
+
+0-0-21-21 input: -0.006794007495045662 	 TT_out: TorchTensor(-147.1250) 	 torch: -147.18853759765625
+
+0-0-21-22 input: 0.00250301044434309 	 TT_out: TorchTensor(399.5000) 	 torch: 399.5189208984375
+
+0-0-21-23 input: -0.008811283856630325 	 TT_out: TorchTensor(-113.4375) 	 torch: -113.49083709716797
+
+0-0-21-24 input: 0.0008026957511901855 	 TT_out: TorchTensor(1245.) 	 torch: 1245.802001953125
+
+0-0-21-25 input: -0.00047587044537067413 	 TT_out: TorchTensor(-2098.) 	 torch: -2101.412353515625
+
+0-0-21-26 input: 0.006471756845712662 	 TT_out: TorchTensor(154.5000) 	 torch: 154.51754760742188
+
+0-0-21-27 input: 0.0032733860425651073 	 TT_out: TorchTensor(305.2500) 	 torch: 305.4940490722656
+
+0-0-21-28 input: -0.003659297712147236 	 TT_out: TorchTensor(-273.) 	 torch: -273.2764892578125
+
+0-0-21-29 input: -0.0005569206550717354 	 TT_out: TorchTensor(-1795.) 	 torch: -1795.587890625
+
+0-0-21-30 input: 0.001031395047903061 	 TT_out: TorchTensor(969.5000) 	 torch: 969.5606079101562
+
+0-0-21-31 input: -0.0025371145457029343 	 TT_out: TorchTensor(-394.) 	 torch: -394.1485290527344
+
+0-0-22-0 input: 0.005594106391072273 	 TT_out: TorchTensor(178.7500) 	 torch: 178.7595672607422
+
+0-0-22-1 input: -0.007552307099103928 	 TT_out: TorchTensor(-132.2500) 	 torch: -132.4098663330078
+
+0-0-22-2 input: 0.00803420040756464 	 TT_out: TorchTensor(124.4375) 	 torch: 124.4678955078125
+
+0-0-22-3 input: -0.0050685815513134 	 TT_out: TorchTensor(-197.2500) 	 torch: -197.29385375976562
+
+0-0-22-4 input: 0.0052275992929935455 	 TT_out: TorchTensor(191.2500) 	 torch: 191.2924041748047
+
+0-0-22-5 input: 0.00789724849164486 	 TT_out: TorchTensor(126.5625) 	 torch: 126.62638092041016
+
+0-0-22-6 input: 0.002449262421578169 	 TT_out: TorchTensor(408.2500) 	 torch: 408.28619384765625
+
+0-0-22-7 input: 0.0013773380778729916 	 TT_out: TorchTensor(726.) 	 torch: 726.0381469726562
+
+0-0-22-8 input: 0.0002451939508318901 	 TT_out: TorchTensor(4078.) 	 torch: 4078.404052734375
+
+0-0-22-9 input: -0.0073123592883348465 	 TT_out: TorchTensor(-136.6250) 	 torch: -136.7547607421875
+
+0-0-22-10 input: -0.007760245352983475 	 TT_out: TorchTensor(-128.6250) 	 torch: -128.86190795898438
+
+0-0-22-11 input: -0.000603879801928997 	 TT_out: TorchTensor(-1655.) 	 torch: -1655.958740234375
+
+0-0-22-12 input: 0.00013014860451221466 	 TT_out: TorchTensor(7680.) 	 torch: 7683.5244140625
+
+0-0-22-13 input: 0.002664149273186922 	 TT_out: TorchTensor(375.2500) 	 torch: 375.3543395996094
+
+0-0-22-14 input: -0.0029009031131863594 	 TT_out: TorchTensor(-344.5000) 	 torch: -344.7202453613281
+
+0-0-22-15 input: -0.0054370081052184105 	 TT_out: TorchTensor(-183.8750) 	 torch: -183.9246826171875
+
+0-0-22-16 input: -0.0022884560748934746 	 TT_out: TorchTensor(-436.7500) 	 torch: -436.975830078125
+
+0-0-22-17 input: 0.005018183030188084 	 TT_out: TorchTensor(199.2500) 	 torch: 199.2753143310547
+
+0-0-22-18 input: -0.007885714992880821 	 TT_out: TorchTensor(-126.7500) 	 torch: -126.81158447265625
+
+0-0-22-19 input: -0.007765850052237511 	 TT_out: TorchTensor(-128.5000) 	 torch: -128.76890563964844
+
+0-0-22-20 input: 0.003561212681233883 	 TT_out: TorchTensor(280.7500) 	 torch: 280.80322265625
+
+0-0-22-21 input: 0.0015124385245144367 	 TT_out: TorchTensor(661.) 	 torch: 661.1838989257812
+
+0-0-22-22 input: -0.007805410772562027 	 TT_out: TorchTensor(-127.8750) 	 torch: -128.1162567138672
+
+0-0-22-23 input: -0.004349278286099434 	 TT_out: TorchTensor(-229.8750) 	 torch: -229.92320251464844
+
+0-0-22-24 input: -0.0058655813336372375 	 TT_out: TorchTensor(-170.3750) 	 torch: -170.486083984375
+
+0-0-22-25 input: -0.0007442208006978035 	 TT_out: TorchTensor(-1343.) 	 torch: -1343.687255859375
+
+0-0-22-26 input: 0.00257900170981884 	 TT_out: TorchTensor(387.5000) 	 torch: 387.7469177246094
+
+0-0-22-27 input: -0.002276523970067501 	 TT_out: TorchTensor(-439.2500) 	 torch: -439.26617431640625
+
+0-0-22-28 input: 0.00867504719644785 	 TT_out: TorchTensor(115.2500) 	 torch: 115.27314758300781
+
+0-0-22-29 input: 0.003269101958721876 	 TT_out: TorchTensor(305.7500) 	 torch: 305.8944091796875
+
+0-0-22-30 input: -0.0027830516919493675 	 TT_out: TorchTensor(-359.2500) 	 torch: -359.31781005859375
+
+0-0-22-31 input: 0.0027716271579265594 	 TT_out: TorchTensor(360.7500) 	 torch: 360.79888916015625
+
+0-0-23-0 input: 0.0005107969045639038 	 TT_out: TorchTensor(1957.) 	 torch: 1957.7252197265625
+
+0-0-23-1 input: 0.003529807087033987 	 TT_out: TorchTensor(283.2500) 	 torch: 283.3016052246094
+
+0-0-23-2 input: 0.004959631711244583 	 TT_out: TorchTensor(201.6250) 	 torch: 201.62786865234375
+
+0-0-23-3 input: -0.007930435240268707 	 TT_out: TorchTensor(-126.0625) 	 torch: -126.09648132324219
+
+0-0-23-4 input: -0.006131485104560852 	 TT_out: TorchTensor(-163.) 	 torch: -163.09262084960938
+
+0-0-23-5 input: -0.008319715037941933 	 TT_out: TorchTensor(-120.1875) 	 torch: -120.19642639160156
+
+0-0-23-6 input: 0.0007856125012040138 	 TT_out: TorchTensor(1272.) 	 torch: 1272.8922119140625
+
+0-0-23-7 input: 0.005449474789202213 	 TT_out: TorchTensor(183.5000) 	 torch: 183.50392150878906
+
+0-0-23-8 input: 0.0015329821035265923 	 TT_out: TorchTensor(652.) 	 torch: 652.3233642578125
+
+0-0-23-9 input: 0.0007179854437708855 	 TT_out: TorchTensor(1392.) 	 torch: 1392.785888671875
+
+0-0-23-10 input: 0.006834515370428562 	 TT_out: TorchTensor(146.2500) 	 torch: 146.31614685058594
+
+0-0-23-11 input: -0.00792432390153408 	 TT_out: TorchTensor(-126.1875) 	 torch: -126.19373321533203
+
+0-0-23-12 input: -0.004818267188966274 	 TT_out: TorchTensor(-207.5000) 	 torch: -207.54348754882812
+
+0-0-23-13 input: 0.0015713218599557877 	 TT_out: TorchTensor(636.) 	 torch: 636.4068603515625
+
+0-0-23-14 input: 0.004806728567928076 	 TT_out: TorchTensor(208.) 	 torch: 208.0417022705078
+
+0-0-23-15 input: -0.006493283435702324 	 TT_out: TorchTensor(-154.) 	 torch: -154.0052947998047
+
+0-0-23-16 input: 0.0002999119460582733 	 TT_out: TorchTensor(3334.) 	 torch: 3334.31201171875
+
+0-0-23-17 input: -0.005807480774819851 	 TT_out: TorchTensor(-172.1250) 	 torch: -172.1916961669922
+
+0-0-23-18 input: 0.0054856170900166035 	 TT_out: TorchTensor(182.2500) 	 torch: 182.29489135742188
+
+0-0-23-19 input: -0.0008037053048610687 	 TT_out: TorchTensor(-1244.) 	 torch: -1244.2371826171875
+
+0-0-23-20 input: 0.004904016852378845 	 TT_out: TorchTensor(203.8750) 	 torch: 203.9144744873047
+
+0-0-23-21 input: 0.0033115078695118427 	 TT_out: TorchTensor(301.7500) 	 torch: 301.97723388671875
+
+0-0-23-22 input: 0.0018068058416247368 	 TT_out: TorchTensor(553.) 	 torch: 553.462890625
+
+0-0-23-23 input: -0.006672855466604233 	 TT_out: TorchTensor(-149.7500) 	 torch: -149.8608856201172
+
+0-0-23-24 input: -0.005360987037420273 	 TT_out: TorchTensor(-186.5000) 	 torch: -186.53282165527344
+
+0-0-23-25 input: -0.004631255753338337 	 TT_out: TorchTensor(-215.8750) 	 torch: -215.92416381835938
+
+0-0-23-26 input: -0.00835159420967102 	 TT_out: TorchTensor(-119.6875) 	 torch: -119.73761749267578
+
+0-0-23-27 input: -0.00881061889231205 	 TT_out: TorchTensor(-113.4375) 	 torch: -113.49940490722656
+
+0-0-23-28 input: 0.0037888195365667343 	 TT_out: TorchTensor(263.7500) 	 torch: 263.9344482421875
+
+0-0-23-29 input: -0.007634377107024193 	 TT_out: TorchTensor(-130.8750) 	 torch: -130.9864501953125
+
+0-0-23-30 input: 0.006966894958168268 	 TT_out: TorchTensor(143.5000) 	 torch: 143.5359649658203
+
+0-0-23-31 input: -0.0011871103197336197 	 TT_out: TorchTensor(-842.) 	 torch: -842.3817138671875
+
+0-0-24-0 input: 0.008724512532353401 	 TT_out: TorchTensor(114.5625) 	 torch: 114.61958312988281
+
+0-0-24-1 input: 0.006798920221626759 	 TT_out: TorchTensor(147.) 	 torch: 147.08218383789062
+
+0-0-24-2 input: -0.0022920453920960426 	 TT_out: TorchTensor(-436.2500) 	 torch: -436.2915344238281
+
+0-0-24-3 input: -3.2475218176841736e-05 	 TT_out: TorchTensor(-30784.) 	 torch: -30792.7109375
+
+0-0-24-4 input: 0.008805230259895325 	 TT_out: TorchTensor(113.5625) 	 torch: 113.56886291503906
+
+0-0-24-5 input: -0.0002533774822950363 	 TT_out: TorchTensor(-3946.) 	 torch: -3946.6806640625
+
+0-0-24-6 input: 0.008252885192632675 	 TT_out: TorchTensor(121.1250) 	 torch: 121.16974639892578
+
+0-0-24-7 input: -0.000642840750515461 	 TT_out: TorchTensor(-1555.) 	 torch: -1555.59521484375
+
+0-0-24-8 input: 0.0036812513135373592 	 TT_out: TorchTensor(271.5000) 	 torch: 271.6467590332031
+
+0-0-24-9 input: -0.007801368832588196 	 TT_out: TorchTensor(-128.) 	 torch: -128.18263244628906
+
+0-0-24-10 input: 0.0005386043339967728 	 TT_out: TorchTensor(1856.) 	 torch: 1856.6505126953125
+
+0-0-24-11 input: -0.00836842879652977 	 TT_out: TorchTensor(-119.4375) 	 torch: -119.49674224853516
+
+0-0-24-12 input: -0.007303507998585701 	 TT_out: TorchTensor(-136.8750) 	 torch: -136.92050170898438
+
+0-0-24-13 input: -0.0025168806314468384 	 TT_out: TorchTensor(-397.2500) 	 torch: -397.31719970703125
+
+0-0-24-14 input: 0.0009289830923080444 	 TT_out: TorchTensor(1076.) 	 torch: 1076.44580078125
+
+0-0-24-15 input: -0.006364836357533932 	 TT_out: TorchTensor(-157.) 	 torch: -157.1132354736328
+
+0-0-24-16 input: -0.006828609853982925 	 TT_out: TorchTensor(-146.3750) 	 torch: -146.44268798828125
+
+0-0-24-17 input: 0.006145312916487455 	 TT_out: TorchTensor(162.6250) 	 torch: 162.72564697265625
+
+0-0-24-18 input: -0.008789969608187675 	 TT_out: TorchTensor(-113.7500) 	 torch: -113.76603698730469
+
+0-0-24-19 input: -0.006199689581990242 	 TT_out: TorchTensor(-161.2500) 	 torch: -161.29840087890625
+
+0-0-24-20 input: 0.0005008531734347343 	 TT_out: TorchTensor(1996.) 	 torch: 1996.5931396484375
+
+0-0-24-21 input: -0.004915377125144005 	 TT_out: TorchTensor(-203.3750) 	 torch: -203.4431915283203
+
+0-0-24-22 input: 0.008537989109754562 	 TT_out: TorchTensor(117.0625) 	 torch: 117.12359619140625
+
+0-0-24-23 input: -0.001970631070435047 	 TT_out: TorchTensor(-507.2500) 	 torch: -507.45166015625
+
+0-0-24-24 input: -0.005802805535495281 	 TT_out: TorchTensor(-172.2500) 	 torch: -172.33042907714844
+
+0-0-24-25 input: 0.006983055733144283 	 TT_out: TorchTensor(143.1250) 	 torch: 143.2037811279297
+
+0-0-24-26 input: 0.00041458476334810257 	 TT_out: TorchTensor(2412.) 	 torch: 2412.052001953125
+
+0-0-24-27 input: -5.530286580324173e-05 	 TT_out: TorchTensor(-18080.) 	 torch: -18082.24609375
+
+0-0-24-28 input: 0.005268080160021782 	 TT_out: TorchTensor(189.7500) 	 torch: 189.82247924804688
+
+0-0-24-29 input: 0.004962870851159096 	 TT_out: TorchTensor(201.3750) 	 torch: 201.49627685546875
+
+0-0-24-30 input: -0.0026069143787026405 	 TT_out: TorchTensor(-383.5000) 	 torch: -383.5952453613281
+
+0-0-24-31 input: -0.005376122891902924 	 TT_out: TorchTensor(-186.) 	 torch: -186.00765991210938
+
+0-0-25-0 input: -0.005110624246299267 	 TT_out: TorchTensor(-195.6250) 	 torch: -195.67080688476562
+
+0-0-25-1 input: -0.005353858694434166 	 TT_out: TorchTensor(-186.7500) 	 torch: -186.7811737060547
+
+0-0-25-2 input: 0.00883429404348135 	 TT_out: TorchTensor(113.1875) 	 torch: 113.19523620605469
+
+0-0-25-3 input: -0.006642958149313927 	 TT_out: TorchTensor(-150.5000) 	 torch: -150.53533935546875
+
+0-0-25-4 input: -0.00758829340338707 	 TT_out: TorchTensor(-131.6250) 	 torch: -131.7819366455078
+
+0-0-25-5 input: -0.0009601963683962822 	 TT_out: TorchTensor(-1040.) 	 torch: -1041.45361328125
+
+0-0-25-6 input: -0.0025414079427719116 	 TT_out: TorchTensor(-393.2500) 	 torch: -393.482666015625
+
+0-0-25-7 input: 0.008258615620434284 	 TT_out: TorchTensor(121.0625) 	 torch: 121.0856704711914
+
+0-0-25-8 input: 0.004076652694493532 	 TT_out: TorchTensor(245.2500) 	 torch: 245.29928588867188
+
+0-0-25-9 input: 0.0010819612070918083 	 TT_out: TorchTensor(924.) 	 torch: 924.24755859375
+
+0-0-25-10 input: -0.004115128889679909 	 TT_out: TorchTensor(-243.) 	 torch: -243.00575256347656
+
+0-0-25-11 input: -0.0032764049246907234 	 TT_out: TorchTensor(-305.) 	 torch: -305.21258544921875
+
+0-0-25-12 input: 0.008392204530537128 	 TT_out: TorchTensor(119.1250) 	 torch: 119.158203125
+
+0-0-25-13 input: -0.007229713723063469 	 TT_out: TorchTensor(-138.2500) 	 torch: -138.3180694580078
+
+0-0-25-14 input: -0.002985963597893715 	 TT_out: TorchTensor(-334.7500) 	 torch: -334.9002685546875
+
+0-0-25-15 input: -0.005601477809250355 	 TT_out: TorchTensor(-178.5000) 	 torch: -178.52432250976562
+
+0-0-25-16 input: -0.0054676346480846405 	 TT_out: TorchTensor(-182.8750) 	 torch: -182.89443969726562
+
+0-0-25-17 input: -0.0065226200968027115 	 TT_out: TorchTensor(-153.2500) 	 torch: -153.3126220703125
+
+0-0-25-18 input: -0.0029939720407128334 	 TT_out: TorchTensor(-334.) 	 torch: -334.00445556640625
+
+0-0-25-19 input: -0.001769200898706913 	 TT_out: TorchTensor(-565.) 	 torch: -565.2269287109375
+
+0-0-25-20 input: -0.007116280496120453 	 TT_out: TorchTensor(-140.5000) 	 torch: -140.52284240722656
+
+0-0-25-21 input: 0.008533533662557602 	 TT_out: TorchTensor(117.1250) 	 torch: 117.18474578857422
+
+0-0-25-22 input: -0.008192367851734161 	 TT_out: TorchTensor(-122.0625) 	 torch: -122.06483459472656
+
+0-0-25-23 input: -0.006143419072031975 	 TT_out: TorchTensor(-162.7500) 	 torch: -162.7758026123047
+
+0-0-25-24 input: 0.0063249641098082066 	 TT_out: TorchTensor(158.) 	 torch: 158.10366821289062
+
+0-0-25-25 input: 0.006494028028100729 	 TT_out: TorchTensor(153.8750) 	 torch: 153.9876251220703
+
+0-0-25-26 input: -0.0008203303441405296 	 TT_out: TorchTensor(-1219.) 	 torch: -1219.0211181640625
+
+0-0-25-27 input: -0.008752124384045601 	 TT_out: TorchTensor(-114.2500) 	 torch: -114.25797271728516
+
+0-0-25-28 input: 0.006407150998711586 	 TT_out: TorchTensor(156.) 	 torch: 156.0756072998047
+
+0-0-25-29 input: -0.004846644587814808 	 TT_out: TorchTensor(-206.2500) 	 torch: -206.32830810546875
+
+0-0-25-30 input: 0.006048229523003101 	 TT_out: TorchTensor(165.2500) 	 torch: 165.337646484375
+
+0-0-25-31 input: 0.0071637616492807865 	 TT_out: TorchTensor(139.5000) 	 torch: 139.59146118164062
+
+0-0-26-0 input: -0.005335548892617226 	 TT_out: TorchTensor(-187.3750) 	 torch: -187.42213439941406
+
+0-0-26-1 input: 0.0025934590958058834 	 TT_out: TorchTensor(385.5000) 	 torch: 385.5854187011719
+
+0-0-26-2 input: -0.00486069917678833 	 TT_out: TorchTensor(-205.6250) 	 torch: -205.73171997070312
+
+0-0-26-3 input: -0.005535169504582882 	 TT_out: TorchTensor(-180.6250) 	 torch: -180.66293334960938
+
+0-0-26-4 input: -0.0049089305102825165 	 TT_out: TorchTensor(-203.6250) 	 torch: -203.71035766601562
+
+0-0-26-5 input: -0.006293804384768009 	 TT_out: TorchTensor(-158.8750) 	 torch: -158.88641357421875
+
+0-0-26-6 input: 0.001601670403033495 	 TT_out: TorchTensor(624.) 	 torch: 624.3482055664062
+
+0-0-26-7 input: 0.008615267463028431 	 TT_out: TorchTensor(116.0625) 	 torch: 116.07300567626953
+
+0-0-26-8 input: 0.0017380756326019764 	 TT_out: TorchTensor(575.) 	 torch: 575.3489379882812
+
+0-0-26-9 input: -0.0069628991186618805 	 TT_out: TorchTensor(-143.5000) 	 torch: -143.6183319091797
+
+0-0-26-10 input: 0.0002755140885710716 	 TT_out: TorchTensor(3628.) 	 torch: 3629.578369140625
+
+0-0-26-11 input: -0.0019817063584923744 	 TT_out: TorchTensor(-504.5000) 	 torch: -504.6156311035156
+
+0-0-26-12 input: 0.006083658896386623 	 TT_out: TorchTensor(164.2500) 	 torch: 164.37477111816406
+
+0-0-26-13 input: -0.004067590460181236 	 TT_out: TorchTensor(-245.7500) 	 torch: -245.84579467773438
+
+0-0-26-14 input: 0.005707539618015289 	 TT_out: TorchTensor(175.1250) 	 torch: 175.20684814453125
+
+0-0-26-15 input: 0.0013408232480287552 	 TT_out: TorchTensor(745.5000) 	 torch: 745.8104858398438
+
+0-0-26-16 input: -0.007987068966031075 	 TT_out: TorchTensor(-125.1875) 	 torch: -125.20237731933594
+
+0-0-26-17 input: 0.0015482408925890923 	 TT_out: TorchTensor(645.5000) 	 torch: 645.8943481445312
+
+0-0-26-18 input: 0.004599049687385559 	 TT_out: TorchTensor(217.3750) 	 torch: 217.43621826171875
+
+0-0-26-19 input: -0.008683551102876663 	 TT_out: TorchTensor(-115.1250) 	 torch: -115.16026306152344
+
+0-0-26-20 input: -0.005609307438135147 	 TT_out: TorchTensor(-178.2500) 	 torch: -178.27513122558594
+
+0-0-26-21 input: -0.008383288979530334 	 TT_out: TorchTensor(-119.2500) 	 torch: -119.28492736816406
+
+0-0-26-22 input: -0.008727135136723518 	 TT_out: TorchTensor(-114.5625) 	 torch: -114.58513641357422
+
+0-0-26-23 input: 0.005310988985002041 	 TT_out: TorchTensor(188.2500) 	 torch: 188.28884887695312
+
+0-0-26-24 input: -0.0011810678988695145 	 TT_out: TorchTensor(-846.5000) 	 torch: -846.6913452148438
+
+0-0-26-25 input: 0.005861314013600349 	 TT_out: TorchTensor(170.5000) 	 torch: 170.61021423339844
+
+0-0-26-26 input: -0.005908581428229809 	 TT_out: TorchTensor(-169.1250) 	 torch: -169.245361328125
+
+0-0-26-27 input: -0.008636754006147385 	 TT_out: TorchTensor(-115.7500) 	 torch: -115.78424072265625
+
+0-0-26-28 input: 0.0036000898107886314 	 TT_out: TorchTensor(277.5000) 	 torch: 277.7708435058594
+
+0-0-26-29 input: -0.008591931313276291 	 TT_out: TorchTensor(-116.3750) 	 torch: -116.38826751708984
+
+0-0-26-30 input: -0.006834322586655617 	 TT_out: TorchTensor(-146.2500) 	 torch: -146.32028198242188
+
+0-0-26-31 input: -0.0011682305485010147 	 TT_out: TorchTensor(-855.5000) 	 torch: -855.9954223632812
+
+0-0-27-0 input: 0.004465925041586161 	 TT_out: TorchTensor(223.8750) 	 torch: 223.9177703857422
+
+0-0-27-1 input: -0.004388553090393543 	 TT_out: TorchTensor(-227.7500) 	 torch: -227.86553955078125
+
+0-0-27-2 input: -0.00799090787768364 	 TT_out: TorchTensor(-125.1250) 	 torch: -125.14222717285156
+
+0-0-27-3 input: -0.0020954925566911697 	 TT_out: TorchTensor(-477.) 	 torch: -477.21478271484375
+
+0-0-27-4 input: -0.007608113810420036 	 TT_out: TorchTensor(-131.2500) 	 torch: -131.43862915039062
+
+0-0-27-5 input: -0.0066452957689762115 	 TT_out: TorchTensor(-150.3750) 	 torch: -150.48239135742188
+
+0-0-27-6 input: -0.0015194294974207878 	 TT_out: TorchTensor(-658.) 	 torch: -658.1417846679688
+
+0-0-27-7 input: 0.00234860647469759 	 TT_out: TorchTensor(425.7500) 	 torch: 425.7843933105469
+
+0-0-27-8 input: 0.00010997336357831955 	 TT_out: TorchTensor(9088.) 	 torch: 9093.111328125
+
+0-0-27-9 input: -0.008264655247330666 	 TT_out: TorchTensor(-120.9375) 	 torch: -120.99718475341797
+
+0-0-27-10 input: 0.00823267549276352 	 TT_out: TorchTensor(121.4375) 	 torch: 121.46719360351562
+
+0-0-27-11 input: 0.002114079426974058 	 TT_out: TorchTensor(473.) 	 torch: 473.0191345214844
+
+0-0-27-12 input: 0.0057275909930467606 	 TT_out: TorchTensor(174.5000) 	 torch: 174.59347534179688
+
+0-0-27-13 input: 0.005829451605677605 	 TT_out: TorchTensor(171.5000) 	 torch: 171.542724609375
+
+0-0-27-14 input: 0.001600577961653471 	 TT_out: TorchTensor(624.5000) 	 torch: 624.7742919921875
+
+0-0-27-15 input: 0.008959634229540825 	 TT_out: TorchTensor(111.5625) 	 torch: 111.61170196533203
+
+0-0-27-16 input: 0.008536061272025108 	 TT_out: TorchTensor(117.1250) 	 torch: 117.1500473022461
+
+0-0-27-17 input: 0.0073170787654817104 	 TT_out: TorchTensor(136.6250) 	 torch: 136.66656494140625
+
+0-0-27-18 input: -0.008039433509111404 	 TT_out: TorchTensor(-124.3750) 	 torch: -124.38687133789062
+
+0-0-27-19 input: -0.005987218581140041 	 TT_out: TorchTensor(-167.) 	 torch: -167.0224609375
+
+0-0-27-20 input: -0.005322560667991638 	 TT_out: TorchTensor(-187.8750) 	 torch: -187.87948608398438
+
+0-0-27-21 input: 0.00014073122292757034 	 TT_out: TorchTensor(7104.) 	 torch: 7105.74365234375
+
+0-0-27-22 input: -0.006800724193453789 	 TT_out: TorchTensor(-147.) 	 torch: -147.0431671142578
+
+0-0-27-23 input: -0.003594379872083664 	 TT_out: TorchTensor(-278.) 	 torch: -278.21209716796875
+
+0-0-27-24 input: 0.00010749232023954391 	 TT_out: TorchTensor(9296.) 	 torch: 9302.990234375
+
+0-0-27-25 input: -0.001008879393339157 	 TT_out: TorchTensor(-991.) 	 torch: -991.19873046875
+
+0-0-27-26 input: -0.0002828603610396385 	 TT_out: TorchTensor(-3534.) 	 torch: -3535.313232421875
+
+0-0-27-27 input: -0.006354534067213535 	 TT_out: TorchTensor(-157.2500) 	 torch: -157.36795043945312
+
+0-0-27-28 input: 0.005163529887795448 	 TT_out: TorchTensor(193.6250) 	 torch: 193.6659698486328
+
+0-0-27-29 input: 0.008545134216547012 	 TT_out: TorchTensor(117.) 	 torch: 117.02566528320312
+
+0-0-27-30 input: 0.0013122051022946835 	 TT_out: TorchTensor(762.) 	 torch: 762.0759887695312
+
+0-0-27-31 input: -0.004858125001192093 	 TT_out: TorchTensor(-205.7500) 	 torch: -205.84072875976562
+
+0-0-28-0 input: -0.007902916520833969 	 TT_out: TorchTensor(-126.5000) 	 torch: -126.53556060791016
+
+0-0-28-1 input: 0.006314294412732124 	 TT_out: TorchTensor(158.2500) 	 torch: 158.37081909179688
+
+0-0-28-2 input: -0.000391974113881588 	 TT_out: TorchTensor(-2550.) 	 torch: -2551.18896484375
+
+0-0-28-3 input: 0.004304180387407541 	 TT_out: TorchTensor(232.2500) 	 torch: 232.332275390625
+
+0-0-28-4 input: 0.0021222494542598724 	 TT_out: TorchTensor(471.) 	 torch: 471.1981506347656
+
+0-0-28-5 input: -0.00523750763386488 	 TT_out: TorchTensor(-190.8750) 	 torch: -190.93051147460938
+
+0-0-28-6 input: 0.00043710600584745407 	 TT_out: TorchTensor(2286.) 	 torch: 2287.774658203125
+
+0-0-28-7 input: -0.0010864026844501495 	 TT_out: TorchTensor(-920.) 	 torch: -920.468994140625
+
+0-0-28-8 input: 0.003976619336754084 	 TT_out: TorchTensor(251.3750) 	 torch: 251.46987915039062
+
+0-0-28-9 input: 0.00039879418909549713 	 TT_out: TorchTensor(2506.) 	 torch: 2507.55908203125
+
+0-0-28-10 input: 0.006589607801288366 	 TT_out: TorchTensor(151.7500) 	 torch: 151.7541046142578
+
+0-0-28-11 input: 0.006818744819611311 	 TT_out: TorchTensor(146.6250) 	 torch: 146.65455627441406
+
+0-0-28-12 input: -0.00715387798845768 	 TT_out: TorchTensor(-139.7500) 	 torch: -139.78431701660156
+
+0-0-28-13 input: 0.007432480342686176 	 TT_out: TorchTensor(134.3750) 	 torch: 134.54458618164062
+
+0-0-28-14 input: 0.004614443052560091 	 TT_out: TorchTensor(216.6250) 	 torch: 216.71087646484375
+
+0-0-28-15 input: 0.00826054997742176 	 TT_out: TorchTensor(121.) 	 torch: 121.05731201171875
+
+0-0-28-16 input: 0.004494410939514637 	 TT_out: TorchTensor(222.3750) 	 torch: 222.49856567382812
+
+0-0-28-17 input: -0.0075244661420583725 	 TT_out: TorchTensor(-132.7500) 	 torch: -132.89979553222656
+
+0-0-28-18 input: 0.005595493130385876 	 TT_out: TorchTensor(178.6250) 	 torch: 178.7152557373047
+
+0-0-28-19 input: 0.004358544480055571 	 TT_out: TorchTensor(229.3750) 	 torch: 229.43438720703125
+
+0-0-28-20 input: 0.004342462867498398 	 TT_out: TorchTensor(230.2500) 	 torch: 230.2840576171875
+
+0-0-28-21 input: -0.005704107694327831 	 TT_out: TorchTensor(-175.2500) 	 torch: -175.312255859375
+
+0-0-28-22 input: -0.003780944272875786 	 TT_out: TorchTensor(-264.2500) 	 torch: -264.48419189453125
+
+0-0-28-23 input: 0.0010880958288908005 	 TT_out: TorchTensor(919.) 	 torch: 919.0366821289062
+
+0-0-28-24 input: -0.00563803780823946 	 TT_out: TorchTensor(-177.2500) 	 torch: -177.36666870117188
+
+0-0-28-25 input: 0.005447660572826862 	 TT_out: TorchTensor(183.5000) 	 torch: 183.56503295898438
+
+0-0-28-26 input: 0.007959437556564808 	 TT_out: TorchTensor(125.6250) 	 torch: 125.63701629638672
+
+0-0-28-27 input: -0.005746793933212757 	 TT_out: TorchTensor(-174.) 	 torch: -174.01007080078125
+
+0-0-28-28 input: 0.000261552631855011 	 TT_out: TorchTensor(3822.) 	 torch: 3823.322265625
+
+0-0-28-29 input: 0.005864454433321953 	 TT_out: TorchTensor(170.5000) 	 torch: 170.5188446044922
+
+0-0-28-30 input: 0.0006055943667888641 	 TT_out: TorchTensor(1651.) 	 torch: 1651.270263671875
+
+0-0-28-31 input: 0.007458515930920839 	 TT_out: TorchTensor(134.) 	 torch: 134.07493591308594
+
+0-0-29-0 input: -0.007094312459230423 	 TT_out: TorchTensor(-140.8750) 	 torch: -140.95799255371094
+
+0-0-29-1 input: 0.008234022185206413 	 TT_out: TorchTensor(121.4375) 	 torch: 121.44732666015625
+
+0-0-29-2 input: 0.004435897339135408 	 TT_out: TorchTensor(225.3750) 	 torch: 225.43353271484375
+
+0-0-29-3 input: -0.0026189815253019333 	 TT_out: TorchTensor(-381.7500) 	 torch: -381.82781982421875
+
+0-0-29-4 input: 0.0027926922775804996 	 TT_out: TorchTensor(358.) 	 torch: 358.077392578125
+
+0-0-29-5 input: 0.004086390137672424 	 TT_out: TorchTensor(244.6250) 	 torch: 244.7147674560547
+
+0-0-29-6 input: 0.00406723702326417 	 TT_out: TorchTensor(245.7500) 	 torch: 245.86715698242188
+
+0-0-29-7 input: 0.006997955031692982 	 TT_out: TorchTensor(142.8750) 	 torch: 142.89889526367188
+
+0-0-29-8 input: -0.004491964355111122 	 TT_out: TorchTensor(-222.5000) 	 torch: -222.6197509765625
+
+0-0-29-9 input: 0.004311800934374332 	 TT_out: TorchTensor(231.8750) 	 torch: 231.92164611816406
+
+0-0-29-10 input: 0.006018460728228092 	 TT_out: TorchTensor(166.1250) 	 torch: 166.1554412841797
+
+0-0-29-11 input: 0.0063813901506364346 	 TT_out: TorchTensor(156.6250) 	 torch: 156.70567321777344
+
+0-0-29-12 input: -0.007808063179254532 	 TT_out: TorchTensor(-127.8750) 	 torch: -128.07273864746094
+
+0-0-29-13 input: -0.003322923555970192 	 TT_out: TorchTensor(-300.7500) 	 torch: -300.9398193359375
+
+0-0-29-14 input: -0.0016909753903746605 	 TT_out: TorchTensor(-591.) 	 torch: -591.3746337890625
+
+0-0-29-15 input: -0.007103882730007172 	 TT_out: TorchTensor(-140.7500) 	 torch: -140.76809692382812
+
+0-0-29-16 input: -0.006562074646353722 	 TT_out: TorchTensor(-152.3750) 	 torch: -152.3908233642578
+
+0-0-29-17 input: 0.006279051303863525 	 TT_out: TorchTensor(159.2500) 	 torch: 159.25973510742188
+
+0-0-29-18 input: 0.006086521781980991 	 TT_out: TorchTensor(164.2500) 	 torch: 164.29745483398438
+
+0-0-29-19 input: -0.004419035278260708 	 TT_out: TorchTensor(-226.2500) 	 torch: -226.29373168945312
+
+0-0-29-20 input: 0.001146240159869194 	 TT_out: TorchTensor(872.) 	 torch: 872.4175415039062
+
+0-0-29-21 input: -0.007025683298707008 	 TT_out: TorchTensor(-142.2500) 	 torch: -142.3349151611328
+
+0-0-29-22 input: -0.0006084898486733437 	 TT_out: TorchTensor(-1643.) 	 torch: -1643.412841796875
+
+0-0-29-23 input: 0.008470755070447922 	 TT_out: TorchTensor(118.) 	 torch: 118.05323028564453
+
+0-0-29-24 input: 0.0027100695297122 	 TT_out: TorchTensor(368.7500) 	 torch: 368.9942321777344
+
+0-0-29-25 input: -0.008429283276200294 	 TT_out: TorchTensor(-118.6250) 	 torch: -118.63404846191406
+
+0-0-29-26 input: 0.004706160631030798 	 TT_out: TorchTensor(212.3750) 	 torch: 212.48744201660156
+
+0-0-29-27 input: -0.004500457085669041 	 TT_out: TorchTensor(-222.1250) 	 torch: -222.19964599609375
+
+0-0-29-28 input: 0.007297266740351915 	 TT_out: TorchTensor(137.) 	 torch: 137.03761291503906
+
+0-0-29-29 input: -0.0032662907615303993 	 TT_out: TorchTensor(-306.) 	 torch: -306.1576843261719
+
+0-0-29-30 input: -0.0028413627296686172 	 TT_out: TorchTensor(-351.7500) 	 torch: -351.94378662109375
+
+0-0-29-31 input: 0.008798795752227306 	 TT_out: TorchTensor(113.6250) 	 torch: 113.65191650390625
+
+0-0-30-0 input: 7.328018546104431e-05 	 TT_out: TorchTensor(13640.) 	 torch: 13646.25390625
+
+0-0-30-1 input: 0.004145819693803787 	 TT_out: TorchTensor(241.1250) 	 torch: 241.20681762695312
+
+0-0-30-2 input: -0.003435203805565834 	 TT_out: TorchTensor(-291.) 	 torch: -291.1035461425781
+
+0-0-30-3 input: 0.004809371195733547 	 TT_out: TorchTensor(207.8750) 	 torch: 207.92738342285156
+
+0-0-30-4 input: -0.0014122901484370232 	 TT_out: TorchTensor(-708.) 	 torch: -708.06982421875
+
+0-0-30-5 input: 0.0015625692903995514 	 TT_out: TorchTensor(639.5000) 	 torch: 639.9716186523438
+
+0-0-30-6 input: -0.0012139100581407547 	 TT_out: TorchTensor(-823.5000) 	 torch: -823.7842407226562
+
+0-0-30-7 input: 0.005079064983874559 	 TT_out: TorchTensor(196.8750) 	 torch: 196.88662719726562
+
+0-0-30-8 input: 0.002774276304990053 	 TT_out: TorchTensor(360.2500) 	 torch: 360.4543762207031
+
+0-0-30-9 input: 0.0016246354207396507 	 TT_out: TorchTensor(615.5000) 	 torch: 615.522705078125
+
+0-0-30-10 input: -0.007746821269392967 	 TT_out: TorchTensor(-128.8750) 	 torch: -129.085205078125
+
+0-0-30-11 input: -0.002399679273366928 	 TT_out: TorchTensor(-416.5000) 	 torch: -416.72235107421875
+
+0-0-30-12 input: -0.0071745943278074265 	 TT_out: TorchTensor(-139.2500) 	 torch: -139.38070678710938
+
+0-0-30-13 input: -0.00024276040494441986 	 TT_out: TorchTensor(-4112.) 	 torch: -4119.2880859375
+
+0-0-30-14 input: -0.0011209389194846153 	 TT_out: TorchTensor(-892.) 	 torch: -892.1092529296875
+
+0-0-30-15 input: -0.0016608955338597298 	 TT_out: TorchTensor(-602.) 	 torch: -602.0848388671875
+
+0-0-30-16 input: 0.006047886796295643 	 TT_out: TorchTensor(165.2500) 	 torch: 165.34701538085938
+
+0-0-30-17 input: -0.00712234154343605 	 TT_out: TorchTensor(-140.3750) 	 torch: -140.40325927734375
+
+0-0-30-18 input: -0.002117016352713108 	 TT_out: TorchTensor(-472.2500) 	 torch: -472.3629150390625
+
+0-0-30-19 input: -0.0055976081639528275 	 TT_out: TorchTensor(-178.6250) 	 torch: -178.64773559570312
+
+0-0-30-20 input: -0.004152708686888218 	 TT_out: TorchTensor(-240.7500) 	 torch: -240.8066864013672
+
+0-0-30-21 input: -0.006018282845616341 	 TT_out: TorchTensor(-166.1250) 	 torch: -166.1603546142578
+
+0-0-30-22 input: -0.0036251116544008255 	 TT_out: TorchTensor(-275.7500) 	 torch: -275.85357666015625
+
+0-0-30-23 input: -0.0020867008715867996 	 TT_out: TorchTensor(-479.) 	 torch: -479.2253723144531
+
+0-0-30-24 input: -0.005878509022295475 	 TT_out: TorchTensor(-170.) 	 torch: -170.1111602783203
+
+0-0-30-25 input: 0.0052076405845582485 	 TT_out: TorchTensor(192.) 	 torch: 192.02554321289062
+
+0-0-30-26 input: -0.004618143662810326 	 TT_out: TorchTensor(-216.5000) 	 torch: -216.53721618652344
+
+0-0-30-27 input: 0.0026854886673390865 	 TT_out: TorchTensor(372.2500) 	 torch: 372.3717041015625
+
+0-0-30-28 input: -0.0006156172603368759 	 TT_out: TorchTensor(-1624.) 	 torch: -1624.3858642578125
+
+0-0-30-29 input: 0.0073464373126626015 	 TT_out: TorchTensor(136.) 	 torch: 136.1204071044922
+
+0-0-30-30 input: 0.008619558066129684 	 TT_out: TorchTensor(116.) 	 torch: 116.01522827148438
+
+0-0-30-31 input: -0.008411083370447159 	 TT_out: TorchTensor(-118.8750) 	 torch: -118.8907470703125
+
+0-0-31-0 input: 0.0018705381080508232 	 TT_out: TorchTensor(534.) 	 torch: 534.6055297851562
+
+0-0-31-1 input: 0.005871802568435669 	 TT_out: TorchTensor(170.2500) 	 torch: 170.30545043945312
+
+0-0-31-2 input: 0.006015934981405735 	 TT_out: TorchTensor(166.1250) 	 torch: 166.22520446777344
+
+0-0-31-3 input: -0.008445870131254196 	 TT_out: TorchTensor(-118.3750) 	 torch: -118.40106201171875
+
+0-0-31-4 input: 0.005100938957184553 	 TT_out: TorchTensor(196.) 	 torch: 196.04234313964844
+
+0-0-31-5 input: 0.004277436528354883 	 TT_out: TorchTensor(233.7500) 	 torch: 233.78488159179688
+
+0-0-31-6 input: 0.0007816050201654434 	 TT_out: TorchTensor(1279.) 	 torch: 1279.4185791015625
+
+0-0-31-7 input: 0.0036451509222388268 	 TT_out: TorchTensor(274.2500) 	 torch: 274.3370666503906
+
+0-0-31-8 input: -0.002677101641893387 	 TT_out: TorchTensor(-373.5000) 	 torch: -373.5382995605469
+
+0-0-31-9 input: -0.008531276136636734 	 TT_out: TorchTensor(-117.1875) 	 torch: -117.21575927734375
+
+0-0-31-10 input: -0.0015637539327144623 	 TT_out: TorchTensor(-639.) 	 torch: -639.48681640625
+
+0-0-31-11 input: 0.0030693612061440945 	 TT_out: TorchTensor(325.7500) 	 torch: 325.8006896972656
+
+0-0-31-12 input: -0.00034565478563308716 	 TT_out: TorchTensor(-2892.) 	 torch: -2893.059814453125
+
+0-0-31-13 input: 0.005026308353990316 	 TT_out: TorchTensor(198.8750) 	 torch: 198.9531707763672
+
+0-0-31-14 input: -0.0065994057804346085 	 TT_out: TorchTensor(-151.5000) 	 torch: -151.52879333496094
+
+0-0-31-15 input: -0.00690179318189621 	 TT_out: TorchTensor(-144.8750) 	 torch: -144.88987731933594
+
+0-0-31-16 input: 0.0056455605663359165 	 TT_out: TorchTensor(177.1250) 	 torch: 177.1303253173828
+
+0-0-31-17 input: 0.0042123435996472836 	 TT_out: TorchTensor(237.3750) 	 torch: 237.3975372314453
+
+0-0-31-18 input: -0.00869709812104702 	 TT_out: TorchTensor(-114.9375) 	 torch: -114.98088073730469
+
+0-0-31-19 input: 0.006000222638249397 	 TT_out: TorchTensor(166.6250) 	 torch: 166.6604766845703
+
+0-0-31-20 input: -0.007099729031324387 	 TT_out: TorchTensor(-140.7500) 	 torch: -140.85044860839844
+
+0-0-31-21 input: -0.0076833683997392654 	 TT_out: TorchTensor(-130.) 	 torch: -130.1512451171875
+
+0-0-31-22 input: 0.006101795472204685 	 TT_out: TorchTensor(163.8750) 	 torch: 163.8861846923828
+
+0-0-31-23 input: -0.0081930011510849 	 TT_out: TorchTensor(-122.) 	 torch: -122.0553970336914
+
+0-0-31-24 input: 0.006516029592603445 	 TT_out: TorchTensor(153.3750) 	 torch: 153.46768188476562
+
+0-0-31-25 input: 0.004727177321910858 	 TT_out: TorchTensor(211.5000) 	 torch: 211.542724609375
+
+0-0-31-26 input: 0.0033041080459952354 	 TT_out: TorchTensor(302.5000) 	 torch: 302.6535339355469
+
+0-0-31-27 input: 0.0018088924698531628 	 TT_out: TorchTensor(552.5000) 	 torch: 552.824462890625
+
+0-0-31-28 input: 0.007483245804905891 	 TT_out: TorchTensor(133.5000) 	 torch: 133.63185119628906
+
+0-0-31-29 input: -0.00718417763710022 	 TT_out: TorchTensor(-139.1250) 	 torch: -139.1947784423828
+
+0-0-31-30 input: -0.004815020598471165 	 TT_out: TorchTensor(-207.6250) 	 torch: -207.6834259033203
+
+0-0-31-31 input: 0.0076827495358884335 	 TT_out: TorchTensor(130.) 	 torch: 130.16172790527344
+
+pcc_msg 0.9999999888771313
+PASSED[38;2;000;128;000m                  Metal[0m | [1m[38;2;100;149;237mINFO    [0m | Closing device 0
+[38;2;000;128;000m                  Metal[0m | [1m[38;2;100;149;237mINFO    [0m | Disabling and clearing program cache on device 0
+
+
+=============================== warnings summary ===============================
+tests/ttnn/unit_tests/operations/eltwise/test_i0_bw_pcc.py::test_i0_bw_recip_range[shapes=[1, 1, 32, 32]]
+  tests/ttnn/unit_tests/operations/eltwise/test_i0_bw_pcc.py:121: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    @pytest.mark.parametrize(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+- generated xml file: /home/ubuntu/Kalai/tt-metal/generated/test_reports/most_recent_tests.xml -
+============================== slowest durations ===============================
+4.00s call     tests/ttnn/unit_tests/operations/eltwise/test_i0_bw_pcc.py::test_i0_bw_recip_range[shapes=[1, 1, 32, 32]]
+1.29s setup    tests/ttnn/unit_tests/operations/eltwise/test_i0_bw_pcc.py::test_i0_bw_recip_range[shapes=[1, 1, 32, 32]]
+0.00s teardown tests/ttnn/unit_tests/operations/eltwise/test_i0_bw_pcc.py::test_i0_bw_recip_range[shapes=[1, 1, 32, 32]]
+=========================== short test summary info ============================
+PASSED tests/ttnn/unit_tests/operations/eltwise/test_i0_bw_pcc.py::test_i0_bw_recip_range[shapes=[1, 1, 32, 32]]
+========================= 1 passed, 1 warning in 5.32s =========================
+[38;2;000;128;000m                 Device[0m | [1m[38;2;100;149;237mINFO    [0m | Closing user mode device drivers

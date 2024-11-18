@@ -75,9 +75,9 @@ def run(
     if input_layout == ttnn.ROW_MAJOR_LAYOUT:
         input_shape = sanitize_shape_rm(input_shape)
 
-    torch_grad_tensor = gen_func_with_cast_tt(partial(torch_random, low=-10, high=10, dtype=torch.float32), grad_dtype)(
-        input_shape
-    )
+    torch_grad_tensor = gen_func_with_cast_tt(
+        partial(torch_random, low=-10, high=10, dtype=torch.float32), dtype=torch.float32
+    )(input_shape)
     torch_input_tensor_a = gen_func_with_cast_tt(
         partial(torch_random, low=-100, high=100, dtype=torch.float32), input_a_dtype
     )(input_shape)
