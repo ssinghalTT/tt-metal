@@ -108,6 +108,30 @@ auto preprocess_inputs(const Tensor &input_tensor_a_arg, const Tensor &input_ten
     Tensor input_tensor_a = input_tensor_a_arg;
     Tensor input_tensor_b = input_tensor_b_arg;
 
+    auto rank_a = input_tensor_a.get_shape().rank();
+    auto rank_b = input_tensor_b.get_shape().rank();
+    int diff = std::abs((int)rank_a - (int)rank_b);
+
+    // rank check for optional output tensor is not handled
+    if(rank_a != rank_b){
+        if(rank_a > rank_b){
+            auto s_b = input_tensor_b.get_shape();
+            std::vector<int32_t> shape_vector(rank_a, 1);
+            for(int i=0; i < rank_b; ++i){
+                shape_vector[diff + i] = s_b[i];
+            }
+            input_tensor_b = ttnn::reshape(input_tensor_b, shape_vector);
+        }
+        if(rank_a < rank_b){
+            auto s_a = input_tensor_a.get_shape();
+            std::vector<int32_t> shape_vector(rank_b, 1);
+            for(int i=0; i < rank_a; ++i){
+                shape_vector[diff + i] = s_a[i];
+            }
+            input_tensor_a = ttnn::reshape(input_tensor_a, shape_vector);
+        }
+    }
+
     // TODO: #7731 (Remove calls to repeat )
     auto repeat_smaller = [](const auto &first, auto &second) {
         const auto first_shape = first.get_shape();
