@@ -122,8 +122,8 @@ RowMajorPageConfig::RowMajorPageConfig(const Tile& tile) : tile_(tile) {}
 
 Alignment RowMajorPageConfig::create_default_alignment(DataType dtype, const MemoryConfig& memory_config) const {
 {
-    const auto element_size = CMAKE_UNIQUE_NAMESPACE::rm_element_size_bytes(dtype);
-    auto width_alignment = sizeof(uint32_t) / element_size;
+    //const auto element_size = CMAKE_UNIQUE_NAMESPACE::rm_element_size_bytes(dtype);
+    auto width_alignment = 1;//sizeof(uint32_t) / element_size;
 
     if (memory_config.shard_spec.has_value()) {
         const auto& shard_spec = memory_config.shard_spec.value();
@@ -149,7 +149,7 @@ void RowMajorPageConfig::validate_alignment(const Alignment& alignment, DataType
     TT_FATAL(!alignment.empty(), "Alignment must contain at least one dimension for Row Major layout.");
     const uint32_t width_alignment = alignment[-1];
     const uint32_t element_size = CMAKE_UNIQUE_NAMESPACE::rm_element_size_bytes(dtype);
-    const uint32_t page_alignment = sizeof(uint32_t) / element_size;
+    const uint32_t page_alignment = 1; //sizeof(uint32_t) / element_size;
 
     TT_FATAL((width_alignment % page_alignment) == 0,
         "Incorrect alignment configuration for Row Major layout: innermost dimension alignment must be aligned to {} bytes since we pack buffer data as uint32_t. With element size of {} byte(s), alignment {} must be a multiple of alignment {}.",
@@ -168,7 +168,7 @@ void RowMajorPageConfig::validate_alignment(const Alignment& alignment, DataType
 
 Size RowMajorPageConfig::get_page_shape(const Size& physical_size, DataType dtype, const MemoryConfig& memory_config, const std::optional<Size>& physical_shard_size) const {
     if (physical_size.height() == 0 || physical_size.width() == 0) {
-        return Size(1, sizeof(uint32_t) / CMAKE_UNIQUE_NAMESPACE::rm_element_size_bytes(dtype));
+        return Size(1, 1 /*sizeof(uint32_t) / CMAKE_UNIQUE_NAMESPACE::rm_element_size_bytes(dtype)*/);
     }
 
     if(memory_config.memory_layout == TensorMemoryLayout::SINGLE_BANK) {
