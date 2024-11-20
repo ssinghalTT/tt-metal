@@ -267,8 +267,6 @@ OptimizedConvBlockConfig determine_per_core_conv_block_config(
         }
     }
     auto grid_size = parallel_config.grid.bounding_box().grid_size();
-    act_block_h_ntiles = act_block_h_override > 0 ? act_block_h_override / tt::constants::TILE_HEIGHT
-                                                           : conv_op_parallel_config.per_core_out_matrix_height / tt::constants::TILE_HEIGHT;
     uint32_t act_c_num_blocks = parallel_config.shard_scheme == TensorMemoryLayout::HEIGHT_SHARDED ? 1
                                 : parallel_config.shard_orientation == ShardOrientation::COL_MAJOR ? grid_size.y
                                                                                                    : grid_size.x;
@@ -276,9 +274,11 @@ OptimizedConvBlockConfig determine_per_core_conv_block_config(
     uint32_t act_block_w = parallel_config.shard_scheme == TensorMemoryLayout::HEIGHT_SHARDED
                             ? round_up(padded_in_channels * window_w, 32)
                             : round_up((padded_in_channels / act_c_num_blocks) * window_h * window_w, tt::constants::TILE_WIDTH);
+    if(parallel_config.shard_scheme == TensorMemoryLayout::WIDTH_SHARDED) {
+        act_block_w = (padded_in_channels * window_h * window_w)/(parallel_config.grid.num_cores() * act_block_w_div);
+    }
     TT_ASSERT(act_block_w % 32 == 0);
     uint32_t act_block_w_ntiles = act_block_w / 32;
-    TT_ASSERT(conv_op_parallel_config.per_core_out_matrix_height % tt::constants::TILE_HEIGHT == 0);
     //TT_FATAL(conv_op_parallel_config.per_core_out_matrix_width % TILE_WIDTH == 0);
     uint32_t out_block_h_ntiles = div_up(conv_op_parallel_config.per_core_out_matrix_height, tt::constants::TILE_HEIGHT);
     uint32_t weight_block_w_ntiles = div_up(conv_op_parallel_config.per_core_out_matrix_width, tt::constants::TILE_WIDTH);
@@ -752,7 +752,7 @@ ttnn::operations::matmul::MatmulProgramConfig determine_matmul_op_config_from_co
         TT_ASSERT(conv_blocking_config.act_block_w_ntiles % grid_size_along_c == 0);
         ttnn::operations::matmul::MatmulMultiCoreReuseMultiCastProgramConfig matmul_config = {
             .compute_with_storage_grid_size = conv_parallelization_config.grid_size,
-            .in0_block_w = conv_blocking_config.act_block_w_ntiles,
+            .in0_block_w = conv_blocking_config.act_block_w_ntiles / grid_size_along_c,
             .out_subblock_h = conv_blocking_config.out_subblock_h_ntiles,
             .out_subblock_w = conv_blocking_config.out_subblock_w_ntiles,
             .out_block_h = div_up(conv_parallelization_config.per_core_out_matrix_height, tt::constants::TILE_HEIGHT),
