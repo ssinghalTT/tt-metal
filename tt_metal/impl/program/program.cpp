@@ -377,6 +377,7 @@ KernelGroup::KernelGroup(
             hal.get_dev_addr(index, HalL1MemAddrType::KERNEL_CONFIG);
     }
 
+    std::vector<NOC_MODE> tensix_dm_processor_noc_modes;
     uint32_t processor_classes = hal.get_processor_classes_count(programmable_core_type_index);
     for (int class_id = 0; class_id < processor_classes; class_id++) {
         auto& optional_id = kernel_ids[class_id];
@@ -395,6 +396,7 @@ KernelGroup::KernelGroup(
                     if (std::get<DataMovementConfig>(kernel->config()).noc_mode == NOC_MODE::DM_DYNAMIC_NOC) {
                         this->launch_msg.kernel_config.brisc_noc_mode = NOC_MODE::DM_DYNAMIC_NOC;
                     }
+                    tensix_dm_processor_noc_modes.push_back(std::get<DataMovementConfig>(kernel->config()).noc_mode);
                 } else if (class_id == utils::underlying_type<DataMovementProcessor>(DataMovementProcessor::RISCV_1)) {
                     // Use 1-ncrisc's noc (the other noc) if ncrisc specifies a noc
                     // If both brisc and ncrisc set the noc, then this is safe due to prior correctness validation
@@ -403,9 +405,13 @@ KernelGroup::KernelGroup(
                     if (this->launch_msg.kernel_config.brisc_noc_mode == NOC_MODE::DM_DYNAMIC_NOC) {
                         this->launch_msg.kernel_config.brisc_noc_mode = NOC_MODE::DM_DYNAMIC_NOC;
                     }
+                    tensix_dm_processor_noc_modes.push_back(std::get<DataMovementConfig>(kernel->config()).noc_mode);
                 }
             }
         }
+    }
+    if (tensix_dm_processor_noc_modes.size() > 1 && !std::equal(tensix_dm_processor_noc_modes.begin() + 1, tensix_dm_processor_noc_modes.end(), tensix_dm_processor_noc_modes.begin())) {
+        TT_THROW("data movement processors must have the same noc modes");
     }
 
     for (uint32_t index = 0; index < MaxProcessorsPerCoreType; index ++) {

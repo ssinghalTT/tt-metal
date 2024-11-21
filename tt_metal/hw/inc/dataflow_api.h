@@ -1587,7 +1587,7 @@ void noc_async_read_barrier(uint8_t noc = noc_index) {
     // BH cache is write-through so reader must invalidate if reading any address that was previously read
     do {
         invalidate_l1_cache();
-    } while (!ncrisc_noc_reads_flushed(noc));
+    } while (!ncrisc_noc_reads_flushed<noc_mode>(noc));
     WAYPOINT("NRBD");
 }
 
@@ -1602,7 +1602,7 @@ void noc_async_read_barrier(uint8_t noc = noc_index) {
 FORCE_INLINE
 void noc_async_write_barrier(uint8_t noc = noc_index) {
     WAYPOINT("NWBW");
-    while (!ncrisc_noc_nonposted_writes_flushed(noc))
+    while (!ncrisc_noc_nonposted_writes_flushed<noc_mode>(noc))
         ;
     WAYPOINT("NWBD");
 }
@@ -1615,7 +1615,7 @@ void noc_async_write_barrier(uint8_t noc = noc_index) {
 FORCE_INLINE
 void noc_async_writes_flushed(uint8_t noc = noc_index) {
     WAYPOINT("NWFW");
-    while (!ncrisc_noc_nonposted_writes_sent(noc))
+    while (!ncrisc_noc_nonposted_writes_sent<noc_mode>(noc))
         ;
     WAYPOINT("NWFD");
 }
@@ -1631,7 +1631,7 @@ void noc_async_writes_flushed(uint8_t noc = noc_index) {
 FORCE_INLINE
 void noc_async_atomic_barrier(uint8_t noc_idx = noc_index) {
     WAYPOINT("NABW");
-    while (!ncrisc_noc_nonposted_atomics_flushed(noc_idx))
+    while (!ncrisc_noc_nonposted_atomics_flushed<noc_mode>(noc_idx))
         ;
     WAYPOINT("NABD");
 }

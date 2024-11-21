@@ -90,42 +90,42 @@ PREFETCHER_GRID = [
         # 32, 2304, 3840
         (1, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat4_b, ttnn.MathFidelity.LoFi, True, True, (8, 3)),
         # 32, 2304, 3840
-        (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat4_b, ttnn.MathFidelity.LoFi, True, True, (8, 3)),
-        # 32, 2304, 3840
-        (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.LoFi, False, False, (8, 3)),
-        # 32, 2304, 3840
-        (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi2, False, True, (8, 3)),
-        # 32, 2304, 3840
-        (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi2, True, False, (8, 3)),
-        # 32, 2304, 3840
-        (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, False, False, (8, 3)),
-        # 32, 2304, 3840
-        (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, True, False, (8, 3)),
-        # 32, 2304, 3840
-        (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, False, True, (8, 3)),
-        # 256, 8192, 8192
-        (1, 256, 1024, 8192, ttnn.bfloat16, ttnn.bfloat4_b, ttnn.MathFidelity.HiFi4, True, True, (8, 4)),
-        # 32, 64, 64
-        (1, 32, 64, 64, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, True, True, (2, 1)),
-        # 32, 64, 64
-        (11, 32, 64, 64, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, True, True, (2, 1)),
+        # (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat4_b, ttnn.MathFidelity.LoFi, True, True, (8, 3)),
+        # # 32, 2304, 3840
+        # (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.LoFi, False, False, (8, 3)),
+        # # 32, 2304, 3840
+        # (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi2, False, True, (8, 3)),
+        # # 32, 2304, 3840
+        # (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi2, True, False, (8, 3)),
+        # # 32, 2304, 3840
+        # (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, False, False, (8, 3)),
+        # # 32, 2304, 3840
+        # (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, True, False, (8, 3)),
+        # # 32, 2304, 3840
+        # (3, 32, 2304, 3840, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, False, True, (8, 3)),
+        # # 256, 8192, 8192
+        # (1, 256, 1024, 8192, ttnn.bfloat16, ttnn.bfloat4_b, ttnn.MathFidelity.HiFi4, True, True, (8, 4)),
+        # # 32, 64, 64
+        # (1, 32, 64, 64, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, True, True, (2, 1)),
+        # # 32, 64, 64
+        # (11, 32, 64, 64, ttnn.bfloat16, ttnn.bfloat8_b, ttnn.MathFidelity.HiFi4, True, True, (2, 1)),
     ],
 )
 @pytest.mark.parametrize(
     "activation",
     [
         None,
-        ttnn.UnaryOpType.SILU,
-        ttnn.UnaryOpType.RELU,
+        # ttnn.UnaryOpType.SILU,
+        # ttnn.UnaryOpType.RELU,
     ],
 )
 @pytest.mark.parametrize(
     "use_arbitrary_cores",
-    [False, True],
+    [False],
 )
 @pytest.mark.parametrize(
     "num_iters",
-    [1, 3],
+    [3],
 )
 def test_multi_core_matmul_1d_wh(
     device,

@@ -89,8 +89,13 @@ inline __attribute__((always_inline)) void ncrisc_noc_fast_read(uint32_t noc, ui
   noc_reads_num_issued[noc] += 1;
 }
 
+template<uint8_t noc_mode = DM_DEDICATED_NOC>
 inline __attribute__((always_inline)) bool ncrisc_noc_reads_flushed(uint32_t noc) {
-  return (NOC_STATUS_READ_REG(noc, NIU_MST_RD_RESP_RECEIVED) == noc_reads_num_issued[noc]);
+  if constexpr (noc_mode == DM_DYNAMIC_NOC) {
+    return (NOC_STATUS_READ_REG(noc, NIU_MST_RD_RESP_RECEIVED) >= noc_reads_num_issued[noc]);
+  } else {
+    return (NOC_STATUS_READ_REG(noc, NIU_MST_RD_RESP_RECEIVED) == noc_reads_num_issued[noc]);
+  }
 }
 
 inline __attribute__((always_inline)) bool ncrisc_noc_read_with_transaction_id_flushed(uint32_t noc, uint32_t transcation_id) {
@@ -155,20 +160,44 @@ inline __attribute__((always_inline)) void ncrisc_noc_blitz_write_setup(uint32_t
   noc_nonposted_writes_acked[noc] += num_times_to_write;
 }
 
+template<uint8_t noc_mode = DM_DEDICATED_NOC>
 inline __attribute__((always_inline)) bool ncrisc_noc_nonposted_writes_sent(uint32_t noc) {
-  return (NOC_STATUS_READ_REG(noc, NIU_MST_NONPOSTED_WR_REQ_SENT) == noc_nonposted_writes_num_issued[noc]);
+  // two DM processor share the same noc might cause the registers count more than single processor
+  // if constexpr (noc_mode == DM_DYNAMIC_NOC) /{
+    return (NOC_STATUS_READ_REG(noc, NIU_MST_NONPOSTED_WR_REQ_SENT) >= noc_nonposted_writes_num_issued[noc]);
+  // } else {
+    // return (NOC_STATUS_READ_REG(noc, NIU_MST_NONPOSTED_WR_REQ_SENT) == noc_nonposted_writes_num_issued[noc]);
+  // }
 }
 
+template<uint8_t noc_mode = DM_DEDICATED_NOC>
 inline __attribute__((always_inline)) bool ncrisc_noc_posted_writes_sent(uint32_t noc) {
-  return (NOC_STATUS_READ_REG(noc, NIU_MST_POSTED_WR_REQ_SENT) == noc_posted_writes_num_issued[noc]);
+  // two DM processor share the same noc might cause the registers count more than single processor
+  if constexpr (noc_mode == DM_DYNAMIC_NOC) {
+    return (NOC_STATUS_READ_REG(noc, NIU_MST_POSTED_WR_REQ_SENT) >= noc_posted_writes_num_issued[noc]);
+  } else {
+    return (NOC_STATUS_READ_REG(noc, NIU_MST_POSTED_WR_REQ_SENT) == noc_posted_writes_num_issued[noc]);
+  }
 }
 
+template<uint8_t noc_mode = DM_DEDICATED_NOC>
 inline __attribute__((always_inline)) bool ncrisc_noc_nonposted_writes_flushed(uint32_t noc) {
-  return (NOC_STATUS_READ_REG(noc, NIU_MST_WR_ACK_RECEIVED) == noc_nonposted_writes_acked[noc]);
+  // two DM processor share the same noc might cause the registers count more than single processor
+  if constexpr (noc_mode == DM_DYNAMIC_NOC) {
+    return (NOC_STATUS_READ_REG(noc, NIU_MST_WR_ACK_RECEIVED) >= noc_nonposted_writes_acked[noc]);
+  } else {
+    return (NOC_STATUS_READ_REG(noc, NIU_MST_WR_ACK_RECEIVED) == noc_nonposted_writes_acked[noc]);
+  }
 }
 
+template<uint8_t noc_mode = DM_DEDICATED_NOC>
 inline __attribute__((always_inline)) bool ncrisc_noc_nonposted_atomics_flushed(uint32_t noc) {
-  return (NOC_STATUS_READ_REG(noc, NIU_MST_ATOMIC_RESP_RECEIVED) == noc_nonposted_atomics_acked[noc]);
+  // two DM processor share the same noc might cause the registers count more than single processor
+  if constexpr (noc_mode == DM_DYNAMIC_NOC) {
+    return (NOC_STATUS_READ_REG(noc, NIU_MST_ATOMIC_RESP_RECEIVED) >= noc_nonposted_atomics_acked[noc]);
+  } else {
+    return (NOC_STATUS_READ_REG(noc, NIU_MST_ATOMIC_RESP_RECEIVED) == noc_nonposted_atomics_acked[noc]);
+  }
 }
 
 inline __attribute__((always_inline)) void noc_init(uint32_t atomic_ret_val) {

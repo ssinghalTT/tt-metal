@@ -1820,6 +1820,7 @@ operation::ProgramWithCallbacks create_program_gather_in0(
         tt_metal::DataMovementConfig{
             .processor = tt_metal::DataMovementProcessor::RISCV_0,
             .noc = in1_noc,
+            .noc_mode = tt_metal::NOC_MODE::DM_DYNAMIC_NOC,
             .compile_args = in1_sender_writer_compile_time_args});
 
     auto mm_kernel = tt_metal::CreateKernel(
