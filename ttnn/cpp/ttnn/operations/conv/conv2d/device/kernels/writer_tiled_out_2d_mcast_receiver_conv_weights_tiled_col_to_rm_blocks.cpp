@@ -61,10 +61,10 @@ void kernel_main() {
     constexpr uint32_t out_addr = get_compile_time_arg_val(29);
 
     #ifdef UNPAD_UNTILIZE_OUT
-    constexpr uint32_t out_block_width_ntiles = get_compile_time_arg_val(32);
-    constexpr uint32_t out_block_width_padded_bytes = get_compile_time_arg_val(33);
-    constexpr uint32_t out_block_width_bytes = get_compile_time_arg_val(34);
-    constexpr uint32_t untilized_padded_out_cb = get_compile_time_arg_val(35);
+    constexpr uint32_t out_block_width_ntiles = get_compile_time_arg_val(33);
+    constexpr uint32_t out_block_width_padded_bytes = get_compile_time_arg_val(34);
+    constexpr uint32_t out_block_width_bytes = get_compile_time_arg_val(35);
+    constexpr uint32_t untilized_padded_out_cb = get_compile_time_arg_val(36);
     #endif
     uint32_t i = 0;
     i+=19;
@@ -214,6 +214,7 @@ void kernel_main() {
             for (uint32_t bh = 0; bh < out_block_height_num_tiles; bh++) {
                 /*DPRINT << "Waiting for out_block_width_ntiles: " << out_block_width_ntiles << ENDL();*/
                 cb_wait_front(untilized_padded_out_cb, out_block_width_ntiles);
+                /*print_pages(get_read_ptr(untilized_padded_out_cb), 32, 32);*/
                 uint32_t src_cb_addr = get_read_ptr(untilized_padded_out_cb);
                 /*DPRINT << "src_cb_addr: " << src_cb_addr << ENDL();*/
                 /*DPRINT << "Done waiting for out_block_width_ntiles: " << out_block_width_ntiles << ENDL();*/

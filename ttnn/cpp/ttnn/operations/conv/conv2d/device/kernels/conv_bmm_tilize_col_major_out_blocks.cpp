@@ -9,7 +9,7 @@
 #include "compute_kernel_api/pack_untilize.h"
 #include "compute_kernel_api/tile_move_copy.h"
 #include "compute_kernel_api/matmul.h"
-// #include "debug/dprint.h"
+#include "debug/dprint.h"
 
 #ifdef FUSE_BIAS
 #include "compute_kernel_api/bcast.h"
@@ -17,14 +17,31 @@
 
 #include "compute_kernel_api/eltwise_unary/sfpu_split_includes.h"
 
-#define DEBUG_PRINT 0
+#define DEBUG_PRINT 1
 
 // #include "debug_macros.h"
+#define dump_unpack(a) \
+    do { DPRINT_UNPACK(DPRINT << "UP: "<< #a " = " << a << ENDL()); } while(false)
+#define dump_pack(a) \
+    do { DPRINT_PACK(DPRINT << "P: "<< #a " = " << a << ENDL()); } while(false)
+#define dump_math(a) \
+    do { DPRINT_MATH(DPRINT << "M: "<< #a " = " << a << ENDL()); } while(false)
+
 
 // SliceRange srt = SliceRange{.h0 = 0, .h1 = 4, .hs = 1, .w0 = 0, .w1 = 8, .ws = 1};
 // SliceRange srr = SliceRange{.h0 = 0, .h1 = 1, .hs = 8, .w0 = 0, .w1 = 32, .ws = 1};
 // SliceRange srr1 = SliceRange{.h0 = 1, .h1 = 2, .hs = 8, .w0 = 0, .w1 = 32, .ws = 1};
 // SliceRange src = SliceRange{.h0 = 0, .h1 = 32, .hs = 1, .w0 = 0, .w1 = 1, .ws = 1};
+
+inline void print_full_tile(uint32_t cb_id, uint32_t tile_id = 0, bool untilize = false) {
+   DPRINT_UNPACK(DPRINT << "======" << ENDL());
+   for (uint8_t r = 0; r < 32; ++ r) {
+   //for (int32_t r = 0; r < 1; ++ r) {
+     SliceRange sr = SliceRange{.h0 = r, .h1 = (uint8_t)(r+1), .hs = 1, .w0 = 0, .w1 = 32, .ws = 1};
+     DPRINT_UNPACK(DPRINT << (uint)r << " " << TileSlice(cb_id, tile_id, sr, true, untilize) << ENDL());
+   }
+   DPRINT_UNPACK(DPRINT << "++++++" << ENDL());
+}
 
 inline void tilize_in(
     uint32_t in_cb_id,
@@ -115,6 +132,20 @@ void MAIN {
     constexpr uint32_t out_block_w = in1_block_w;
     constexpr bool spill = in0_num_blocks_w > 1;
 
+    /*dump_unpack(out_subblock_h);*/
+    /*dump_unpack(out_subblock_w);*/
+    /*dump_unpack(out_subblock_num_tiles);*/
+    /*dump_unpack(in0_block_w);*/
+    /*dump_unpack(in0_num_subblocks);*/
+    /*dump_unpack(in0_block_num_tiles);*/
+    /*dump_unpack(in0_subblock_num_tiles);*/
+    /*dump_unpack(in0_subblock_h);*/
+    /*dump_unpack(in1_num_subblocks);*/
+    /*dump_unpack(in1_block_num_tiles);*/
+    /*dump_unpack(in1_block_w);*/
+    /*dump_unpack(in0_num_blocks_h);*/
+    /*dump_unpack(in0_num_blocks_w);*/
+    /*dump_unpack(in1_num_blocks_w);*/
     // CB indices
     constexpr uint32_t in0_cb_id                                = tt::CBIndex::c_0;
     constexpr uint32_t in1_cb_id                                = tt::CBIndex::c_1;
@@ -222,6 +253,8 @@ void MAIN {
                 pack_reconfig_data_format(curr_matmul_out_cb);
                 #endif
                 uint32_t in0_index_subblock_offset = 0;
+                dump_unpack(in0_num_subblocks);
+                dump_unpack(in1_num_subblocks);
                 for (uint32_t in0_subblock_i = 0; in0_subblock_i < in0_num_subblocks; ++in0_subblock_i) {
                     uint32_t in1_index_subblock_offset = 0;
                     for (uint32_t in1_subblock_i = 0; in1_subblock_i < in1_num_subblocks; ++in1_subblock_i) {
@@ -291,6 +324,16 @@ void MAIN {
 
                         tile_regs_release();
                         cb_push_back(curr_matmul_out_cb, out_subblock_num_tiles);
+                        /*if(in1_block_w_i == 0 && in0_block_h_i == 0 && in0_block_w_i == 7) {*/
+                        /*    dump_math(curr_matmul_out_cb);*/
+                        /*    dump_math(out_subblock_num_tiles);*/
+                        /*    dump_math(matmul_partials_cb);*/
+                        /*    dump_math(out_cb_id);*/
+                        /*    print_full_tile(curr_matmul_out_cb);*/
+                        /*    print_full_tile(curr_matmul_out_cb, 1);*/
+                        /*    print_full_tile(curr_matmul_out_cb, 2);*/
+                        /*    print_full_tile(curr_matmul_out_cb, 3);*/
+                        /*}*/
 
                         in1_index_subblock_offset += out_subblock_w;
                     } // for in1_num_subblocks
@@ -393,6 +436,7 @@ void MAIN {
                     }
                     tile_regs_release();
                     cb_push_back(untilize_mode_out_cb_id, out_subblock_num_tiles);
+                    print_full_tile(untilize_mode_out_cb_id);
 
                     in1_index_subblock_offset += out_subblock_w;
                 } // for in1_num_subblocks

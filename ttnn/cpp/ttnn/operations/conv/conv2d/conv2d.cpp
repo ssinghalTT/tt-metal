@@ -83,7 +83,8 @@ ParallelConfig determine_parallel_config(
     uint32_t output_channels,
     const CoreCoord& compute_grid_size,
     ShardOrientation block_shard_orientation,
-    bool is_out_tiled) {
+    bool is_out_tiled,
+    bool is_non_tile_mul_width) {
 
     uint32_t effective_tile_height = is_out_tiled ? tt::constants::TILE_HEIGHT : 1;
     uint32_t effective_tile_width = is_out_tiled ? tt::constants::TILE_WIDTH : 1;
@@ -104,7 +105,11 @@ ParallelConfig determine_parallel_config(
         uint32_t start_divisor =
                 block_shard_orientation == ShardOrientation::COL_MAJOR ? compute_grid_size.x : compute_grid_size.y;
         num_cores_nhw = find_closest_largest_divisor_with_num_padding(out_nhw_ntiles, start_divisor);
-        uint32_t num_cores_c = find_closest_common_largest_divisor(out_c_ntiles, std::ceil((float)input_channels / effective_tile_width), block_shard_orientation == ShardOrientation::COL_MAJOR ? compute_grid_size.y : compute_grid_size.x);
+        auto channels_per_core = std::ceil((float)input_channels / effective_tile_width);
+        if(is_non_tile_mul_width)
+            channels_per_core = input_channels / effective_tile_width;
+
+        uint32_t num_cores_c = find_closest_common_largest_divisor(out_c_ntiles, channels_per_core, block_shard_orientation == ShardOrientation::COL_MAJOR ? compute_grid_size.y : compute_grid_size.x);
         uint32_t cores_x = block_shard_orientation == ShardOrientation::COL_MAJOR ? num_cores_nhw : num_cores_c;
         uint32_t cores_y = block_shard_orientation == ShardOrientation::COL_MAJOR ? num_cores_c : num_cores_nhw;
         CoreRange core_range = CoreRange(CoreCoord({0, 0}), CoreCoord({cores_x - 1, cores_y - 1}));
@@ -443,12 +448,14 @@ std::tuple<ttnn::Shape, ttnn::MemoryConfig, bool, bool> get_conv_padded_input_sh
     bool use_non_tile_height = (shard_layout == TensorMemoryLayout::HEIGHT_SHARDED) && out_channels <= 256 && conv_config.act_block_h_override == 0 &&
         (conv_config.dtype == DataType::BFLOAT16 || conv_config.dtype == DataType::FLOAT32) && conv_config.output_layout == Layout::ROW_MAJOR && conv_config.input_channels_alignment != 16; //shalow conv varient
 
+    /*bool is_non_tile_mul_width = (shard_layout == TensorMemoryLayout::BLOCK_SHARDED) && out_channels <= 256 && conv_config.act_block_h_override == 0 &&*/
+    /*    (conv_config.dtype == DataType::BFLOAT16 || conv_config.dtype == DataType::FLOAT32) && conv_config.output_layout == Layout::ROW_MAJOR && conv_config.input_channels_alignment != 16; //shalow conv varient*/
     ParallelConfig parallel_config = input_tensor_parallel_config;
     if (conv_config.reshard_if_not_optimal || needs_shard_or_reshard) {
         auto block_shard_orientation =
             conv_config.transpose_shards ? ShardOrientation::COL_MAJOR : ShardOrientation::ROW_MAJOR;
         ParallelConfig optimal_parallel_config = determine_parallel_config(
-            shard_layout, batch_size, in_channels, height, width, out_channels, device->compute_with_storage_grid_size(), block_shard_orientation, !use_non_tile_height);
+            shard_layout, batch_size, in_channels, height, width, out_channels, device->compute_with_storage_grid_size(), block_shard_orientation, !use_non_tile_height, false);
 
         if (conv_config.override_sharding_config) {
             TT_FATAL(conv_config.core_grid.has_value(), "Error");
@@ -749,10 +756,9 @@ ttnn::operations::matmul::MatmulProgramConfig determine_matmul_op_config_from_co
         }
         return matmul_config;
     } else {
-        TT_ASSERT(conv_blocking_config.act_block_w_ntiles % grid_size_along_c == 0);
         ttnn::operations::matmul::MatmulMultiCoreReuseMultiCastProgramConfig matmul_config = {
             .compute_with_storage_grid_size = conv_parallelization_config.grid_size,
-            .in0_block_w = conv_blocking_config.act_block_w_ntiles / grid_size_along_c,
+            .in0_block_w = conv_blocking_config.act_block_w_ntiles,
             .out_subblock_h = conv_blocking_config.out_subblock_h_ntiles,
             .out_subblock_w = conv_blocking_config.out_subblock_w_ntiles,
             .out_block_h = div_up(conv_parallelization_config.per_core_out_matrix_height, tt::constants::TILE_HEIGHT),

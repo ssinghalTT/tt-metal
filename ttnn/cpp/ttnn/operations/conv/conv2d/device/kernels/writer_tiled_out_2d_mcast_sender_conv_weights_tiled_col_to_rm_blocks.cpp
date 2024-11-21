@@ -10,7 +10,7 @@
 #if ENABLE_DEBUG
 #include "debug/dprint.h"
 
-#define DUMP(a) \
+#define dump(a) \
     do { DPRINT << "Sender: "<< #a " = " << a << ENDL(); } while(false)
 
 inline void print_pages(uint32_t l1_addr, uint32_t pagelen, uint32_t npages, uint32_t start = 0) {
@@ -64,10 +64,10 @@ void kernel_main() {
     constexpr uint32_t out_addr = get_compile_time_arg_val(29);
 
     #ifdef UNPAD_UNTILIZE_OUT
-    constexpr uint32_t out_block_width_ntiles = get_compile_time_arg_val(32);
-    constexpr uint32_t out_block_width_padded_bytes = get_compile_time_arg_val(33);
-    constexpr uint32_t out_block_width_bytes = get_compile_time_arg_val(34);
-    constexpr uint32_t untilized_padded_out_cb = get_compile_time_arg_val(35);
+    constexpr uint32_t out_block_width_ntiles = get_compile_time_arg_val(33);
+    constexpr uint32_t out_block_width_padded_bytes = get_compile_time_arg_val(34);
+    constexpr uint32_t out_block_width_bytes = get_compile_time_arg_val(35);
+    constexpr uint32_t untilized_padded_out_cb = get_compile_time_arg_val(36);
     #endif
     uint32_t i = 0;
     i+=1;
@@ -95,6 +95,7 @@ void kernel_main() {
     uint32_t weights_mcast_sender_semaphore_addr    = get_semaphore(get_arg_val<uint32_t>(i)); i+=1;
     uint32_t weights_mcast_receiver_semaphore_addr  = get_semaphore(get_arg_val<uint32_t>(i)); i+=1;
     uint32_t out_aligned_page_size                  = get_arg_val<uint32_t>(i); i+=1;
+    dump(out_aligned_page_size);
 
     #ifndef SKIP_MCAST
         // Set ur local VALID value, to be mcasted to destinations flag address after the data has been mcasted
@@ -188,6 +189,8 @@ void kernel_main() {
                 }
 
                 noc_async_read_barrier();
+                dump(weight_tile_nbytes);
+                /*print_pages(get_write_ptr(cb_id_weight), 32*32, 12);*/
 
                 #ifndef SKIP_MCAST
                     // wait until all weights mcast destinations have atomically incremented the weights semaphore_addr (i.e. its value should be weights_mcast_num_dests), then reset
@@ -345,7 +348,7 @@ void kernel_main() {
                 for (uint32_t r = 0; r < 32; r++) {
                     noc_async_read(get_noc_addr(src_cb_addr), dst_cb_addr, out_block_width_bytes);
                     noc_async_read_barrier();
-                    /*print_pages(get_noc_addr(src_cb_addr), out_block_width_bytes, 1);*/
+                    /*print_pages(get_noc_addr(src_cb_addr), out_block_width_bytes / 2, 1);*/
                     src_cb_addr += out_block_width_padded_bytes;
                     /*dst_cb_addr += out_block_width_bytes;*/
 

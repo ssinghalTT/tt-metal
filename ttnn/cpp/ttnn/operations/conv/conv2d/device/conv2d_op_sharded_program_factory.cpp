@@ -30,9 +30,9 @@ const uint32_t act_cb_second_reader = CBIndex::c_7;
 const uint32_t matmul_partials_cb = CBIndex::c_24;
 const uint32_t tilize_mode_tilized_act_cb = CBIndex::c_25;
 const uint32_t untilize_mode_reblock_cb = CBIndex::c_26;
-const uint32_t untilized_padded_out_cb = CBIndex::c_27;
 const uint32_t out0_cb = CBIndex::c_16;
 const uint32_t temp_sum_cb = CBIndex::c_27;
+const uint32_t untilized_padded_out_cb = CBIndex::c_28;
 }
 }
 
@@ -182,17 +182,18 @@ std::tuple<CBHandle, CBHandle> create_CBs_for_sharded_input_v2(
         bool need_unpad_after_untilize = output_shard_shape[1] * output_shard_shape[0] < num_writer_output_tiles * TILE_HW;
         // If only width is non-tile multiple
         if (need_unpad_after_untilize && !use_non_tile_height && weight_width_sliced) {
+            uint32_t num_bytes_for_df = datum_size(out_df);
             CircularBufferConfig compute_cb_output_config =
             CircularBufferConfig(num_writer_output_tiles * out_tile_size, {{untilized_padded_out_cb, out_df}})
                 .set_page_size(untilized_padded_out_cb, out_tile_size);
             auto compute_cb_output = tt_metal::CreateCircularBuffer(program, core, compute_cb_output_config);
-            uint32_t num_bytes_for_df = datum_size(out_df);
+            log_debug(LogOp, "untilized padded out CB(shard widht non-tile multiple): {}, npages: {}, pagesize: {}", untilized_padded_out_cb, num_writer_output_tiles, out_tile_size * num_bytes_for_df);
             CircularBufferConfig cb_output_config =
             CircularBufferConfig(num_bytes_for_df * output_shard_shape[0] * output_shard_shape[1], {{out0_cb, out_df}})
                 .set_page_size(out0_cb, output_shard_shape[1] * num_bytes_for_df);
             cb_output_config = cb_output_config.set_globally_allocated_address(*output.buffer());
             cb_output = tt_metal::CreateCircularBuffer(program, core, cb_output_config);
-            log_debug(LogOp, "output CB(shard widht non-tile multiple): {}, npages: {}, pagesize: {}", out0_cb, output_shard_shape[0] * output_shard_shape[1], output_shard_shape[1] * num_bytes_for_df);
+            log_debug(LogOp, "output CB(shard widht non-tile multiple): {}, npages: {}, pagesize: {}", out0_cb, output_shard_shape[0], output_shard_shape[1] * num_bytes_for_df);
         } else {
             auto shard_shape = output.shard_spec().value().shape;
             uint32_t aligned_output_stick_nbytes = use_non_tile_height ? shard_shape[1] * output.element_size() : out_tile_size;
@@ -1545,6 +1546,7 @@ operation::ProgramWithCallbacks multi_core_optimized_conv_sharded_v2_impl(
                     writer_rt_args.push_back(num_cores_x - 1);  // weights_mcast_num_cores
                     writer_rt_args.push_back(weights_mcast_sender_semaphore_id);
                     writer_rt_args.push_back(weights_mcast_receiver_semaphore_id);
+                    writer_rt_args.push_back(output.buffer()->aligned_page_size());
 
                     SetRuntimeArgs(program, writer_mcast_sender_id, core, writer_rt_args);
                 } else {

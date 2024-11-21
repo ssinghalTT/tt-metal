@@ -10,7 +10,7 @@
 #if ENABLE_DEBUG
 #include "debug/dprint.h"
 
-#define DUMP(a) \
+#define dump(a) \
     do { DPRINT << "Activations: "<< #a " = " << a << ENDL(); } while(false)
 
 inline void print_pages(uint32_t l1_addr, uint32_t pagelen, uint32_t npages, uint32_t start = 0) {
@@ -77,7 +77,7 @@ void kernel_main() {
     constexpr uint32_t window_inner                     = get_compile_time_arg_val(9);
     constexpr uint32_t act_block_h_datums               = get_compile_time_arg_val(10);
     constexpr uint32_t padded_conv_act_size_w           = get_compile_time_arg_val(13);
-    constexpr uint32_t act_block_w_extra_align_bytes = get_compile_time_arg_val(14);
+    constexpr uint32_t act_block_w_extra_align_bytes    = get_compile_time_arg_val(14);
     constexpr uint32_t act_num_blocks_h                 = get_compile_time_arg_val(16);
     constexpr uint32_t act_block_num_tiles              = get_compile_time_arg_val(17);
     constexpr uint32_t act_w_num_outer                  = get_compile_time_arg_val(18);
@@ -174,7 +174,7 @@ void kernel_main() {
         // noc_async_read_inc_num_issued(num_issued_reads_per_block); // "false" on read
         noc_async_read_barrier();
         /*DPRINT << "Read activations " << ENDL();*/
-        /*print_pages(get_write_ptr(cb_id_act_row_major_bfloat16), 32*9, act_mcast_sender_size_bytes/2/32/9);*/
+        /*print_pages(get_write_ptr(cb_id_act_row_major_bfloat16), 12*32, act_mcast_sender_size_bytes/2/12/32);*/
         /*print_pages(get_read_ptr(cb_id_sharded_act), 16, 64);*/
         cb_push_back(cb_id_act_row_major_bfloat16, act_block_num_tiles);
 
@@ -230,6 +230,7 @@ void kernel_main() {
                 noc_semaphore_wait(act_mcast_receiver_semaphore_addr_ptr, VALID);
             }
             cb_push_back(cb_id_act, act_block_num_tiles);
+            /*print_pages(get_read_ptr(cb_id_act), 40, 9*3);*/
         } // act_w_num_outer
         cb_pop_front(tilized_in0_cb_id, act_block_num_tiles);
     }
