@@ -48,14 +48,14 @@ jobs:
     uses: ./.github/workflows/umd-unit-tests.yaml
     with:
       arch: blackhole
-      runner-label: BH
+      runner-label: P150
   sd-unit-tests:
     needs: build-artifact
     uses: ./.github/workflows/build-and-unit-tests.yaml
     secrets: inherit
     with:
       arch: blackhole
-      runner-label: BH
+      runner-label: P150
       timeout: 30
   fd-unit-tests:
     needs: build-wheels
@@ -63,7 +63,7 @@ jobs:
     secrets: inherit
     with:
       arch: blackhole
-      runner-label: BH
+      runner-label: P150
   # FD C++ Unit Tests
   cpp-unit-tests:
     needs: build-artifact
@@ -71,7 +71,7 @@ jobs:
     uses: ./.github/workflows/cpp-post-commit.yaml
     with:
       arch: blackhole
-      runner-label: BH
+      runner-label: P150
       timeout: 60
 
 #   profiler-regression:
