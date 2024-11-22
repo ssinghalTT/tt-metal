@@ -90,6 +90,12 @@ enum noc_mode : uint8_t {
     DM_INVALID_NOC = 2,
 };
 
+enum RISC_ID : uint8_t {
+    ERISC_ID = 0,
+    BRISC_ID = 0,
+    NCRISC_ID = 1,
+};
+
 // Address offsets to kernel runtime configuration components
 // struct to densely packs values used by each processor
 struct rta_offset_t {

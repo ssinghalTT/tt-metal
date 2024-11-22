@@ -49,9 +49,9 @@ void __attribute__((noinline)) Application(void) {
     noc_init(MEM_NOC_ATOMIC_RET_VAL_ADDR);
 
     for (uint32_t n = 0; n < NUM_NOCS; n++) {
-        noc_local_state_init(n);
+        noc_local_state_init<ERISC_ID>(n);
     }
-    ncrisc_noc_full_sync();
+    ncrisc_noc_full_sync<ERISC_ID>();
     WAYPOINT("REW");
     uint32_t count = 0;
     while (routing_info->routing_enabled != 1) {
