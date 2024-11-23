@@ -456,7 +456,7 @@ std::tuple<ttnn::Shape, ttnn::MemoryConfig, bool, bool> get_conv_padded_input_sh
         auto block_shard_orientation =
             conv_config.transpose_shards ? ShardOrientation::COL_MAJOR : ShardOrientation::ROW_MAJOR;
         auto num_cores_c = block_shard_orientation == ShardOrientation::COL_MAJOR ? device->compute_with_storage_grid_size().y : device->compute_with_storage_grid_size().x;
-        bool is_non_tile_mul_width = (shard_layout == TensorMemoryLayout::BLOCK_SHARDED) && conv_config.act_block_h_override == 0 && (in_channels >= (16 *  num_cores_c)) &&
+        bool is_non_tile_mul_width = (shard_layout == TensorMemoryLayout::BLOCK_SHARDED) && conv_config.act_block_h_override == 0 &&
         (conv_config.dtype == DataType::BFLOAT16 || conv_config.dtype == DataType::FLOAT32) && conv_config.output_layout == Layout::ROW_MAJOR && ((2*in_channels) % (16 * num_cores_c)) == 0;
         ParallelConfig optimal_parallel_config = determine_parallel_config(
             shard_layout, batch_size, in_channels, height, width, out_channels, device->compute_with_storage_grid_size(), block_shard_orientation, !use_non_tile_height, is_non_tile_mul_width);
@@ -715,6 +715,7 @@ std::pair<ttnn::Tensor, std::optional<ttnn::Tensor>> prepare_conv_weights_biases
         weight_tensor_ = ttnn::reshape(weight_tensor_, target_shape);
     }
 
+    weight_tensor_ = ttnn::operations::core::to_device(weight_tensor_, device, std::nullopt);
     if (bias_tensor.has_value()) {
         if (parallel_config.shard_scheme != TensorMemoryLayout::BLOCK_SHARDED) {
             bias_tensor_ = bias_tensor.value();
