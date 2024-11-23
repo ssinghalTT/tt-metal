@@ -113,7 +113,7 @@ auto preprocess_inputs(const Tensor &input_tensor_a_arg, const Tensor &input_ten
     auto rank_a = shape_a.rank();
     auto rank_b = shape_b.rank();
 
-    // if(rank_a != rank_b){
+    if(rank_a != rank_b){
 
         // auto max_rank = std::max(rank_a, rank_b);
         // auto min_rank = std::min(rank_a, rank_b);
@@ -126,7 +126,7 @@ auto preprocess_inputs(const Tensor &input_tensor_a_arg, const Tensor &input_ten
         // }
         // reshaped_tensor = ttnn::reshape(reshaped_tensor, shape_vector);
 
-    // }
+    }
 
     // TODO: #7731 (Remove calls to repeat )
     auto repeat_smaller = [](const auto &first, auto &second) {
