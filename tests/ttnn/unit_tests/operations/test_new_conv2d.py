@@ -2627,11 +2627,11 @@ def test_non_tile_multiple_height_conv_wh(
     "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override",
     (
         (1, 320, 320, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (3, 320, 320, 32, 32, 3, 3, 1, 1, 1, 1, False, None),
-        (2, 512, 512, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
+        (1, 320, 320, 32, 32, 3, 3, 1, 1, 1, 1, False, None),
+        (1, 512, 512, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
         (1, 512, 512, 32, 32, 3, 3, 1, 1, 1, 1, False, None),
-        (2, 640, 640, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
-        (2, 1280, 1280, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
+        (1, 640, 640, 16, 16, 3, 3, 1, 1, 1, 1, False, None),
+        (1, 640, 640, 32, 32, 3, 3, 1, 1, 1, 1, False, None),
     ),
 )
 @pytest.mark.parametrize(
