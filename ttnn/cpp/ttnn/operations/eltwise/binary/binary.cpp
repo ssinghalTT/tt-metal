@@ -115,15 +115,15 @@ auto preprocess_inputs(const Tensor &input_tensor_a_arg, const Tensor &input_ten
 
     if(rank_a != rank_b){
 
-        // auto max_rank = std::max(rank_a, rank_b);
-        // auto min_rank = std::min(rank_a, rank_b);
+        auto max_rank = std::max(rank_a, rank_b);
+        auto min_rank = std::min(rank_a, rank_b);
 
-        // std::vector<int32_t> shape_vector(max_rank, 1);
-        // auto& reshaped_tensor = (rank_a > rank_b) ? input_tensor_b : input_tensor_a;
-        // auto s_b = reshaped_tensor.get_shape();
-        // for(int i=0; i < min_rank; ++i){
-        //     shape_vector[(max_rank - min_rank) + i] = s_b[i];
-        // }
+        std::vector<int32_t> shape_vector(max_rank, 1);
+        auto& reshaped_tensor = (rank_a > rank_b) ? input_tensor_b : input_tensor_a;
+        auto s_b = reshaped_tensor.get_shape();
+        for(int i=0; i < min_rank; ++i){
+            shape_vector[(max_rank - min_rank) + i] = s_b[i];
+        }
         // reshaped_tensor = ttnn::reshape(reshaped_tensor, shape_vector);
 
     }
