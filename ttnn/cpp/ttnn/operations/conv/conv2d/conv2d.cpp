@@ -700,20 +700,23 @@ std::pair<ttnn::Tensor, std::optional<ttnn::Tensor>> prepare_conv_weights_biases
             weight_tensor_, weight_block_h_ntiles, weight_block_w_ntiles, weights_bias_dtype);
     }
 
-    if(parallel_config.shard_scheme != TensorMemoryLayout::BLOCK_SHARDED) {
-        uint32_t weight_matrix_height = in_channels * window_h * window_w;
-        int32_t weight_matrix_height_padding = weight_tensor_.shape()[2] - weight_matrix_height;
-        TT_FATAL(weight_matrix_height_padding >= 0," Matrix Height Padding can't be negative");
-
-        auto target_shape = ttnn::Shape(std::array<uint32_t,4>{1, 1, weight_matrix_height, out_channels},
-                std::array<std::array<uint32_t, 2>, 4>{
-                std::array<uint32_t, 2>{0, 0},
-                std::array<uint32_t, 2>{0, 0},
-                std::array<uint32_t, 2>{0, weight_matrix_height_padding},
-                std::array<uint32_t, 2>{0, out_channel_padding}
-                });
-        weight_tensor_ = ttnn::reshape(weight_tensor_, target_shape);
+    uint32_t weight_matrix_height = in_channels * window_h * window_w;
+    int32_t weight_matrix_height_padding = weight_tensor_.shape()[2] - weight_matrix_height;
+    TT_FATAL(weight_matrix_height_padding >= 0," Matrix Height Padding can't be negative");
+    if(parallel_config.shard_scheme == TensorMemoryLayout::BLOCK_SHARDED) {
+        weight_matrix_height = weight_tensor_.shape()[2];
+        weight_matrix_height_padding = 0;
+        out_channels = out_channels % 16 ? out_channels : weight_tensor_.shape()[3];
     }
+
+    auto target_shape = ttnn::Shape(std::array<uint32_t,4>{1, 1, weight_matrix_height, out_channels},
+            std::array<std::array<uint32_t, 2>, 4>{
+            std::array<uint32_t, 2>{0, 0},
+            std::array<uint32_t, 2>{0, 0},
+            std::array<uint32_t, 2>{0, weight_matrix_height_padding},
+            std::array<uint32_t, 2>{0, out_channel_padding}
+            });
+    weight_tensor_ = ttnn::reshape(weight_tensor_, target_shape);
 
     weight_tensor_ = ttnn::operations::core::to_device(weight_tensor_, device, std::nullopt);
     if (bias_tensor.has_value()) {
