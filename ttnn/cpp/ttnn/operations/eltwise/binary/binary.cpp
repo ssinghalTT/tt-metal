@@ -124,7 +124,7 @@ auto preprocess_inputs(const Tensor &input_tensor_a_arg, const Tensor &input_ten
         for(int i=0; i < min_rank; ++i){
             shape_vector[(max_rank - min_rank) + i] = s_b[i];
         }
-        // reshaped_tensor = ttnn::reshape(reshaped_tensor, shape_vector);
+        reshaped_tensor = ttnn::reshape(reshaped_tensor, shape_vector);
 
     }
 
