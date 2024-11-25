@@ -706,7 +706,17 @@ std::pair<ttnn::Tensor, std::optional<ttnn::Tensor>> prepare_conv_weights_biases
     if(parallel_config.shard_scheme == TensorMemoryLayout::BLOCK_SHARDED) {
         weight_matrix_height = weight_tensor_.shape()[2];
         weight_matrix_height_padding = 0;
-        out_channels = out_channels % 16 ? out_channels : weight_tensor_.shape()[3];
+        /* For non-tile multiple of input channel case, Padding for each weight matrix shard is needed to accomodate
+         * right amount of channels in each shard. For example, If we have 320 input and output channels, each
+         * activation matrix shard would have 40 channels for 8 cores. Similarly, each weight matrix shard also needs to
+         * have 40 output channels each to match number of cores for each shard. Current implementation of
+         * convert_conv_weight_tensor_to_tiled_layout_block_sharded takes care of that and increases number of columns
+         * in weight matrix. so for such cases, out_channels need to be
+         * initialized with weight_tensor_.shape()[3].
+         * However, there are cases like output channels are 255 with input as tile multiple, For such cases, padding is
+         * added at last and output_channels for each shard would be of multiple of 32.
+         * */
+        out_channels = ((out_channels % 16 != 0) && (in_channels / num_cores_c) % 32 == 0) ? out_channels : weight_tensor_.shape()[3];
     }
 
     auto target_shape = ttnn::Shape(std::array<uint32_t,4>{1, 1, weight_matrix_height, out_channels},
