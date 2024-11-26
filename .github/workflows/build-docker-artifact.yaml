@@ -30,7 +30,7 @@ jobs:
       - build-docker
       - in-service
     steps:
-      - uses: tenstorrent/tt-metal/.github/actions/checkout-with-submodule-lfs@main
+      - uses: tenstorrent/tt-metal/.github/actions/checkout-with-submodule-lfs@afuller/debug
         with:
           fetch-depth: 0
       - name: Login to GitHub Container Registry
