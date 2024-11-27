@@ -455,7 +455,8 @@ uint32_t Buffer::alignment() const {
 }
 
 DeviceAddr Buffer::aligned_page_size() const {
-    return align(page_size(), this->alignment());
+    //return align(page_size(), this->alignment());
+    return align(page_size(), hal.get_alignment(HalMemType::L1));
 }
 DeviceAddr Buffer::aligned_size() const {
     return this->num_dev_pages() * this->aligned_page_size();
