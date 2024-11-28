@@ -283,7 +283,7 @@ class Buffer final {
     const bool bottom_up_;
     const std::optional<SubDeviceId> sub_device_id_;
     const bool owns_data_;
-    const bool is_l1_aligned_;
+    const bool l1_aligned_;
 
     std::optional<SubDeviceManagerId> sub_device_manager_id_;
     Allocator * allocator_;
