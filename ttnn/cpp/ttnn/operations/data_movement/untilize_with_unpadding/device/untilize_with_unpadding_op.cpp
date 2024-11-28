@@ -34,17 +34,17 @@ void UntilizeWithUnpadding::validate(const std::vector<Tensor>& input_tensors) c
             // What else?
         } else if (input_tensor_a.memory_config().memory_layout == TensorMemoryLayout::WIDTH_SHARDED) {
             auto output_shape = this->compute_output_shapes(input_tensors).at(0);
-            // Minor host code changes required to remove this restriction
-            TT_FATAL(input_tensor_a.shard_spec().value().grid.ranges().size() == 1, "Error");
             for (uint32_t i = 0; i < output_shape.rank() - 2; i++) {
                 TT_FATAL(input_tensor_a.get_legacy_shape()[i] == output_shape[i], "Error");
             }
             if (output_mem_config.is_sharded()) {
-                TT_FATAL(this->output_mem_config.memory_layout == input_tensor_a.memory_config().memory_layout, "Error");
+                TT_FATAL(
+                    this->output_mem_config.memory_layout == input_tensor_a.memory_config().memory_layout, "Error");
                 TT_FATAL(
                     input_tensor_a.get_legacy_shape()[-1] == output_shape[-1] ||
-                    (tt::div_up(output_shape[-1], input_tensor_a.shard_spec().value().shape[1]) ==
-                     input_tensor_a.shard_spec().value().grid.num_cores()), "Error");
+                        (tt::div_up(output_shape[-1], input_tensor_a.shard_spec().value().shape[1]) ==
+                         input_tensor_a.shard_spec().value().grid.num_cores()),
+                    "Error");
             } else {
                 TT_FATAL(this->output_mem_config.memory_layout == TensorMemoryLayout::INTERLEAVED, "Error");
                 TT_FATAL(
@@ -54,7 +54,8 @@ void UntilizeWithUnpadding::validate(const std::vector<Tensor>& input_tensors) c
                     "Can only write unbatched output interleaved");
                 TT_FATAL(
                     input_tensor_a.get_legacy_shape()[-1] - output_shape[-1] <
-                    input_tensor_a.shard_spec().value().shape[1], "Error");
+                        input_tensor_a.shard_spec().value().shape[1],
+                    "Error");
             }
         } else {
             TT_THROW("Unsupported sharding scheme");

@@ -183,7 +183,10 @@ Tensor to_weight_tile_layout(
 // Converts convolution weights to tilized 2d matrix layout.
 // Returns a new tensor with layout=Tile
 Tensor convert_conv_weight_tensor_to_tiled_layout(
-    Tensor conv_weight_tensor, uint32_t in1_block_h, uint32_t in1_block_w, std::optional<DataType> output_dtype) {
+    const Tensor& conv_weight_tensor,
+    uint32_t in1_block_h,
+    uint32_t in1_block_w,
+    std::optional<DataType> output_dtype) {
     TT_ASSERT(
         conv_weight_tensor.get_layout() == Layout::ROW_MAJOR &&
         "Convolution weights should be in row major layout for conversion to tilized layout.");
@@ -218,7 +221,9 @@ Tensor to_weight_tile_layout_block_sharded(
         auto weight_matrix_cols = w_shape[0];
         TT_ASSERT(weight_matrix_cols % num_channel_shards == 0);
         auto conv_output_shard_width = weight_matrix_cols / num_channel_shards;
-        auto conv_output_shard_width_padded = (uint32_t)std::ceil((double)conv_output_shard_width / (double)constants::TILE_WIDTH) * constants::TILE_WIDTH;
+        auto conv_output_shard_width_padded =
+            (uint32_t)std::ceil((double)conv_output_shard_width / (double)constants::TILE_WIDTH) *
+            constants::TILE_WIDTH;
         if (conv_output_shard_width < conv_output_shard_width_padded) {
             // width padding for conv output shard padding
             weight_matrix_cols = conv_output_shard_width_padded * num_channel_shards;
@@ -228,7 +233,8 @@ Tensor to_weight_tile_layout_block_sharded(
         TT_ASSERT(w_shape[1] % num_channel_shards == 0);
         auto conv_input_shard_width = w_shape[1] / num_channel_shards;
         auto weight_block_height = conv_input_shard_width * w_shape[2] * w_shape[3];
-        auto weight_block_height_padded = (uint32_t)std::ceil((double)weight_block_height / (double)constants::TILE_HEIGHT) * constants::TILE_HEIGHT;
+        auto weight_block_height_padded =
+            (uint32_t)std::ceil((double)weight_block_height / (double)constants::TILE_HEIGHT) * constants::TILE_HEIGHT;
         if (weight_block_height < weight_block_height_padded) {
             // height padding for non tile multiple block height
             weight_matrix_rows = weight_block_height_padded * num_channel_shards;
@@ -241,10 +247,14 @@ Tensor to_weight_tile_layout_block_sharded(
                     for (auto c_s = 0; c_s < conv_input_shard_width; c_s++) {
                         for (auto oc = 0; oc < num_channel_shards; oc++) {
                             for (auto k_s = 0; k_s < conv_output_shard_width; k_s++) {
-                                auto matrix_idx = (oc * conv_output_shard_width_padded + k_s) + c_s * weight_matrix_cols + s * conv_input_shard_width * weight_matrix_cols +
-                                                  r * w_shape[3] * conv_input_shard_width * weight_matrix_cols + ic * weight_block_height_padded * weight_matrix_cols;
-                                auto idx =
-                                    (oc * conv_output_shard_width + k_s) * w_shape[1] * w_shape[2] * w_shape[3] + (ic * conv_input_shard_width + c_s) * w_shape[2] * w_shape[3] + r * w_shape[3] + s;
+                                auto matrix_idx = (oc * conv_output_shard_width_padded + k_s) +
+                                                  c_s * weight_matrix_cols +
+                                                  s * conv_input_shard_width * weight_matrix_cols +
+                                                  r * w_shape[3] * conv_input_shard_width * weight_matrix_cols +
+                                                  ic * weight_block_height_padded * weight_matrix_cols;
+                                auto idx = (oc * conv_output_shard_width + k_s) * w_shape[1] * w_shape[2] * w_shape[3] +
+                                           (ic * conv_input_shard_width + c_s) * w_shape[2] * w_shape[3] +
+                                           r * w_shape[3] + s;
                                 output_buffer[matrix_idx] = input_buffer[idx];
                             }
                         }
@@ -303,7 +313,6 @@ Tensor to_weight_tile_layout_block_sharded(
                                                                          : convert_tensor(conv_weight_tensor);
 }
 
-
 // Converts convolution weights to tilized 2d matrix layout for block sharded conv.
 // Returns a new tensor with layout=Tile
 Tensor convert_conv_weight_tensor_to_tiled_layout_block_sharded(
@@ -311,14 +320,13 @@ Tensor convert_conv_weight_tensor_to_tiled_layout_block_sharded(
     TT_ASSERT(
         conv_weight_tensor.get_layout() == Layout::ROW_MAJOR &&
         "Convolution weights should be in row major layout for conversion to tilized layout.");
-    const static std::map<
-        DataType,
-        std::function<Tensor(const Tensor&, uint32_t num_channel_shards, DataType output_dtype)>>
-        to_w_tile_layout_map = {
-            {DataType::BFLOAT16, &to_weight_tile_layout_block_sharded<bfloat16>},
-            {DataType::FLOAT32, &to_weight_tile_layout_block_sharded<float>},
-            {DataType::UINT32, &to_weight_tile_layout_block_sharded<uint32_t>},
-        };
+    const static std::
+        map<DataType, std::function<Tensor(const Tensor&, uint32_t num_channel_shards, DataType output_dtype)>>
+            to_w_tile_layout_map = {
+                {DataType::BFLOAT16, &to_weight_tile_layout_block_sharded<bfloat16>},
+                {DataType::FLOAT32, &to_weight_tile_layout_block_sharded<float>},
+                {DataType::UINT32, &to_weight_tile_layout_block_sharded<uint32_t>},
+            };
     if (output_dtype.has_value()) {
         if (output_dtype == DataType::BFLOAT8_B || output_dtype == DataType::BFLOAT4_B) {
             TT_ASSERT(conv_weight_tensor.get_dtype() == DataType::FLOAT32);
@@ -339,7 +347,9 @@ Tensor to_bias_tile_layout_block_sharded(
         auto bias_matrix_cols = b_shape[3];
         /*TT_ASSERT(bias_matrix_cols % num_channel_shards == 0);*/
         auto conv_output_shard_width = bias_matrix_cols / num_channel_shards;
-        auto conv_output_shard_width_padded = (uint32_t)std::ceil((double)conv_output_shard_width / (double)constants::TILE_WIDTH) * constants::TILE_WIDTH;
+        auto conv_output_shard_width_padded =
+            (uint32_t)std::ceil((double)conv_output_shard_width / (double)constants::TILE_WIDTH) *
+            constants::TILE_WIDTH;
         if (conv_output_shard_width < conv_output_shard_width_padded) {
             // width padding for conv output shard padding
             bias_matrix_cols = conv_output_shard_width_padded * num_channel_shards;
@@ -413,14 +423,13 @@ Tensor convert_conv_bias_tensor_to_tiled_layout_block_sharded(
     TT_ASSERT(
         conv_bias_tensor.get_layout() == Layout::ROW_MAJOR &&
         "Convolution weights should be in row major layout for conversion to tilized layout.");
-    const static std::map<
-        DataType,
-        std::function<Tensor(const Tensor&, uint32_t num_channel_shards, DataType output_dtype)>>
-        to_b_tile_layout_map = {
-            {DataType::BFLOAT16, &to_bias_tile_layout_block_sharded<bfloat16>},
-            {DataType::FLOAT32, &to_bias_tile_layout_block_sharded<float>},
-            {DataType::UINT32, &to_bias_tile_layout_block_sharded<uint32_t>},
-        };
+    const static std::
+        map<DataType, std::function<Tensor(const Tensor&, uint32_t num_channel_shards, DataType output_dtype)>>
+            to_b_tile_layout_map = {
+                {DataType::BFLOAT16, &to_bias_tile_layout_block_sharded<bfloat16>},
+                {DataType::FLOAT32, &to_bias_tile_layout_block_sharded<float>},
+                {DataType::UINT32, &to_bias_tile_layout_block_sharded<uint32_t>},
+            };
     if (output_dtype.has_value()) {
         if (output_dtype == DataType::BFLOAT8_B || output_dtype == DataType::BFLOAT4_B) {
             TT_ASSERT(conv_bias_tensor.get_dtype() == DataType::FLOAT32);
@@ -432,11 +441,13 @@ Tensor convert_conv_bias_tensor_to_tiled_layout_block_sharded(
         conv_bias_tensor, num_channel_shards, output_dtype.value_or(conv_bias_tensor.get_dtype()));
 }
 
-
 // Converts convolution weights to tilized 2d matrix layout.
 // Returns a new tensor with layout=Tile
 Tensor convert_conv_weight_tensor_to_special_padding_tiled_layout(
-    Tensor conv_weight_tensor, uint32_t in1_block_h, uint32_t in1_block_w, std::optional<DataType> output_dtype) {
+    const Tensor& conv_weight_tensor,
+    uint32_t in1_block_h,
+    uint32_t in1_block_w,
+    std::optional<DataType> output_dtype) {
     TT_ASSERT(
         conv_weight_tensor.get_layout() == Layout::ROW_MAJOR &&
         "Convolution weights should be in row major layout for conversion to tilized layout.");
@@ -565,7 +576,7 @@ allocated output tensor with shape [out_channels, in_channels, H, W] The extra c
 divided into num_groups for each groupped filter
 */
 Tensor convert_conv_weight_tensor_to_grouped_layout(
-    Tensor conv_weight_tensor, uint32_t num_groups, DataType output_dtype) {
+    const Tensor& conv_weight_tensor, uint32_t num_groups, DataType output_dtype) {
     TT_ASSERT(
         conv_weight_tensor.get_layout() == Layout::ROW_MAJOR &&
         "Convolution weights should be in row major layout for adding the required padding");
@@ -733,7 +744,7 @@ Tensor transform(const Tensor& tensor, std::function<Tensor(const Tensor&)> tran
         output_tensors, tensor.storage_type(), ttnn::distributed::get_distributed_tensor_config_from_tensor(tensor));
 }
 
-void apply(const Tensor& tensor, std::function<void(const Tensor&)> callable) {
+void apply(const Tensor& tensor, const std::function<void(const Tensor&)>& callable) {
     auto input_tensors = ttnn::distributed::get_tensors_from_multi_device_storage(tensor);
     for (const auto& device_tensor : input_tensors) {
         callable(device_tensor);
@@ -846,8 +857,9 @@ Tensor copy_borrowed_tensor_in_async_mode(Device* worker, const Tensor& tensor) 
     // Tensor has workers (on device) or runtime mode is synchronous or tensor has multiple buffers.
     // No need to check for borrowed storage.
     if (worker->get_worker_mode() == WorkExecutorMode::SYNCHRONOUS or
-        tensor.tensor_attributes->num_shards_to_be_populated > 1)
+        tensor.tensor_attributes->num_shards_to_be_populated > 1) {
         return tensor;
+    }
 
     if (tensor.storage_type() == StorageType::BORROWED) {
         ZoneScopedN("CopyBorrowedStorage");

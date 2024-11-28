@@ -15,38 +15,36 @@ namespace tt_metal {
 // Converts convolution weights to tilized 2d matrix layout.
 // Returns a new tensor with layout=Tile
 Tensor convert_conv_weight_tensor_to_tiled_layout(
-    Tensor conv_weight_tensor,
+    const Tensor& conv_weight_tensor,
     uint32_t in1_block_h,
     uint32_t in1_block_w,
     std::optional<DataType> output_dtype = std::nullopt);
 
-// Converts convolution weights to tilized 2d matrix layout for block sharded conv. Adds zero padding between weight blocks based on output shard width padding.
-// Returns a new tensor with layout=Tile
+// Converts convolution weights to tilized 2d matrix layout for block sharded conv. Adds zero padding between weight
+// blocks based on output shard width padding. Returns a new tensor with layout=Tile
 Tensor convert_conv_weight_tensor_to_tiled_layout_block_sharded(
-    Tensor conv_weight_tensor,
-    uint32_t num_channel_shards,
-    std::optional<DataType> output_dtype = std::nullopt);
+    Tensor conv_weight_tensor, uint32_t num_channel_shards, std::optional<DataType> output_dtype = std::nullopt);
 
-// Converts convolution bias to tilized layout for block sharded conv. Adds zero padding between bias blocks based on output shard width padding.
-// Returns a new tensor with layout=Tile
+// Converts convolution bias to tilized layout for block sharded conv. Adds zero padding between bias blocks based on
+// output shard width padding. Returns a new tensor with layout=Tile
 Tensor convert_conv_bias_tensor_to_tiled_layout_block_sharded(
-    Tensor conv_bias_tensor,
-    uint32_t num_channel_shards,
-    std::optional<DataType> output_dtype = std::nullopt);
+    Tensor conv_bias_tensor, uint32_t num_channel_shards, std::optional<DataType> output_dtype = std::nullopt);
 
 // Converts convolution weights to tilized 2d matrix layout with special block height padding
 // Returns a new tensor with layout=Tile
 Tensor convert_conv_weight_tensor_to_special_padding_tiled_layout(
-    Tensor conv_weight_tensor,
+    const Tensor& conv_weight_tensor,
     uint32_t in1_block_h,
     uint32_t in1_block_w,
     std::optional<DataType> output_dtype = std::nullopt);
 
 // Converts convolution weights to grouped layout with padded zeros
-Tensor convert_conv_weight_tensor_to_grouped_layout(Tensor conv_weight_tensor, uint32_t num_groups, DataType output_dtype);
+Tensor convert_conv_weight_tensor_to_grouped_layout(
+    const Tensor& conv_weight_tensor, uint32_t num_groups, DataType output_dtype);
 
 // Converts convolution weights to depthwise layout with broadcasted weights
-Tensor convert_conv_weight_tensor_to_depthwise_layout(Tensor conv_weight_tensor, uint32_t act_block_h_ntiles, DataType output_dtype);
+Tensor convert_conv_weight_tensor_to_depthwise_layout(
+    Tensor conv_weight_tensor, uint32_t act_block_h_ntiles, DataType output_dtype);
 
 const ttnn::SimpleShape infer_dims_for_reshape(const Tensor& tensor, tt::stl::Span<const int32_t> shape);
 
@@ -60,8 +58,9 @@ static std::size_t compute_volume(const tt::tt_metal::LegacyShape& shape) {
 }
 
 static ttnn::SmallVector<uint32_t> compute_strides(const ttnn::SimpleShape& shape) {
-    if (shape.rank() == 0)
+    if (shape.rank() == 0) {
         return {};
+    }
 
     auto num_elements = shape.volume();
     ttnn::SmallVector<uint32_t> strides;
@@ -125,7 +124,7 @@ bool is_device_tensor(const Tensor& tensor);
 Tensor transform(const Tensor& tensor, std::function<Tensor(const Tensor&)> transform_func);
 
 // Given a multi-device tensor, and a callable, applies the function to all per-device tensors.
-void apply(const Tensor& tensor, std::function<void(const Tensor&)> callable);
+void apply(const Tensor& tensor, const std::function<void(const Tensor&)>& callable);
 
 // Given a multi-device tensor, returns all the devices it is mapped to.
 std::vector<Device*> get_devices(const Tensor& multi_device_tensor);
@@ -187,7 +186,7 @@ inline bool is_tensor_on_device_or_multidevice(const ttnn::Tensor& tensor) {
     return is_tensor_on_device(tensor) or is_tensor_on_multi_device(tensor);
 }
 
-template<class T>
+template <class T>
 inline uint32_t get_batch_size(const T& shape) {
     uint32_t result = 1;
     for (auto i = 0; i < shape.rank() - 2; i++) {
