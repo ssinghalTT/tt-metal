@@ -50,7 +50,7 @@ void Pool2D::validate_on_program_cache_hit(const operation_attributes_t& op_attr
     return validate_pool2d(tensors.input_tensor_, op_attr.sliding_window_config_, op_attr.memory_config_);
 }
 
-Pool2D::spec_return_value_t Pool2D::compute_output_specs(
+Pool2D::shape_return_value_t Pool2D::compute_output_shapes(
     const operation_attributes_t& op_attr, const tensor_args_t& tensors) {
     auto& input = tensors.input_tensor_;
     auto& sliding_window_config = op_attr.sliding_window_config_;
@@ -66,12 +66,34 @@ Pool2D::spec_return_value_t Pool2D::compute_output_specs(
     uint32_t out_h = sliding_window_config.get_output_shape()[1];
     uint32_t out_w = sliding_window_config.get_output_shape()[2];
 
+    bool is_out_tiled = output_dtype == DataType::BFLOAT8_B;
+
+    // need to pad the last dim to TILE_WIDTH
     uint32_t out_c = input_shape[3];
+    uint32_t out_c_padded = tt::round_up(out_c, (out_c <= 16) ? 16 : tt::constants::TILE_WIDTH);
+    uint32_t out_pagesize = out_c_padded * datum_size(datatype_to_dataformat_converter(input.get_dtype()));
     uint32_t out_nhw = sliding_window_config.batch_size * out_h * out_w;
 
-    // {1, 1, N * H * W, C}
-    auto output_shape = ttnn::SimpleShape({1, 1, out_nhw, out_c});
+    uint32_t out_nhw_padded =
+        tt::round_up(out_nhw, (is_out_tiled ? tt::constants::TILE_HEIGHT : 1) * sliding_window_config.num_cores_nhw);
 
+    // {1, 1, N * H * W, C}
+    const ttnn::SmallVector<uint32_t> out_dims({1, 1, out_nhw_padded, out_c_padded});
+    const auto padding = Padding(
+        {{0, 0}, {0, 0}, {0, out_nhw_padded - out_nhw}, {0, out_c_padded - out_c}},
+        Padding::PadValue::NegativeInfinity);
+    auto out_shape = Shape(tt::tt_metal::LegacyShape(out_dims, padding));
+    return out_shape;
+}
+
+Pool2D::tensor_return_value_t Pool2D::create_output_tensors(
+    const operation_attributes_t& op_attr, const tensor_args_t& tensors) {
+    auto& input = tensors.input_tensor_;
+    auto& sliding_window_config = op_attr.sliding_window_config_;
+    auto& out_mem_config = op_attr.memory_config_;
+    auto& output_dtype = op_attr.output_dtype_;
+
+    Shape output_shape = compute_output_shapes(op_attr, tensors);
     auto mem_config = out_mem_config;
     if (mem_config.shard_spec.has_value()) {
         mem_config.shard_spec->shape[1] = input.shard_spec()->shape[1];
@@ -86,12 +108,8 @@ Pool2D::spec_return_value_t Pool2D::compute_output_specs(
         mem_config.shard_spec = ShardSpec{shard_grid, shard_shape, ShardOrientation::ROW_MAJOR, false};
     }
 
-    return TensorSpec(output_shape, TensorLayout(output_dtype, input.tensor_spec().page_config(), mem_config));
-}
-
-Pool2D::tensor_return_value_t Pool2D::create_output_tensors(
-    const operation_attributes_t& op_attr, const tensor_args_t& tensors) {
-    return create_device_tensor(compute_output_specs(op_attr, tensors), tensors.input_tensor_.device());
+    // return create_device_tensor(output_shape, input.get_dtype(), input.get_layout(), input.device(), mem_config);
+    return create_device_tensor(output_shape, output_dtype, input.get_layout(), input.device(), mem_config);
 }
 
 tt::stl::hash::hash_t Pool2D::compute_program_hash(
