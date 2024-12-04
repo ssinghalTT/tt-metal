@@ -6,7 +6,6 @@
 #include <optional>
 #include <unordered_set>
 
-#include "conv2d_utils.hpp"
 #include "ttnn/core.hpp"
 #include "ttnn/operations/core/core.hpp"
 #include "ttnn/operations/matmul/matmul.hpp"
