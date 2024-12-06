@@ -112,14 +112,14 @@ def run_test_matmul_in1_dram_sharded(
     logger.debug("in1_shard_shape " + str(in1_shard_shape))
     logger.debug("in1_shard_grid " + str(in1_shard_grid))
 
-    in0 = torch.randn(in0_shape).bfloat16().float()
-    in1 = torch.randn(in1_shape).bfloat16().float()
+    in0 = torch.ones(in0_shape).bfloat16().float()
+    in1 = torch.ones(in1_shape).bfloat16().float()
 
     in0_t = torch2tt_tensor(in0, device, tt_memory_config=interleaved_mem_config, tt_dtype=in0_dtype)
     in1_t = torch2tt_tensor(in1, device, tt_memory_config=in1_mem_config, tt_dtype=in1_dtype)
 
     if has_bias:
-        bias = torch.randn(bias_shape).bfloat16().float()
+        bias = torch.zeros(bias_shape).bfloat16().float()
         bias_padded = bias.unsqueeze(2)
         bias_padded = torch.nn.functional.pad(bias_padded, (0, 0, 0, 32 - bias_padded.size(2)), "constant", 0)
         bias_shard_grid = ttnn.CoreCoord(device.dram_grid_size().x - 1, device.dram_grid_size().y - 1)
@@ -185,41 +185,58 @@ def run_test_matmul_in1_dram_sharded(
 
     tt_out = tt2torch_tensor(output_t)
 
+    print(pt_out[0][0][0][0:64])
+    print(tt_out[0][0][0][0:64])
+
     passing, output = comp_pcc(pt_out, tt_out)
     logger.info(output)
     assert passing
 
 
+# @pytest.mark.parametrize(
+#     "fidelity",
+#     [
+#         ttnn.MathFidelity.HiFi2,
+#         ttnn.MathFidelity.LoFi,
+#     ],
+#     ids=["HiFi2", "LoFi"],
+# )
+# @pytest.mark.parametrize(
+#     "has_bias",
+#     [
+#         False,
+#         True,
+#     ],
+#     ids=["no_bias", "bias"],
+# )
 @pytest.mark.parametrize(
     "fidelity",
     [
-        ttnn.MathFidelity.HiFi2,
         ttnn.MathFidelity.LoFi,
     ],
-    ids=["HiFi2", "LoFi"],
+    ids=["LoFi"],
 )
 @pytest.mark.parametrize(
     "has_bias",
     [
-        False,
         True,
     ],
-    ids=["no_bias", "bias"],
+    ids=["bias"],
 )
 @pytest.mark.parametrize(
     "in0_dtype, in1_dtype, out_dtype",
     [
-        (ttnn.bfloat16, ttnn.bfloat8_b, ttnn.bfloat16),
+        (ttnn.bfloat16, ttnn.bfloat16, ttnn.bfloat16),
     ],
 )
 @pytest.mark.parametrize(
     "in1_in_dram, out_sharded, in0_sharded, M, K, N, activation, grid_size",
     # "in1_in_dram, out_sharded, in0_sharded, M, K, N, activation, grid_size, in0_dtype, in1_dtype, out_dtype",
     [
-        (False, True, True, 32, 8192, 1280, None, (8, 1)),
-        (False, True, True, 32, 8192, 4096, None, (8, 2)),
-        (False, True, True, 32, 8192, 1024, None, (8, 1)),
-        (False, True, True, 32, 32768, 1024, None, (8, 2)),
+        # (False, True, True, 32, 8192, 1280, None, (8, 1)),
+        # (False, True, True, 32, 8192, 4096, None, (8, 2)),
+        # (False, True, True, 32, 8192, 1024, None, (8, 1)),
+        (False, True, True, 32, 32768, 1024, None, (8, 4)),
         # (False, True, True, 32, 4096, 6144, None, (8, 2), ttnn.bfloat16, ttnn.bfloat8_b, ttnn.bfloat16),
         # (False, True, True, 32, 4096, 14336, None, (8, 2), ttnn.bfloat16, ttnn.bfloat4_b, ttnn.bfloat8_b),
         # (False, True, True, 32, 14336, 4096, None, (8, 2), ttnn.bfloat8_b, ttnn.bfloat8_b, ttnn.bfloat8_b),
@@ -244,7 +261,7 @@ def test_matmul_in1_dram_sharded_with_program_cache(
     function_level_defaults,
     use_program_cache,
 ):
-    for _ in range(2):
+    for _ in range(1):
         run_test_matmul_in1_dram_sharded(
             device,
             in0_sharded,

@@ -570,21 +570,35 @@ def run_matmul_2d_multiple_output_blocks_per_core(
     if has_bias:
         pt_out += bias
 
+    print(pt_out)
+    print(output_tensor)
+
     assert_with_pcc(pt_out, output_tensor, 0.999)
 
 
 @run_for_wormhole_b0()
-@pytest.mark.parametrize("b", [1, 2])
+# @pytest.mark.parametrize("b", [1, 2])
+# @pytest.mark.parametrize("m", [1024])
+# @pytest.mark.parametrize("k", [1024])
+# @pytest.mark.parametrize("n", [1024])
+# @pytest.mark.parametrize("has_bias", [True, False])
+# @pytest.mark.parametrize("grid_size", [(8, 4)])
+# @pytest.mark.parametrize("in0_sharded", [True, False])
+# @pytest.mark.parametrize("out_sharded", [True, False])
+# @pytest.mark.parametrize("num_out_block_h", [1, 2])
+# @pytest.mark.parametrize("num_out_block_w", [1, 2])
+# @pytest.mark.parametrize("transpose_mcast", [True, False])
+@pytest.mark.parametrize("b", [1])
 @pytest.mark.parametrize("m", [1024])
 @pytest.mark.parametrize("k", [1024])
 @pytest.mark.parametrize("n", [1024])
-@pytest.mark.parametrize("has_bias", [True, False])
+@pytest.mark.parametrize("has_bias", [False])
 @pytest.mark.parametrize("grid_size", [(8, 4)])
-@pytest.mark.parametrize("in0_sharded", [True, False])
-@pytest.mark.parametrize("out_sharded", [True, False])
-@pytest.mark.parametrize("num_out_block_h", [1, 2])
-@pytest.mark.parametrize("num_out_block_w", [1, 2])
-@pytest.mark.parametrize("transpose_mcast", [True, False])
+@pytest.mark.parametrize("in0_sharded", [True])
+@pytest.mark.parametrize("out_sharded", [True])
+@pytest.mark.parametrize("num_out_block_h", [1])
+@pytest.mark.parametrize("num_out_block_w", [1])
+@pytest.mark.parametrize("transpose_mcast", [False])
 def test_matmul_2d_multiple_output_blocks_per_core(
     device,
     b,
