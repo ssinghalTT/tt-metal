@@ -97,6 +97,9 @@ void kernel_main() {
 
                 // wait until all in0 mcast destinations have atomically incremented the in0 semaphore_addr
                 noc_semaphore_wait(in0_mcast_sender_semaphore_addr_ptr, in0_mcast_num_dests);
+                // see if the timing of reset its own semaphore is relavent
+                for (volatile int i = 0; i < 1000; ++i) {
+                }
                 noc_semaphore_set(in0_mcast_sender_semaphore_addr_ptr, 0);
 
                 // Now we have the block in the CB address, we can mcast to dests!
@@ -135,6 +138,9 @@ void kernel_main() {
 
                     // wait until all in0 mcast destinations have atomically incremented the in0 semaphore_addr
                     noc_semaphore_wait(in0_mcast_sender_semaphore_addr_ptr, in0_mcast_num_dests - 1);
+                    // see if the timing of reset its own semaphore is relavent
+                    for (volatile int i = 0; i < 1000; ++i) {
+                    }
                     noc_semaphore_set(in0_mcast_sender_semaphore_addr_ptr, 0);
 
                     uint64_t in0_multicast_data_addr = in0_multicast_data_noc | in0_start_address;

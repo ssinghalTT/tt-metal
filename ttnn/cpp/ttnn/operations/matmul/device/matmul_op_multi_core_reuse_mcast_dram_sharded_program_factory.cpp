@@ -831,6 +831,18 @@ operation::ProgramWithCallbacks create_program_dram_sharded(
         in0_CB_size / in0_single_tile_size,
         in0_CB_size);
 
+    uint32_t dram_read_tile_cb_index = 4;
+    tt_metal::CircularBufferConfig dram_read_tile_cb_config =
+        tt_metal::CircularBufferConfig(in0_single_tile_size, {{dram_read_tile_cb_index, in0_data_format}})
+            .set_page_size(dram_read_tile_cb_index, in0_single_tile_size);
+    auto cb_dram_read_tile = tt_metal::CreateCircularBuffer(program, all_cores_in_rect_grid, dram_read_tile_cb_config);
+
+    uint32_t mcast_tile_cb_index = 5;
+    tt_metal::CircularBufferConfig mcast_tile_cb_config =
+        tt_metal::CircularBufferConfig(in0_single_tile_size, {{mcast_tile_cb_index, in0_data_format}})
+            .set_page_size(mcast_tile_cb_index, in0_single_tile_size);
+    auto cb_mcast_tile = tt_metal::CreateCircularBuffer(program, all_cores_in_rect_grid, mcast_tile_cb_config);
+
     uint32_t src1_cb_index = 1;
     tt_metal::CircularBufferConfig src1_cb_config =
         tt_metal::CircularBufferConfig(in1_CB_size, {{src1_cb_index, in1_data_format}})
