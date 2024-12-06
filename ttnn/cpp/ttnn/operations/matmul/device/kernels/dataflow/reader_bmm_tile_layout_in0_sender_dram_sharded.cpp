@@ -55,6 +55,11 @@ void kernel_main() {
         const uint32_t in0_single_tile_size_bytes = get_tile_size(cb_id_in0);
         const DataFormat in0_data_format = get_dataformat(cb_id_in0);
 
+        constexpr uint32_t cb_id_in4 = 4;
+        uint32_t dram_write_addr = get_write_ptr(cb_id_in4);
+        const InterleavedAddrGenFast<true> s = {
+            .bank_base_address = 128, .page_size = in0_single_tile_size_bytes, .data_format = in0_data_format};
+
         uint32_t l1_write_addr_in0;
 
         // Set ur local VALID value, to be mcasted to destinations flag address after the data has been mcasted
@@ -82,6 +87,11 @@ void kernel_main() {
 
         uint32_t local_read_addr = get_read_ptr(cb_id_in2);
 
+        for (uint32_t a = 0; a < 24; ++a) {
+            // hit 12 banks
+            noc_async_read_tile(a, s, dram_write_addr);
+        }
+
         if (worker_core_type == 1) {  // mcast sender + no compute
 
             for (uint32_t i = 0; i < num_blocks_per_shard; ++i) {
@@ -98,8 +108,8 @@ void kernel_main() {
                 // wait until all in0 mcast destinations have atomically incremented the in0 semaphore_addr
                 noc_semaphore_wait(in0_mcast_sender_semaphore_addr_ptr, in0_mcast_num_dests);
                 // see if the timing of reset its own semaphore is relavent
-                for (volatile int i = 0; i < 1000; ++i) {
-                }
+                // for (volatile int i = 0; i < 1000; ++i) {
+                // }
                 noc_semaphore_set(in0_mcast_sender_semaphore_addr_ptr, 0);
 
                 // Now we have the block in the CB address, we can mcast to dests!
@@ -139,7 +149,11 @@ void kernel_main() {
                     // wait until all in0 mcast destinations have atomically incremented the in0 semaphore_addr
                     noc_semaphore_wait(in0_mcast_sender_semaphore_addr_ptr, in0_mcast_num_dests - 1);
                     // see if the timing of reset its own semaphore is relavent
-                    for (volatile int i = 0; i < 1000; ++i) {
+                    // for (volatile int i = 0; i < 1000; ++i) {
+                    // }
+                    for (uint32_t a = 0; a < 24; ++a) {
+                        // hit 12 banks
+                        noc_async_read_tile(a, s, dram_write_addr);
                     }
                     noc_semaphore_set(in0_mcast_sender_semaphore_addr_ptr, 0);
 
@@ -196,6 +210,11 @@ void kernel_main() {
 
                 cb_push_back(cb_id_in0, in0_block_num_tiles);
             }
+        }
+
+        for (uint32_t a = 0; a < 24; ++a) {
+            // hit 12 banks
+            noc_async_read_tile(a, s, dram_write_addr);
         }
     }
 }
