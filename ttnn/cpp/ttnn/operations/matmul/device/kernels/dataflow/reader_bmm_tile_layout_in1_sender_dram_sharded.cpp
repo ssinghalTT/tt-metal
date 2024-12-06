@@ -92,7 +92,8 @@ void kernel_main() {
 
         cb_reserve_back(cb_id_in1, in1_block_num_tiles * 3);
         uint32_t l1_write_addr_in1_offset = 0;
-        uint32_t l1_write_addr_in1_start = 131872;
+        uint32_t l1_write_addr_in1_start = 103200;
+        // DPRINT << "l1_write_addr_in1_start " << l1_write_addr_in1_start <<ENDL();
         l1_write_addr_in1 = l1_write_addr_in1_start;
         for (uint32_t block = 0; block < num_blocks; ++block) {
             // noc_async_read_tile_dram_sharded_set_trid(curr_block_trid);
