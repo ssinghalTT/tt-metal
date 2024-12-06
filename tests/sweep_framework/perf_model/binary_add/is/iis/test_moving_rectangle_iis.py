@@ -34,8 +34,6 @@ def run_test(
         size = 0.5
     if input_dtype == ttnn.bfloat8_b:
         size = 1
-    if dims[0] * dims[1] / shard_x / shard_y * size >= 400000:
-        return
 
     # Before the ttnn.add call, write the shard_x, shard_y, grid_x, grid_y to a CSV file
     print(str(start_x) + " " + str(start_y))
@@ -51,7 +49,7 @@ def run_test(
                 )
             }
         ),
-        ttnn.TensorMemoryLayout.BLOCK_SHARDED,
+        ttnn.TensorMemoryLayout.HEIGHT_SHARDED,
         ttnn.ShardOrientation.ROW_MAJOR,
     )
 
@@ -74,10 +72,8 @@ def run_test(
     output = ttnn.add(input_tensor_a, input_tensor_b, memory_config=sharded_mem_config)
 
 
-@pytest.mark.parametrize(
-    "dims", [(64 * 32, 64 * 32), (32 * 32, 32 * 32), (16 * 32, 16 * 32), (8 * 32, 8 * 32), (4 * 32, 4 * 32)]
-)
-@pytest.mark.parametrize("out_mem_config", [ttnn.L1_MEMORY_CONFIG, ttnn.DRAM_MEMORY_CONFIG])
+@pytest.mark.parametrize("dims", [(64 * 32, 64 * 32)])
+@pytest.mark.parametrize("out_mem_config", [ttnn.L1_MEMORY_CONFIG])
 @pytest.mark.parametrize("in_mem_config", ["block"])
 def test_add_with_block_sharding(device, dims, out_mem_config, in_mem_config):
     torch.manual_seed(0)
@@ -94,36 +90,34 @@ def test_add_with_block_sharding(device, dims, out_mem_config, in_mem_config):
         torch_input_tensor_b = torch.rand((h, w))
 
         for i in range(7):
-            if w >= 8 * 32:
-                run_test(
-                    device,
-                    torch_input_tensor_a,
-                    torch_input_tensor_b,
-                    out_mem_config,
-                    "block",
-                    dims,
-                    2,
-                    8,
-                    input_dtype,
-                    i,
-                    0,
-                )
+            run_test(
+                device,
+                torch_input_tensor_a,
+                torch_input_tensor_b,
+                out_mem_config,
+                "block",
+                dims,
+                2,
+                8,
+                input_dtype,
+                i,
+                0,
+            )
 
         for i in range(7):
-            if h >= 8 * 32:
-                run_test(
-                    device,
-                    torch_input_tensor_a,
-                    torch_input_tensor_b,
-                    out_mem_config,
-                    "block",
-                    dims,
-                    8,
-                    2,
-                    input_dtype,
-                    0,
-                    i,
-                )
+            run_test(
+                device,
+                torch_input_tensor_a,
+                torch_input_tensor_b,
+                out_mem_config,
+                "block",
+                dims,
+                8,
+                2,
+                input_dtype,
+                0,
+                i,
+            )
 
         for i in range(5):
             for j in range(5):

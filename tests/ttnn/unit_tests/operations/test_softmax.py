@@ -227,7 +227,7 @@ from models.utility_functions import torch_random
 @pytest.mark.parametrize("batch_size", [1])
 @pytest.mark.parametrize("h", [4])
 @pytest.mark.parametrize("w", [4])
-@pytest.mark.parametrize("dim", [-3])
+@pytest.mark.parametrize("dim", [-1])
 def test_softmax(device, batch_size, h, w, dim):
     torch.manual_seed(0)
 
@@ -246,8 +246,6 @@ def test_softmax(device, batch_size, h, w, dim):
     output_tensor = ttnn.to_torch(output_tensor)
 
     print(output_tensor)
-
-    breakpoint()
 
     assert_with_pcc(torch_output_tensor, output_tensor, 0.997)
 

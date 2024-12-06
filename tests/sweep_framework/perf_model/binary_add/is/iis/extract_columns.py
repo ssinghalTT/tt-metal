@@ -96,7 +96,7 @@ def save_to_csv(output_file_path, extracted_data, sharding_data):
 
 def main():
     # Input file paths
-    input_file_path = "/localdev/skrstic/tt-metal/generated/profiler/reports/2024_11_26_09_05_08/ops_perf_results_2024_11_26_09_05_08.csv"
+    input_file_path = "/localdev/skrstic/tt-metal/generated/profiler/reports/2024_12_03_10_26_55/ops_perf_results_2024_12_03_10_26_55.csv"
     sharding_file_path = "tests/sweep_framework/perf_model/binary_add/is/iis/sharding_configurations.csv"
 
     # Output file path

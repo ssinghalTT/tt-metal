@@ -30,7 +30,7 @@ def run_test(
                 )
             }
         ),
-        ttnn.TensorMemoryLayout.BLOCK_SHARDED,
+        ttnn.TensorMemoryLayout.HEIGHT_SHARDED,
         ttnn.ShardOrientation.ROW_MAJOR,
     )
 
@@ -54,7 +54,9 @@ def run_test(
 
 
 @pytest.mark.parametrize(
-    "dims", [(64 * 32, 64 * 32), (32 * 32, 32 * 32), (16 * 32, 16 * 32), (8 * 32, 8 * 32), (4 * 32, 4 * 32)]
+    # "dims", [(64 * 32, 64 * 32), (32 * 32, 32 * 32), (16 * 32, 16 * 32), (8 * 32, 8 * 32), (4 * 32, 4 * 32)]
+    "dims",
+    [((64 * 64 + 32) * 32, 1 * 32)],
 )
 # @pytest.mark.parametrize("dims", [(1 * 32, 1 * 32)])
 @pytest.mark.parametrize("input_a_mem_config", [ttnn.DRAM_MEMORY_CONFIG])
