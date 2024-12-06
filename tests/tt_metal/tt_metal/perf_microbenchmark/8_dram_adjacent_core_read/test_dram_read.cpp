@@ -74,6 +74,9 @@ void get_max_page_size_and_num_pages(uint32_t num_tiles, uint32_t tile_size, uin
 std::tuple<tt_metal::Program, tt_metal::KernelHandle, uint32_t> create_program(
     tt_metal::Device* device,
     const CoreRangeSet& all_cores,
+    bool use_mcast,
+    const CoreRangeSet& all_cores_mcast,
+    uint32_t num_loops,
     const uint32_t& single_tile_size,
     const tt::DataFormat& tile_format,
     uint32_t num_tiles_cb,
@@ -102,7 +105,45 @@ std::tuple<tt_metal::Program, tt_metal::KernelHandle, uint32_t> create_program(
     uint32_t cb_addr = device->get_base_allocator_addr(HalMemType::L1);
     tt_metal::CircularBufferConfig cb_config =
         tt_metal::CircularBufferConfig(cb_size, {{cb_index, tile_format}}).set_page_size(cb_index, single_tile_size);
-    auto cb = tt_metal::CreateCircularBuffer(program, all_cores, cb_config);
+    auto cb = tt_metal::CreateCircularBuffer(program, all_cores.merge(all_cores_mcast), cb_config);
+
+    // mcast core cb
+    if (use_mcast) {
+        uint32_t mcast_cb_index = 1;
+        tt_metal::CircularBufferConfig mcast_cb_config =
+            tt_metal::CircularBufferConfig(cb_size, {{mcast_cb_index, tile_format}})
+                .set_page_size(mcast_cb_index, single_tile_size);
+        auto mcast_cb = tt_metal::CreateCircularBuffer(program, all_cores.merge(all_cores_mcast), mcast_cb_config);
+    }
+
+    if (use_mcast) {
+        auto compute_with_storage_grid_size = device->compute_with_storage_grid_size();
+        uint32_t num_cores_x = compute_with_storage_grid_size.x;
+        uint32_t num_cores_y = compute_with_storage_grid_size.y;
+
+        auto mcast_start = device->worker_core_from_logical_core(CoreCoord(num_cores_x - 1, num_cores_y - 1));
+        auto mcast_end = device->worker_core_from_logical_core(CoreCoord(0, 0));
+
+        std::vector<uint32_t> mcast_compile_time_args = {
+            (std::uint32_t)single_tile_size,
+            (std::uint32_t)block_num_tiles,
+            (std::uint32_t)num_loops,
+            (std::uint32_t)mcast_start.x,
+            (std::uint32_t)mcast_start.y,
+            (std::uint32_t)mcast_end.x,
+            (std::uint32_t)mcast_end.y,
+            (std::uint32_t)num_blocks,
+            (std::uint32_t)num_cores_x * num_cores_y};
+
+        auto mcast_kernel = tt_metal::CreateKernel(
+            program,
+            "tests/tt_metal/tt_metal/perf_microbenchmark/8_dram_adjacent_core_read/kernels/mcast_all_cores.cpp",
+            all_cores_mcast,
+            tt_metal::DataMovementConfig{
+                .processor = tt_metal::DataMovementProcessor::RISCV_1,
+                .noc = tt_metal::NOC::RISCV_1_default,
+                .compile_args = mcast_compile_time_args});
+    }
 
     std::vector<uint32_t> compile_time_args = {
         (std::uint32_t)input_buffer_addr,
@@ -110,7 +151,8 @@ std::tuple<tt_metal::Program, tt_metal::KernelHandle, uint32_t> create_program(
         (std::uint32_t)num_blocks,
         (std::uint32_t)num_pages,
         (std::uint32_t)block_num_tiles,
-        (std::uint32_t)page_size};
+        (std::uint32_t)page_size,
+        (std::uint32_t)num_loops};
 
     auto reader_kernel = tt_metal::CreateKernel(
         program,
@@ -518,6 +560,18 @@ void get_dram_reader_core_coords(
     all_cores_ordered = adj_core_logical_realloc;
 }
 
+std::pair<int, int> findUsedGrid(int num_cores, int num_core_x, int num_core_y) {
+    for (int used_x = 1; used_x <= num_core_x; ++used_x) {
+        if (num_cores % used_x == 0) {
+            int used_y = num_cores / used_x;
+            if (used_y <= num_core_y) {
+                return {used_x, used_y};
+            }
+        }
+    }
+    return {-1, -1};  // Indicates no valid grid was found
+}
+
 int main(int argc, char** argv) {
     if (getenv("TT_METAL_SLOW_DISPATCH_MODE") != nullptr) {
         log_error("Test not supported w/ slow dispatch, exiting");
@@ -529,11 +583,13 @@ int main(int argc, char** argv) {
     uint32_t df = 0;
     std::vector<double> dram_bandwidth;
     uint32_t num_tests = 1;
+    uint32_t num_loops_per_test = 1;
     uint32_t num_blocks = 8;
     uint64_t k = 8192, n = 128;
     uint32_t dram_bandwidth_spec = 0;
     uint32_t num_banks = 1;
     uint32_t bank_start_id = 1;
+    uint32_t mcast_cores = 0;
 
     log_info("start DRAM benchmark");
 
@@ -554,6 +610,9 @@ int main(int argc, char** argv) {
             std::tie(num_tests, input_args) =
                 test_args::get_command_option_uint32_and_remaining_args(input_args, "--num-tests", 1);
 
+            std::tie(num_loops_per_test, input_args) =
+                test_args::get_command_option_uint32_and_remaining_args(input_args, "--num-loops-per-test", 1);
+
             std::tie(use_device_profiler, input_args) =
                 test_args::has_command_option_and_remaining_args(input_args, "--use-device-profiler");
 
@@ -568,6 +627,9 @@ int main(int argc, char** argv) {
 
             std::tie(bank_start_id, input_args) =
                 test_args::get_command_option_uint32_and_remaining_args(input_args, "--bank-start-id", 0);
+
+            std::tie(mcast_cores, input_args) =
+                test_args::get_command_option_uint32_and_remaining_args(input_args, "--mcast-cores", 0);
 
             test_args::validate_remaining_args(input_args);
         } catch (const std::exception& e) {
@@ -654,6 +716,23 @@ int main(int argc, char** argv) {
             log_info("logical core: {}, physical coer: {}", core, phys_core);
         }
 
+        // mcast core for issuing mcast on noc1
+        auto compute_with_storage_grid_size = device->compute_with_storage_grid_size();
+        uint32_t num_cores_x = compute_with_storage_grid_size.x;
+        uint32_t num_cores_y = compute_with_storage_grid_size.y;
+
+        bool use_mcast = mcast_cores > 0;
+        CoreRangeSet all_cores_mcast;
+        std::set<CoreRange> all_cores_mcast_set = {};
+        auto used_grid = findUsedGrid(mcast_cores, num_cores_x, num_cores_y);
+        if (use_mcast) {
+            all_cores_mcast_set.insert(
+                CoreRange(CoreCoord(0, 0), CoreCoord(used_grid.first - 1, used_grid.second - 1)));
+        }
+        all_cores_mcast = CoreRangeSet(all_cores_mcast_set);
+
+        log_info("used_grid: {} {}", used_grid.first, used_grid.second);
+
         log_info(
             LogTest,
             "Measuring DRAM bandwidth for input_size = {} bytes ({:.3f} MB, "
@@ -686,6 +765,9 @@ int main(int argc, char** argv) {
         auto [program, kernel, cb_addr] = create_program(
             device,
             all_cores,
+            use_mcast,
+            all_cores_mcast,
+            num_loops_per_test,
             single_tile_size,
             tile_format,
             num_tiles_cb,

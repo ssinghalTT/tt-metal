@@ -243,9 +243,9 @@ def test_enqueue_read_buffer(iter=1, buffer_type=0, size=2048, timeout=600):
     return bw
 
 
-def run_dram_read_cmd(k, n, num_blocks, df, num_banks, bank_start_id):
+def run_dram_read_cmd(k, n, num_blocks, df, num_banks, bank_start_id, num_tests, num_loops, mcast_cores):
     command = (
-        "TT_METAL_DEVICE_PROFILER=1 ./build/test/tt_metal/perf_microbenchmark/8_dram_adjacent_core_read/test_dram_read "
+        " ./build/test/tt_metal/perf_microbenchmark/8_dram_adjacent_core_read/test_dram_read "
         + " --k "
         + str(k)
         + " --n "
@@ -253,13 +253,17 @@ def run_dram_read_cmd(k, n, num_blocks, df, num_banks, bank_start_id):
         + " --num-blocks "
         + str(num_blocks)
         + " --num-tests "
-        + str(1)
+        + str(num_tests)
+        + " --num-loops-per-test "
+        + str(num_loops)
         + " --data-type "
         + str(df)
         + " --num-banks "
         + str(num_banks)
         + " --bank-start-id "
         + str(bank_start_id)
+        + " --mcast-cores "
+        + str(mcast_cores)
         + " --bypass-check "
     )
     run_moreh_single_test("DRAM BW test multi-core", command)
@@ -723,29 +727,26 @@ def test_matmul_single_core_sharded(
 
 
 @pytest.mark.parametrize(
-    "arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id",
+    "arch, freq, test_vector, num_iters, nblock, data_format, num_banks, bank_start_id, num_tests, num_loops, mcast_cores",
     [
-        ("wormhole_b0", 1000, np.array([32768, 12 * 128]), 1, 8, 0, 12, 0),
-        ("wormhole_b0", 1000, np.array([32768, 12 * 128]), 1, 8, 1, 12, 0),
-        ("wormhole_b0", 1000, np.array([2048, 3840]), 1, 4, 1, 12, 0),  # Padded FF1 shapes for llama 70b on TG
-        ("blackhole", 800, np.array([32768, 8 * 128]), 1, 8, 0, 8, 0),
-        ("blackhole", 800, np.array([32768, 8 * 128]), 1, 8, 1, 8, 0),
-        ("blackhole", 800, np.array([2048, 3840]), 1, 4, 1, 8, 0),  # Padded FF1 shapes for llama 70b on TG
+        ("wormhole_b0", 1000, np.array([8192, 12 * 128]), 1, 8, 0, 12, 0, 1, 1, 1),
     ],
 )
-def test_dram_read_all_core(arch, freq, test_vector, num_tests, nblock, data_format, num_banks, bank_start_id):
+def test_dram_read_all_core(
+    arch, freq, test_vector, num_iters, nblock, data_format, num_banks, bank_start_id, num_tests, num_loops, mcast_cores
+):
     data = []
     cycle_list = []
     time_list = []
     throughput_list = []
-    for _ in range(num_tests):
+    for _ in range(num_iters):
         k = int(test_vector[0])
         n = int(test_vector[1])
         if data_format == 0:
             input_size = k * n * 1088 // 1024
         elif data_format == 1:
             input_size = k * n * 2048 // 1024
-        run_dram_read_cmd(k, n, nblock, data_format, num_banks, bank_start_id)
+        run_dram_read_cmd(k, n, nblock, data_format, num_banks, bank_start_id, num_tests, num_loops, mcast_cores)
         cycle = profile_results_kernel_duration()
         time = cycle / freq / 1000.0 / 1000.0
         throughput = input_size / cycle
