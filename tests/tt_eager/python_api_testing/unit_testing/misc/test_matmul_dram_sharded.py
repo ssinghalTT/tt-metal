@@ -170,6 +170,7 @@ def run_test_matmul_in1_dram_sharded(
     import time
 
     start = time.time()
+    tid = ttnn.begin_trace_capture(device, cq_id=0)
     if has_bias:
         for i in range(1000):
             print(i)
@@ -193,10 +194,20 @@ def run_test_matmul_in1_dram_sharded(
                 dtype=out_dtype,
                 compute_kernel_config=compute_kernel_config,
             )
-    tt_out = ttnn.to_torch(output_t)
+    ttnn.end_trace_capture(device, tid, cq_id=0)
     end = time.time()
     elapsed = end - start
-    print(f"Elapsed time: {elapsed} seconds")
+    print(f"Elapsed time no trace: {elapsed} seconds")
+
+    start = time.time()
+    ttnn.execute_trace(device, tid, cq_id=0, blocking=False)
+    ttnn.synchronize_device(device)
+    ttnn.release_trace(device, tid)
+    end = time.time()
+    elapsed = end - start
+    print(f"Elapsed time trace: {elapsed} seconds")
+
+    tt_out = ttnn.to_torch(output_t)
 
     pt_out = in0 @ in1
     if has_bias:
@@ -226,6 +237,7 @@ def run_test_matmul_in1_dram_sharded(
 #     ],
 #     ids=["no_bias", "bias"],
 # )
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576, "trace_region_size": 3855488}], indirect=True)
 @pytest.mark.parametrize(
     "fidelity",
     [
@@ -255,7 +267,7 @@ def run_test_matmul_in1_dram_sharded(
         # (False, True, True, 32, 8192, 1024, None, (8, 1)),
         # (False, True, True, 32, 32768, 1024, None, (8, 4)),
         # (False, True, True, 32, 4096, 65536, None, (8, 8)),
-        (False, True, True, 32, 3584, 3584, None, (8, 7)),
+        (False, True, True, 32, 3584, 57344, None, (8, 7)),
         # (False, True, True, 32, 4096, 6144, None, (8, 2), ttnn.bfloat16, ttnn.bfloat8_b, ttnn.bfloat16),
         # (False, True, True, 32, 4096, 14336, None, (8, 2), ttnn.bfloat16, ttnn.bfloat4_b, ttnn.bfloat8_b),
         # (False, True, True, 32, 14336, 4096, None, (8, 2), ttnn.bfloat8_b, ttnn.bfloat8_b, ttnn.bfloat8_b),
