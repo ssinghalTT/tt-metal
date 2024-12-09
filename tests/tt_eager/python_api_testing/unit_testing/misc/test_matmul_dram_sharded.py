@@ -168,7 +168,7 @@ def run_test_matmul_in1_dram_sharded(
 
     print("start")
     if has_bias:
-        for i in range(1):
+        for i in range(100):
             print(i)
             output_t = ttnn.linear(
                 in0_t,
@@ -180,7 +180,7 @@ def run_test_matmul_in1_dram_sharded(
                 compute_kernel_config=compute_kernel_config,
             )
     else:
-        for i in range(1):
+        for i in range(100):
             print(i)
             output_t = ttnn.matmul(
                 in0_t,
