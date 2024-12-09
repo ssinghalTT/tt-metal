@@ -112,8 +112,8 @@ def run_test_matmul_in1_dram_sharded(
     logger.debug("in1_shard_shape " + str(in1_shard_shape))
     logger.debug("in1_shard_grid " + str(in1_shard_grid))
 
-    in0 = torch.randn(in0_shape).bfloat16().float()
-    in1 = torch.randn(in1_shape).bfloat16().float()
+    in0 = torch.zeros(in0_shape).bfloat16().float()
+    in1 = torch.zeros(in1_shape).bfloat16().float()
 
     in1_t = torch2tt_tensor(in1, device, tt_memory_config=in1_mem_config, tt_dtype=in1_dtype)
 
@@ -167,24 +167,28 @@ def run_test_matmul_in1_dram_sharded(
         )
 
     if has_bias:
-        output_t = ttnn.linear(
-            in0_t,
-            in1_t,
-            bias=bias_t,
-            program_config=program_config,
-            memory_config=sharded_mem_config,
-            dtype=out_dtype,
-            compute_kernel_config=compute_kernel_config,
-        )
+        for i in range(10000):
+            print(i)
+            output_t = ttnn.linear(
+                in0_t,
+                in1_t,
+                bias=bias_t,
+                program_config=program_config,
+                memory_config=sharded_mem_config,
+                dtype=out_dtype,
+                compute_kernel_config=compute_kernel_config,
+            )
     else:
-        output_t = ttnn.matmul(
-            in0_t,
-            in1_t,
-            program_config=program_config,
-            memory_config=sharded_mem_config,
-            dtype=out_dtype,
-            compute_kernel_config=compute_kernel_config,
-        )
+        for i in range(10000):
+            print(i)
+            output_t = ttnn.matmul(
+                in0_t,
+                in1_t,
+                program_config=program_config,
+                memory_config=sharded_mem_config,
+                dtype=out_dtype,
+                compute_kernel_config=compute_kernel_config,
+            )
     tt_out = ttnn.to_torch(output_t)
 
     pt_out = in0 @ in1

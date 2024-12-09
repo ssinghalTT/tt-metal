@@ -82,7 +82,7 @@ inline void reblock_and_untilize(
 }
 
 void MAIN {
-    for (uint32_t i = 0; i < 1000000; ++i) {
+    for (uint32_t i = 0; i < 1000; ++i) {
         if (i % 1000 == 0) {
             DPRINT << "compute: " << i << ENDL();
         }

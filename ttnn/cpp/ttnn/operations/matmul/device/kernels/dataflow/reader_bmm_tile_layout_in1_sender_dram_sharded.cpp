@@ -9,7 +9,7 @@
 #include "debug/dprint.h"
 
 void kernel_main() {
-    for (uint32_t i = 0; i < 1000000; ++i) {
+    for (uint32_t i = 0; i < 1000; ++i) {
         if (i % 1000 == 0) {
             DPRINT << "dram reader: " << i << ENDL();
         }
@@ -54,16 +54,29 @@ void kernel_main() {
         constexpr DataFormat bias_data_format = get_dataformat(cb_id_in3);
 #endif
 
+        constexpr uint32_t noc_start_x = get_compile_time_arg_val(11);
+        constexpr uint32_t noc_start_y = get_compile_time_arg_val(12);
+        constexpr uint32_t noc_end_x = get_compile_time_arg_val(13);
+        constexpr uint32_t noc_end_y = get_compile_time_arg_val(14);
+        constexpr uint32_t num_cores_mcast = get_compile_time_arg_val(15);
+
         constexpr uint32_t cb_id_in1 = 1;
         constexpr uint32_t cb_id_out = 16;
         constexpr uint32_t cb_id_out_reshard = 17;
         constexpr uint32_t in1_single_tile_size_bytes = get_tile_size(cb_id_in1);
         constexpr uint32_t in1_block_size_bytes = in1_block_num_tiles * in1_single_tile_size_bytes;
 
+        constexpr uint32_t cb_id_in5 = 5;
+        uint32_t mcast_addr = get_write_ptr(cb_id_in5);
+        const uint64_t multicast_data_noc = get_noc_multicast_addr(noc_start_x, noc_start_y, noc_end_x, noc_end_y, 0);
+
         //  READER
         uint32_t l1_write_addr_in1;
         uint32_t l1_read_addr_in1 = 0;
         constexpr DataFormat in1_data_format = get_dataformat(cb_id_in1);
+        uint64_t multicast_data_addr = multicast_data_noc | mcast_addr;
+        noc_async_write_multicast_loopback_src(
+            mcast_addr, multicast_data_addr, in1_single_tile_size_bytes * 16, num_cores_mcast);
 
         uint32_t in1_base_addr =
             noc_async_read_tile_dram_sharded_set_state<true>(in1_tensor_addr, in1_page_size, dram_bank_id, vc);
@@ -105,6 +118,15 @@ void kernel_main() {
                 l1_read_addr_in1 += in1_page_size;
                 l1_write_addr_in1 += in1_page_size;
             }
+
+            // if (block % 4 == 0 ) {
+            //     uint64_t multicast_data_addr = multicast_data_noc | mcast_addr;
+            //     noc_async_write_multicast_loopback_src(
+            //         mcast_addr,
+            //         multicast_data_addr,
+            //         in1_single_tile_size_bytes * 16,
+            //         num_cores_mcast);
+            // }
 
             if (num_free_blocks_in_buffer == 2) {
                 noc_async_read_barrier_with_trid(block_trid_to_wait);
@@ -186,8 +208,13 @@ void kernel_main() {
 
             index_offset += 3;
         }
-        noc_async_write_barrier();
+        // noc_async_write_barrier();
 #endif
+
+        noc_async_write_multicast_loopback_src(
+            mcast_addr, multicast_data_addr, in1_single_tile_size_bytes * 16, num_cores_mcast);
+
+        noc_async_write_barrier();
 
         cb_pop_front(cb_id_out, out_block_num_tiles);
     }

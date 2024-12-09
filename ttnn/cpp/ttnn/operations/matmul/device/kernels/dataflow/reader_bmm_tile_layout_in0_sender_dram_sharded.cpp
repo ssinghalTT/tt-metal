@@ -10,7 +10,7 @@
 #include "debug/dprint.h"
 
 void kernel_main() {
-    for (uint32_t i = 0; i < 1000000; ++i) {
+    for (uint32_t i = 0; i < 1000; ++i) {
         if (i % 1000 == 0) {
             DPRINT << "in0 sender: " << i << ENDL();
         }
@@ -151,10 +151,10 @@ void kernel_main() {
                     // see if the timing of reset its own semaphore is relavent
                     // for (volatile int i = 0; i < 1000; ++i) {
                     // }
-                    for (uint32_t a = 0; a < 24; ++a) {
-                        // hit 12 banks
-                        noc_async_read_tile(a, s, dram_write_addr);
-                    }
+                    // for (uint32_t a = 0; a < 24; ++a) {
+                    //     // hit 12 banks
+                    //     noc_async_read_tile(a, s, dram_write_addr);
+                    // }
                     noc_semaphore_set(in0_mcast_sender_semaphore_addr_ptr, 0);
 
                     uint64_t in0_multicast_data_addr = in0_multicast_data_noc | in0_start_address;

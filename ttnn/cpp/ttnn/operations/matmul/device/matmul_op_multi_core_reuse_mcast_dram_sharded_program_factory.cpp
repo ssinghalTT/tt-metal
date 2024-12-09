@@ -709,7 +709,19 @@ operation::ProgramWithCallbacks create_program_dram_sharded(
     if (bias_buffer != nullptr) {
         in1_sender_writer_compile_time_args.push_back(bias_buffer_page_size);
         in1_sender_writer_compile_time_args.push_back(bias_buffer_num_pages);
-        in1_sender_writer_compile_time_args.push_back((std::uint32_t)1);
+        in1_sender_writer_compile_time_args.push_back(end_core_noc.x);
+        in1_sender_writer_compile_time_args.push_back(end_core_noc.y);
+        in1_sender_writer_compile_time_args.push_back(start_core_noc.x);
+        in1_sender_writer_compile_time_args.push_back(start_core_noc.y);
+        in1_sender_writer_compile_time_args.push_back(num_mcast_cores);
+    } else {
+        in1_sender_writer_compile_time_args.push_back(0);
+        in1_sender_writer_compile_time_args.push_back(0);
+        in1_sender_writer_compile_time_args.push_back(end_core_noc.x);
+        in1_sender_writer_compile_time_args.push_back(end_core_noc.y);
+        in1_sender_writer_compile_time_args.push_back(start_core_noc.x);
+        in1_sender_writer_compile_time_args.push_back(start_core_noc.y);
+        in1_sender_writer_compile_time_args.push_back(num_mcast_cores);
     }
 
     std::map<string, string> mm_kernel_defines;
@@ -839,8 +851,8 @@ operation::ProgramWithCallbacks create_program_dram_sharded(
 
     uint32_t mcast_tile_cb_index = 5;
     tt_metal::CircularBufferConfig mcast_tile_cb_config =
-        tt_metal::CircularBufferConfig(in0_single_tile_size, {{mcast_tile_cb_index, in0_data_format}})
-            .set_page_size(mcast_tile_cb_index, in0_single_tile_size);
+        tt_metal::CircularBufferConfig(in1_single_tile_size * 16, {{mcast_tile_cb_index, in0_data_format}})
+            .set_page_size(mcast_tile_cb_index, in1_single_tile_size);
     auto cb_mcast_tile = tt_metal::CreateCircularBuffer(program, all_cores_in_rect_grid, mcast_tile_cb_config);
 
     uint32_t src1_cb_index = 1;
