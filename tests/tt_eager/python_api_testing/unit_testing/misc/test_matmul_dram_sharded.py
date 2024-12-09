@@ -167,8 +167,11 @@ def run_test_matmul_in1_dram_sharded(
         )
 
     print("start")
+    import time
+
+    start = time.time()
     if has_bias:
-        for i in range(100):
+        for i in range(1000):
             print(i)
             output_t = ttnn.linear(
                 in0_t,
@@ -180,7 +183,7 @@ def run_test_matmul_in1_dram_sharded(
                 compute_kernel_config=compute_kernel_config,
             )
     else:
-        for i in range(100):
+        for i in range(1000):
             print(i)
             output_t = ttnn.matmul(
                 in0_t,
@@ -190,9 +193,10 @@ def run_test_matmul_in1_dram_sharded(
                 dtype=out_dtype,
                 compute_kernel_config=compute_kernel_config,
             )
-    print("end")
     tt_out = ttnn.to_torch(output_t)
-    print("end")
+    end = time.time()
+    elapsed = end - start
+    print(f"Elapsed time: {elapsed} seconds")
 
     pt_out = in0 @ in1
     if has_bias:
