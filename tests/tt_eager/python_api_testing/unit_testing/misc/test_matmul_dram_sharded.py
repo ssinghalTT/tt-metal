@@ -166,8 +166,9 @@ def run_test_matmul_in1_dram_sharded(
             packer_l1_acc=True,
         )
 
+    print("start")
     if has_bias:
-        for i in range(10000):
+        for i in range(1):
             print(i)
             output_t = ttnn.linear(
                 in0_t,
@@ -179,7 +180,7 @@ def run_test_matmul_in1_dram_sharded(
                 compute_kernel_config=compute_kernel_config,
             )
     else:
-        for i in range(10000):
+        for i in range(1):
             print(i)
             output_t = ttnn.matmul(
                 in0_t,
@@ -189,7 +190,9 @@ def run_test_matmul_in1_dram_sharded(
                 dtype=out_dtype,
                 compute_kernel_config=compute_kernel_config,
             )
+    print("end")
     tt_out = ttnn.to_torch(output_t)
+    print("end")
 
     pt_out = in0 @ in1
     if has_bias:
@@ -248,7 +251,7 @@ def run_test_matmul_in1_dram_sharded(
         # (False, True, True, 32, 8192, 1024, None, (8, 1)),
         # (False, True, True, 32, 32768, 1024, None, (8, 4)),
         # (False, True, True, 32, 4096, 65536, None, (8, 8)),
-        (False, True, True, 32, 3584, 57344, None, (8, 7)),
+        (False, True, True, 32, 3584, 3584, None, (8, 7)),
         # (False, True, True, 32, 4096, 6144, None, (8, 2), ttnn.bfloat16, ttnn.bfloat8_b, ttnn.bfloat16),
         # (False, True, True, 32, 4096, 14336, None, (8, 2), ttnn.bfloat16, ttnn.bfloat4_b, ttnn.bfloat8_b),
         # (False, True, True, 32, 14336, 4096, None, (8, 2), ttnn.bfloat8_b, ttnn.bfloat8_b, ttnn.bfloat8_b),

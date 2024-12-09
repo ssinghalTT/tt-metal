@@ -9,7 +9,7 @@
 #include "debug/dprint.h"
 
 void kernel_main() {
-    for (uint32_t i = 0; i < 1000; ++i) {
+    for (uint32_t i = 0; i < 2; ++i) {
         if (i % 1000 == 0) {
             DPRINT << "dram reader: " << i << ENDL();
         }
@@ -218,4 +218,8 @@ void kernel_main() {
 
         cb_pop_front(cb_id_out, out_block_num_tiles);
     }
+
+    // noc_async_atomic_barrier();
+    // noc_async_read_barrier();
+    // noc_async_write_barrier();
 }
