@@ -166,6 +166,26 @@ def run_test_matmul_in1_dram_sharded(
             packer_l1_acc=True,
         )
 
+    if has_bias:
+        output_t = ttnn.linear(
+            in0_t,
+            in1_t,
+            bias=bias_t,
+            program_config=program_config,
+            memory_config=sharded_mem_config,
+            dtype=out_dtype,
+            compute_kernel_config=compute_kernel_config,
+        )
+    else:
+        output_t = ttnn.matmul(
+            in0_t,
+            in1_t,
+            program_config=program_config,
+            memory_config=sharded_mem_config,
+            dtype=out_dtype,
+            compute_kernel_config=compute_kernel_config,
+        )
+
     print("start")
     import time
 
@@ -237,7 +257,7 @@ def run_test_matmul_in1_dram_sharded(
 #     ],
 #     ids=["no_bias", "bias"],
 # )
-@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576, "trace_region_size": 3855488}], indirect=True)
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576, "trace_region_size": 37216256}], indirect=True)
 @pytest.mark.parametrize(
     "fidelity",
     [
