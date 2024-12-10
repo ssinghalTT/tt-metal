@@ -47,87 +47,11 @@ def pad_to_dram_banks(num, lcm=32 * 12):
     return padded_number
 
 
-def run_test_matmul_in1_dram_sharded(
-    device,
-    in0_sharded,
-    out_sharded,
-    in1_in_dram,
-    M,
-    K,
-    N,
-    fidelity,
-    has_bias,
-    activation,
-    grid_size,
-    in0_dtype,
-    in1_dtype,
-    out_dtype,
-    function_level_defaults,
-    use_program_cache,
-):
-    if is_grayskull() and (N == 4096 or K == 32768):
-        pytest.skip("Skipping too large tensor test on Grayskull")
-
-    if is_grayskull() or is_blackhole():
-        N_padded = N
-        num_banks = 8
-    else:
-        N_padded = pad_to_dram_banks(N)
-        num_banks = 12
-
+def create_in0_tensor(M, K, grid_size, in0_dtype, device):
     in0_shape = [1, 1, M, K]
-    in1_shape = [1, 1, K, N]
-    in1_shard_shape = [K, N_padded // num_banks]
-    bias_shape = [1, 1, N]
-    bias_shard_shape = [32, N_padded // num_banks]
     num_cores = grid_size[0] * grid_size[1]
 
-    in0_block_h = M // 32
-    in0_block_w = K // num_cores // 32
-    out_block_h = M // 32
-    out_block_w = N // num_cores // 32
-
-    out_subblock_h, out_subblock_w, _ = find_max_subblock(out_block_h, out_block_w)
-
-    logger.debug("N_padded " + str(N_padded))
-    logger.debug("in0 block h w " + str(in0_block_h * 32) + " " + str(in0_block_w * 32))
-    logger.debug("in1 block h w " + str(in0_block_w * 32) + " " + str(out_block_w * 32))
-    logger.debug("out block h w " + str(out_block_h * 32) + " " + str(out_block_w * 32))
-    logger.debug("out subblock h w " + str(out_subblock_h * 32) + " " + str(out_subblock_w * 32))
-
-    interleaved_mem_config = ttnn.MemoryConfig(
-        memory_layout=ttnn.TensorMemoryLayout.INTERLEAVED,
-        buffer_type=ttnn.BufferType.DRAM,
-    )
-    sharded_mem_config = ttnn.MemoryConfig(
-        memory_layout=ttnn.TensorMemoryLayout.WIDTH_SHARDED,
-        buffer_type=ttnn.BufferType.L1,
-    )
-
-    in1_shard_grid = ttnn.CoreCoord(device.dram_grid_size().x - 1, device.dram_grid_size().y - 1)
-    in1_shard_grid = ttnn.CoreRangeSet({ttnn.CoreRange(ttnn.CoreCoord(0, 0), in1_shard_grid)})
-    in1_shard_spec = ttnn.ShardSpec(in1_shard_grid, in1_shard_shape, ttnn.ShardOrientation.ROW_MAJOR, False)
-    in1_mem_config = ttnn.MemoryConfig(ttnn.TensorMemoryLayout.WIDTH_SHARDED, ttnn.BufferType.DRAM, in1_shard_spec)
-
-    logger.debug("in1_shard_shape " + str(in1_shard_shape))
-    logger.debug("in1_shard_grid " + str(in1_shard_grid))
-
     in0 = torch.zeros(in0_shape).bfloat16().float()
-    in1 = torch.zeros(in1_shape).bfloat16().float()
-
-    in1_t = torch2tt_tensor(in1, device, tt_memory_config=in1_mem_config, tt_dtype=in1_dtype)
-
-    if has_bias:
-        bias = torch.zeros(bias_shape).bfloat16().float()
-        bias_padded = bias.unsqueeze(2)
-        bias_padded = torch.nn.functional.pad(bias_padded, (0, 0, 0, 32 - bias_padded.size(2)), "constant", 0)
-        bias_shard_grid = ttnn.CoreCoord(device.dram_grid_size().x - 1, device.dram_grid_size().y - 1)
-        bias_shard_grid = ttnn.CoreRangeSet({ttnn.CoreRange(ttnn.CoreCoord(0, 0), bias_shard_grid)})
-        bias_shard_spec = ttnn.ShardSpec(bias_shard_grid, bias_shard_shape, ttnn.ShardOrientation.ROW_MAJOR, False)
-        bias_mem_config = ttnn.MemoryConfig(
-            ttnn.TensorMemoryLayout.WIDTH_SHARDED, ttnn.BufferType.DRAM, bias_shard_spec
-        )
-        bias_t = torch2tt_tensor(bias_padded, device, tt_memory_config=bias_mem_config, tt_dtype=ttnn.bfloat16)
 
     in0_memory_config = ttnn.create_sharded_memory_config(
         in0_shape,
@@ -142,127 +66,97 @@ def run_test_matmul_in1_dram_sharded(
         device=device,
         memory_config=in0_memory_config,
     )
+    return in0, in0_t
 
-    program_config = ttnn.MatmulMultiCoreReuseMultiCastDRAMShardedProgramConfig(
-        in0_block_w=in0_block_w // 2,
+
+def create_in1_tensor(K, N, in1_dtype, device):
+    if is_grayskull() or is_blackhole():
+        N_padded = N
+        num_banks = 8
+    else:
+        N_padded = pad_to_dram_banks(N)
+        num_banks = 12
+
+    in1_shape = [1, 1, K, N]
+    in1_shard_shape = [K, N_padded // num_banks]
+
+    in1_shard_grid = ttnn.CoreCoord(device.dram_grid_size().x - 1, device.dram_grid_size().y - 1)
+    in1_shard_grid = ttnn.CoreRangeSet({ttnn.CoreRange(ttnn.CoreCoord(0, 0), in1_shard_grid)})
+    in1_shard_spec = ttnn.ShardSpec(in1_shard_grid, in1_shard_shape, ttnn.ShardOrientation.ROW_MAJOR, False)
+    in1_mem_config = ttnn.MemoryConfig(ttnn.TensorMemoryLayout.WIDTH_SHARDED, ttnn.BufferType.DRAM, in1_shard_spec)
+
+    in1 = torch.zeros(in1_shape).bfloat16().float()
+
+    in1_t = torch2tt_tensor(in1, device, tt_memory_config=in1_mem_config, tt_dtype=in1_dtype)
+    return in1, in1_t
+
+
+def create_bias_tensor(N, device):
+    if is_grayskull() or is_blackhole():
+        N_padded = N
+        num_banks = 8
+    else:
+        N_padded = pad_to_dram_banks(N)
+        num_banks = 12
+
+    bias_shape = [1, 1, N]
+    bias_shard_shape = [32, N_padded // num_banks]
+
+    bias = torch.zeros(bias_shape).bfloat16().float()
+    bias_padded = bias.unsqueeze(2)
+    bias_padded = torch.nn.functional.pad(bias_padded, (0, 0, 0, 32 - bias_padded.size(2)), "constant", 0)
+    bias_shard_grid = ttnn.CoreCoord(device.dram_grid_size().x - 1, device.dram_grid_size().y - 1)
+    bias_shard_grid = ttnn.CoreRangeSet({ttnn.CoreRange(ttnn.CoreCoord(0, 0), bias_shard_grid)})
+    bias_shard_spec = ttnn.ShardSpec(bias_shard_grid, bias_shard_shape, ttnn.ShardOrientation.ROW_MAJOR, False)
+    bias_mem_config = ttnn.MemoryConfig(ttnn.TensorMemoryLayout.WIDTH_SHARDED, ttnn.BufferType.DRAM, bias_shard_spec)
+    bias_t = torch2tt_tensor(bias_padded, device, tt_memory_config=bias_mem_config, tt_dtype=ttnn.bfloat16)
+    return bias, bias_t
+
+
+def get_block_dims(M, K, N, num_cores):
+    in0_block_h = M // 32
+    in0_block_w = K // num_cores // 32
+    out_block_h = M // 32
+    out_block_w = N // num_cores // 32
+    return in0_block_h, in0_block_w, out_block_h, out_block_w
+
+
+def get_program_config(in0_block_w, out_block_h, out_block_w):
+    return ttnn.MatmulMultiCoreReuseMultiCastDRAMShardedProgramConfig(
+        in0_block_w=in0_block_w,
         per_core_M=out_block_h,
         per_core_N=out_block_w,
-        # in0_block_w=1,
-        # per_core_M=1,
-        # per_core_N=32, # 128256 / 2 / tile_size / core_count
         fused_activation=None,
     )
 
+
+def get_kernel_config(fidelity):
     if is_grayskull():
-        compute_kernel_config = ttnn.GrayskullComputeKernelConfig(
+        return ttnn.GrayskullComputeKernelConfig(
             math_fidelity=fidelity,
             math_approx_mode=True,
         )
     else:
-        compute_kernel_config = ttnn.WormholeComputeKernelConfig(
+        return ttnn.WormholeComputeKernelConfig(
             math_fidelity=fidelity,
             math_approx_mode=True,
             fp32_dest_acc_en=False,
             packer_l1_acc=True,
         )
 
-    if has_bias:
-        output_t = ttnn.linear(
-            in0_t,
-            in1_t,
-            bias=bias_t,
-            program_config=program_config,
-            memory_config=sharded_mem_config,
-            dtype=out_dtype,
-            compute_kernel_config=compute_kernel_config,
-        )
-    else:
-        output_t = ttnn.matmul(
-            in0_t,
-            in1_t,
-            program_config=program_config,
-            memory_config=sharded_mem_config,
-            dtype=out_dtype,
-            compute_kernel_config=compute_kernel_config,
-        )
 
-    print("start")
-    import time
-
-    start = time.time()
-
-    if has_bias:
-        tid = ttnn.begin_trace_capture(device, cq_id=0)
-        for i in range(10000):
-            print(i)
-            output_t = ttnn.linear(
-                in0_t,
-                in1_t,
-                bias=bias_t,
-                program_config=program_config,
-                memory_config=sharded_mem_config,
-                dtype=out_dtype,
-                compute_kernel_config=compute_kernel_config,
-            )
-        ttnn.end_trace_capture(device, tid, cq_id=0)
-    else:
-        tid = ttnn.begin_trace_capture(device, cq_id=0)
-        for i in range(10000):
-            print(i)
-            output_t = ttnn.matmul(
-                in0_t,
-                in1_t,
-                program_config=program_config,
-                memory_config=sharded_mem_config,
-                dtype=out_dtype,
-                compute_kernel_config=compute_kernel_config,
-            )
-        ttnn.end_trace_capture(device, tid, cq_id=0)
-
-    end = time.time()
-    elapsed = end - start
-    print(f"Elapsed time no trace: {elapsed} seconds")
-
-    start = time.time()
-    for _ in range(100):
-        ttnn.execute_trace(device, tid, cq_id=0, blocking=False)
-    ttnn.synchronize_device(device)
-    ttnn.release_trace(device, tid)
-    end = time.time()
-    elapsed = end - start
-    print(f"Elapsed time trace: {elapsed} seconds")
-
-    tt_out = ttnn.to_torch(output_t)
-
-    pt_out = in0 @ in1
-    if has_bias:
-        pt_out += bias
-
-    print(pt_out[0][0][0][0:64])
-    print(tt_out[0][0][0][0:64])
-
-    passing, output = comp_pcc(pt_out, tt_out)
-    logger.info(output)
-    assert passing
+def run_matmul_no_bias(in0_t, in1_t, program_config, sharded_mem_config, out_dtype, compute_kernel_config):
+    return ttnn.matmul(
+        in0_t,
+        in1_t,
+        program_config=program_config,
+        memory_config=sharded_mem_config,
+        dtype=out_dtype,
+        compute_kernel_config=compute_kernel_config,
+    )
 
 
-# @pytest.mark.parametrize(
-#     "fidelity",
-#     [
-#         ttnn.MathFidelity.HiFi2,
-#         ttnn.MathFidelity.LoFi,
-#     ],
-#     ids=["HiFi2", "LoFi"],
-# )
-# @pytest.mark.parametrize(
-#     "has_bias",
-#     [
-#         False,
-#         True,
-#     ],
-#     ids=["no_bias", "bias"],
-# )
-@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576, "trace_region_size": 327041024}], indirect=True)
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576, "trace_region_size": 698241024}], indirect=True)
 @pytest.mark.parametrize(
     "fidelity",
     [
@@ -271,80 +165,178 @@ def run_test_matmul_in1_dram_sharded(
     ids=["LoFi"],
 )
 @pytest.mark.parametrize(
-    "has_bias",
-    [
-        False,
-    ],
-    ids=["bias"],
-)
-@pytest.mark.parametrize(
     "in0_dtype, in1_dtype, out_dtype",
     [
         (ttnn.bfloat16, ttnn.bfloat8_b, ttnn.bfloat8_b),
     ],
 )
-@pytest.mark.parametrize(
-    "in1_in_dram, out_sharded, in0_sharded, M, K, N, activation, grid_size",
-    # "in1_in_dram, out_sharded, in0_sharded, M, K, N, activation, grid_size, in0_dtype, in1_dtype, out_dtype",
-    [
-        # (False, True, True, 32, 8192, 1280, None, (8, 1)),
-        # (False, True, True, 32, 8192, 4096, None, (8, 2)),
-        # (False, True, True, 32, 8192, 1024, None, (8, 1)),
-        # (False, True, True, 32, 32768, 1024, None, (8, 4)),
-        # (False, True, True, 32, 4096, 65536, None, (8, 8)),
-        (False, True, True, 32, 3584, 57344, None, (8, 7)),
-        # (False, True, True, 32, 4096, 6144, None, (8, 2), ttnn.bfloat16, ttnn.bfloat8_b, ttnn.bfloat16),
-        # (False, True, True, 32, 4096, 14336, None, (8, 2), ttnn.bfloat16, ttnn.bfloat4_b, ttnn.bfloat8_b),
-        # (False, True, True, 32, 14336, 4096, None, (8, 2), ttnn.bfloat8_b, ttnn.bfloat8_b, ttnn.bfloat8_b),
-        # (False, True, True, 32, 4096, 14336, None, (8, 2), ttnn.bfloat16, ttnn.bfloat4_b, ttnn.bfloat8_b),
-    ],
-)
-def test_matmul_in1_dram_sharded_with_program_cache(
+def test_matmul_in1_dram_sharded(
     device,
-    in0_sharded,
-    out_sharded,
-    in1_in_dram,
-    M,
-    K,
-    N,
     fidelity,
-    has_bias,
-    activation,
-    grid_size,
     in0_dtype,
     in1_dtype,
     out_dtype,
     function_level_defaults,
     use_program_cache,
 ):
-    for _ in range(1):
-        run_test_matmul_in1_dram_sharded(
-            device,
-            in0_sharded,
-            out_sharded,
-            in1_in_dram,
-            M,
-            K,
-            N,
-            fidelity,
-            has_bias,
-            activation,
-            grid_size,
-            in0_dtype,
-            in1_dtype,
-            out_dtype,
-            function_level_defaults,
-            use_program_cache,
+    grid_size = [8, 1]
+    num_cores = grid_size[0] * grid_size[1]
+
+    sharded_mem_config = ttnn.MemoryConfig(
+        memory_layout=ttnn.TensorMemoryLayout.WIDTH_SHARDED,
+        buffer_type=ttnn.BufferType.L1,
+    )
+
+    M = 32
+    K = 4096
+    N = 1792
+    in0, in0_t = create_in0_tensor(M, K, grid_size, in0_dtype, device)
+    in1, in1_t = create_in1_tensor(K, N, in1_dtype, device)
+
+    in0_block_w = 16
+    out_block_h = 1
+    out_block_w = 7
+    program_config = get_program_config(in0_block_w, out_block_h, out_block_w)
+    compute_kernel_config = get_kernel_config(fidelity)
+
+    in1_2, in1_t_2 = create_in1_tensor(K, N, in1_dtype, device)
+    program_config_2 = get_program_config(in0_block_w, out_block_h, out_block_w)
+
+    print("start first run")
+
+    output_t1 = run_matmul_no_bias(in0_t, in1_t, program_config, sharded_mem_config, out_dtype, compute_kernel_config)
+    output_t2 = run_matmul_no_bias(
+        in0_t, in1_t_2, program_config_2, sharded_mem_config, out_dtype, compute_kernel_config
+    )
+    output_t3 = ttnn.mul(
+        output_t1,
+        output_t2,
+        memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
+        input_tensor_a_activation=ttnn.UnaryOpType.SILU,
+        dtype=ttnn.bfloat8_b,
+    )
+
+    print("start")
+    import time
+
+    start = time.time()
+    tid = ttnn.begin_trace_capture(device, cq_id=0)
+    for i in range(1):
+        print(i)
+        output_t1 = run_matmul_no_bias(
+            in0_t, in1_t, program_config, sharded_mem_config, out_dtype, compute_kernel_config
         )
-        # dummy tensor to change tensor alloc
-        dummy_shape = [1, 1, 32, 32]
-        py_dummy_tensor = torch.randn(dummy_shape)
-        mem_config = ttnn.MemoryConfig(
-            memory_layout=ttnn.TensorMemoryLayout.INTERLEAVED,
-            buffer_type=ttnn.BufferType.DRAM,
+        output_t2 = run_matmul_no_bias(
+            in0_t, in1_t_2, program_config_2, sharded_mem_config, out_dtype, compute_kernel_config
         )
-        tt_dummy_tensor = ttnn.Tensor(py_dummy_tensor, in0_dtype).to(ttnn.TILE_LAYOUT).to(device, mem_config)
-    # assert device.num_program_cache_entries() == 3
+        output_t3 = ttnn.mul(
+            output_t1,
+            output_t2,
+            memory_config=ttnn.L1_WIDTH_SHARDED_MEMORY_CONFIG,
+            input_tensor_a_activation=ttnn.UnaryOpType.SILU,
+            dtype=ttnn.bfloat8_b,
+        )
+    ttnn.end_trace_capture(device, tid, cq_id=0)
+
+    end = time.time()
+    elapsed = end - start
+    print(f"Elapsed time no trace: {elapsed} seconds")
+
+    start = time.time()
+    for _ in range(100000):
+        ttnn.execute_trace(device, tid, cq_id=0, blocking=False)
+    ttnn.synchronize_device(device)
+    ttnn.release_trace(device, tid)
+    end = time.time()
+    elapsed = end - start
+    print(f"Elapsed time trace: {elapsed} seconds")
+    tt_out = ttnn.to_torch(output_t2)
+
+
+# @pytest.mark.parametrize("device_params", [{"l1_small_size": 24576, "trace_region_size": 698241024}], indirect=True)
+# @pytest.mark.parametrize(
+#     "fidelity",
+#     [
+#         ttnn.MathFidelity.LoFi,
+#     ],
+#     ids=["LoFi"],
+# )
+# @pytest.mark.parametrize(
+#     "has_bias",
+#     [
+#         False,
+#     ],
+#     ids=["bias"],
+# )
+# @pytest.mark.parametrize(
+#     "in0_dtype, in1_dtype, out_dtype",
+#     [
+#         (ttnn.bfloat16, ttnn.bfloat8_b, ttnn.bfloat8_b),
+#     ],
+# )
+# @pytest.mark.parametrize(
+#     "in1_in_dram, out_sharded, in0_sharded, M, K, N, activation, grid_size",
+#     # "in1_in_dram, out_sharded, in0_sharded, M, K, N, activation, grid_size, in0_dtype, in1_dtype, out_dtype",
+#     [
+#         # (False, True, True, 32, 8192, 1280, None, (8, 1)),
+#         # (False, True, True, 32, 8192, 4096, None, (8, 2)),
+#         # (False, True, True, 32, 8192, 1024, None, (8, 1)),
+#         # (False, True, True, 32, 32768, 1024, None, (8, 4)),
+#         # (False, True, True, 32, 4096, 65536, None, (8, 8)),
+#         (False, True, True, 32, 3584, 3584, None, (8, 7)),
+#         # (False, True, True, 32, 57344, 3584, None, (8, 7)),
+#         # (False, True, True, 32, 4096, 6144, None, (8, 2), ttnn.bfloat16, ttnn.bfloat8_b, ttnn.bfloat16),
+#         # (False, True, True, 32, 4096, 14336, None, (8, 2), ttnn.bfloat16, ttnn.bfloat4_b, ttnn.bfloat8_b),
+#         # (False, True, True, 32, 14336, 4096, None, (8, 2), ttnn.bfloat8_b, ttnn.bfloat8_b, ttnn.bfloat8_b),
+#         # (False, True, True, 32, 4096, 14336, None, (8, 2), ttnn.bfloat16, ttnn.bfloat4_b, ttnn.bfloat8_b),
+#     ],
+# )
+# def test_matmul_in1_dram_sharded_with_program_cache(
+#     device,
+#     in0_sharded,
+#     out_sharded,
+#     in1_in_dram,
+#     M,
+#     K,
+#     N,
+#     fidelity,
+#     has_bias,
+#     activation,
+#     grid_size,
+#     in0_dtype,
+#     in1_dtype,
+#     out_dtype,
+#     function_level_defaults,
+#     use_program_cache,
+# ):
+#     for _ in range(1):
+#         run_test_matmul_in1_dram_sharded(
+#             device,
+#             in0_sharded,
+#             out_sharded,
+#             in1_in_dram,
+#             M,
+#             K,
+#             N,
+#             fidelity,
+#             has_bias,
+#             activation,
+#             grid_size,
+#             in0_dtype,
+#             in1_dtype,
+#             out_dtype,
+#             function_level_defaults,
+#             use_program_cache,
+#         )
+#         # dummy tensor to change tensor alloc
+#         dummy_shape = [1, 1, 32, 32]
+#         py_dummy_tensor = torch.randn(dummy_shape)
+#         mem_config = ttnn.MemoryConfig(
+#             memory_layout=ttnn.TensorMemoryLayout.INTERLEAVED,
+#             buffer_type=ttnn.BufferType.DRAM,
+#         )
+#         tt_dummy_tensor = ttnn.Tensor(py_dummy_tensor, in0_dtype).to(ttnn.TILE_LAYOUT).to(device, mem_config)
+#     # assert device.num_program_cache_entries() == 3
 
 
 def run_test_matmul_in1_dram_sharded_mm_chain(

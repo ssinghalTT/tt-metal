@@ -75,8 +75,8 @@ void kernel_main() {
         uint32_t l1_read_addr_in1 = 0;
         constexpr DataFormat in1_data_format = get_dataformat(cb_id_in1);
         uint64_t multicast_data_addr = multicast_data_noc | mcast_addr;
-        noc_async_write_multicast_loopback_src(
-            mcast_addr, multicast_data_addr, in1_single_tile_size_bytes * 16, num_cores_mcast);
+        // noc_async_write_multicast_loopback_src(
+        //     mcast_addr, multicast_data_addr, in1_single_tile_size_bytes * 16, num_cores_mcast);
 
         uint32_t in1_base_addr =
             noc_async_read_tile_dram_sharded_set_state<true>(in1_tensor_addr, in1_page_size, dram_bank_id, vc);
@@ -211,15 +211,15 @@ void kernel_main() {
         // noc_async_write_barrier();
 #endif
 
-        noc_async_write_multicast_loopback_src(
-            mcast_addr, multicast_data_addr, in1_single_tile_size_bytes * 16, num_cores_mcast);
+        // noc_async_write_multicast_loopback_src(
+        //     mcast_addr, multicast_data_addr, in1_single_tile_size_bytes * 16, num_cores_mcast);
 
         noc_async_write_barrier();
 
         cb_pop_front(cb_id_out, out_block_num_tiles);
     }
 
-    noc_async_atomic_barrier();
-    noc_async_read_barrier();
-    noc_async_write_barrier();
+    // noc_async_atomic_barrier();
+    // noc_async_read_barrier();
+    // noc_async_write_barrier();
 }
