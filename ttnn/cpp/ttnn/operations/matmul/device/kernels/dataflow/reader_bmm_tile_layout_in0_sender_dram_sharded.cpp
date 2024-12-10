@@ -10,7 +10,7 @@
 #include "debug/dprint.h"
 
 void kernel_main() {
-    for (uint32_t i = 0; i < 1000; ++i) {
+    for (uint32_t i = 0; i < 1; ++i) {
         if (i % 1000 == 0) {
             DPRINT << "in0 sender: " << i << ENDL();
         }

@@ -190,9 +190,10 @@ def run_test_matmul_in1_dram_sharded(
     import time
 
     start = time.time()
-    tid = ttnn.begin_trace_capture(device, cq_id=0)
+
     if has_bias:
-        for i in range(1000):
+        tid = ttnn.begin_trace_capture(device, cq_id=0)
+        for i in range(10000):
             print(i)
             output_t = ttnn.linear(
                 in0_t,
@@ -203,8 +204,10 @@ def run_test_matmul_in1_dram_sharded(
                 dtype=out_dtype,
                 compute_kernel_config=compute_kernel_config,
             )
+        ttnn.end_trace_capture(device, tid, cq_id=0)
     else:
-        for i in range(1000):
+        tid = ttnn.begin_trace_capture(device, cq_id=0)
+        for i in range(10000):
             print(i)
             output_t = ttnn.matmul(
                 in0_t,
@@ -214,13 +217,15 @@ def run_test_matmul_in1_dram_sharded(
                 dtype=out_dtype,
                 compute_kernel_config=compute_kernel_config,
             )
-    ttnn.end_trace_capture(device, tid, cq_id=0)
+        ttnn.end_trace_capture(device, tid, cq_id=0)
+
     end = time.time()
     elapsed = end - start
     print(f"Elapsed time no trace: {elapsed} seconds")
 
     start = time.time()
-    ttnn.execute_trace(device, tid, cq_id=0, blocking=False)
+    for _ in range(100):
+        ttnn.execute_trace(device, tid, cq_id=0, blocking=False)
     ttnn.synchronize_device(device)
     ttnn.release_trace(device, tid)
     end = time.time()
@@ -257,7 +262,7 @@ def run_test_matmul_in1_dram_sharded(
 #     ],
 #     ids=["no_bias", "bias"],
 # )
-@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576, "trace_region_size": 37216256}], indirect=True)
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576, "trace_region_size": 327041024}], indirect=True)
 @pytest.mark.parametrize(
     "fidelity",
     [
