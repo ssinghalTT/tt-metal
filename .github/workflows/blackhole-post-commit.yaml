@@ -77,6 +77,13 @@ jobs:
       runner-label: BH
       timeout: 60
       os: "ubuntu-22.04"
+  microbenchmarks:
+    needs: build-artifact
+    uses: ./.github/workflows/metal-run-microbenchmarks.yaml
+    with:
+      arch: blackhole
+      runner-label: BH
+    secrets: inherit
 
 #   profiler-regression:
 #     needs: build-artifact-profiler
