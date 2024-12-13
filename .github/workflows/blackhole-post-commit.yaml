@@ -83,6 +83,7 @@ jobs:
     with:
       arch: blackhole
       runner-label: BH
+      os: "ubuntu-22.04"
     secrets: inherit
 
 #   profiler-regression:
