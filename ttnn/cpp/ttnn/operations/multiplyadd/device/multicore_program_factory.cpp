@@ -141,10 +141,10 @@ void MultiplyAddDeviceOperation::MultiCore::override_runtime_arguments(
     size_t& num_cores_y = cached_program.shared_variables.num_cores_y;
     uint32_t num_cores = num_cores_x * num_cores_y;
 
-    const Tensor& input_tensor1 = tensor_args.input_tensor1;
-    const Tensor& input_tensor2 = tensor_args.input_tensor2;
-    const Tensor& input_tensor3 = tensor_args.input_tensor3;
-    Tensor& output_tensor = tensor_return_value;
+    const ttnn::Tensor& input_tensor1 = tensor_args.input_tensor1;
+    const ttnn::Tensor& input_tensor2 = tensor_args.input_tensor2;
+    const ttnn::Tensor& input_tensor3 = tensor_args.input_tensor3;
+    ttnn::Tensor& output_tensor = tensor_return_value;
 
     Buffer* src0_buffer = input_tensor1.buffer();
     Buffer* src1_buffer = input_tensor2.buffer();

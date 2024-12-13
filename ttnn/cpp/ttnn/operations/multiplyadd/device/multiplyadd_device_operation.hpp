@@ -14,8 +14,8 @@ struct MultiplyAddDeviceOperation {
         const ttnn::Tensor& input_tensor3;
     };
 
-    using spec_return_value_t = TensorSpec;
-    using tensor_return_value_t = Tensor;
+    using spec_return_value_t = ttnn::TensorSpec;
+    using tensor_return_value_t = ttnn::Tensor;
     using shape_return_value_t = ttnn::Shape;
 
     struct MultiCore {
@@ -69,7 +69,7 @@ struct MultiplyAddDeviceOperation {
     // argument will be added automatically for primitive operations So, the user can also call this operation using
     // `tensor_return_value_t output = ttnn::prim::example(queue_id, input_tensor)`
     static std::tuple<operation_attributes_t, tensor_args_t> invoke(
-        const Tensor& input_tensor1, const Tensor& input_tensor2, const Tensor& input_tensor3);
+        const ttnn::Tensor& input_tensor1, const ttnn::Tensor& input_tensor2, const ttnn::Tensor& input_tensor3);
 
     // helper methods
 private:

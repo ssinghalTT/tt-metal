@@ -1,7 +1,6 @@
 #include "multiplyadd_device_operation.hpp"
 #include <cstddef>
 #include "common/assert.hpp"
-#include "ttnn/tensor/tensor.hpp"
 #include "ttnn/tensor/types.hpp"
 
 namespace ttnn::operations::multiplyadd {
@@ -43,7 +42,7 @@ bool MultiplyAddDeviceOperation::is_tensor_dram_interleaved(const ttnn::Tensor& 
 
 std::tuple<MultiplyAddDeviceOperation::operation_attributes_t, MultiplyAddDeviceOperation::tensor_args_t>
 MultiplyAddDeviceOperation::invoke(
-    const Tensor& input_tensor1, const Tensor& input_tensor2, const Tensor& input_tensor3) {
+    const ttnn::Tensor& input_tensor1, const ttnn::Tensor& input_tensor2, const ttnn::Tensor& input_tensor3) {
     return {operation_attributes_t{}, tensor_args_t{input_tensor1, input_tensor2, input_tensor3}};
 }
 }  // namespace ttnn::operations::multiplyadd
