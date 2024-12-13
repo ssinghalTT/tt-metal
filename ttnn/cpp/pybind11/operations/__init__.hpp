@@ -36,6 +36,7 @@
 #include "ttnn/operations/kv_cache/kv_cache_pybind.hpp"
 #include "ttnn/operations/loss/loss_pybind.hpp"
 #include "ttnn/operations/matmul/matmul_pybind.hpp"
+#include "ttnn/operations/multiplyadd/multiplyadd_pybind.hpp"
 #include "ttnn/operations/moreh/moreh_pybind.hpp"
 #include "ttnn/operations/normalization/normalization_pybind.hpp"
 #include "ttnn/operations/pool/downsample/downsample_pybind.hpp"
@@ -162,6 +163,9 @@ void py_module(py::module& module) {
 
     auto m_bernoulli = module.def_submodule("bernoulli", "bernoulli operations");
     bernoulli::bind_bernoulli_operation(m_bernoulli);
+
+    auto m_multiplyadd = module.def_submodule("multiplyadd", "multiplyadd operation");
+    multiplyadd::py_module(m_multiplyadd);
 }
 }  // namespace operations
 

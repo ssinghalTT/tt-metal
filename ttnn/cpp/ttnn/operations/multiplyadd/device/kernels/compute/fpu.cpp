@@ -45,5 +45,5 @@ void MAIN {
         ckernel::tile_regs_release();
     }
     cb_push_back(dst1_cb_index, batch);
-}
+};
 }  // namespace NAMESPACE

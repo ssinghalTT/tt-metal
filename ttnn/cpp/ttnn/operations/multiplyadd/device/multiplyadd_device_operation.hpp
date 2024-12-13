@@ -4,7 +4,7 @@
 
 namespace ttnn {
 
-namespace operations::mac {
+namespace operations::multiplyadd {
 
 struct MultiplyAddDeviceOperation {
     struct operation_attributes_t {};
@@ -76,9 +76,9 @@ private:
     static bool is_tensor_dram_interleaved(const ttnn::Tensor& tensor);
 };
 
-}  // namespace operations::mac
+}  // namespace operations::multiplyadd
 }  // namespace ttnn
 namespace ttnn::prim {
 constexpr auto multiplyadd =
-    ttnn::register_operation<"ttnn::prim::multiplyadd", ttnn::operations::mac::MultiplyAddDeviceOperation>();
+    ttnn::register_operation<"ttnn::prim::multiplyadd", ttnn::operations::multiplyadd::MultiplyAddDeviceOperation>();
 }

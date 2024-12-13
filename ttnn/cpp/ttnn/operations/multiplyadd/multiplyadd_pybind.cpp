@@ -1,9 +1,11 @@
 #include <pybind11/pybind11.h>
-#include "ttnn/cpp/pybind11/decorators.hpp"
-#include "multiplyadd.hpp"
+#include "pybind11/decorators.hpp"
+#include "ttnn/operations/multiplyadd/multiplyadd.hpp"
 
 void bind_multiplyadd_operation(py::module& module) {
-    auto doc = fmt::format(
+    bind_registered_operation(
+        module,
+        ttnn::multiplyadd,
         R"doc(
         Args:
             input_tensor1 (ttnn.Tensor): the first input tensor.
@@ -14,12 +16,7 @@ void bind_multiplyadd_operation(py::module& module) {
             ttnn.Tensor: the output tensor.
 
         multiplyadd(input_tensor1: ttnn.Tensor, input_tensor2: ttnn.Tensor, input_tensor3: ttnn.Tensor) -> ttnn.Tensor
-        )doc");
-
-    bind_registered_operation(
-        module,
-        ttnn::multiplyadd,
-        doc,
+        )doc",
         ttnn::pybind_overload_t{
             [](const decltype(ttnn::multiplyadd)& self,
                const ttnn::Tensor& input_tensor1,

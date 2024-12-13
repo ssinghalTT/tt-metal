@@ -4,7 +4,7 @@
 #include "ttnn/tensor/tensor.hpp"
 #include "ttnn/tensor/types.hpp"
 
-using namespace ::ttnn::operations::mac;
+using namespace ::ttnn::operations::multiplyadd;
 
 MultiplyAddDeviceOperation::program_factory_t MultiplyAddDeviceOperation::select_program_factory(
     const operation_attributes_t& operation_attributes, const tensor_args_t& tensor_args) {

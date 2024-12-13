@@ -5,14 +5,15 @@
 namespace ttnn {
 
 namespace operations {
-namespace mac {
+namespace multiplyadd {
 
 struct MulAddOperation {
     static Tensor invoke(
         const ttnn::Tensor& input_tensor1, const ttnn::Tensor& input_tensor2, const ttnn::Tensor& input_tensor3);
 };
 
-}  // namespace mac
+}  // namespace multiplyadd
 }  // namespace operations
-constexpr auto multiplyadd = ttnn::register_operation<"ttnn::multiplyadd", ttnn::operations::mac::MulAddOperation>();
+constexpr auto multiplyadd =
+    ttnn::register_operation<"ttnn::multiplyadd", ttnn::operations::multiplyadd::MulAddOperation>();
 }  // namespace ttnn

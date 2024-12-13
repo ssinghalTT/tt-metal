@@ -14,7 +14,7 @@ using namespace tt;
 using namespace tt::constants;
 using namespace tt::tt_metal;
 
-namespace ttnn::operations::mac {
+namespace ttnn::operations::multiplyadd {
 MultiplyAddDeviceOperation::MultiCore::cached_program_t MultiplyAddDeviceOperation::MultiCore::create(
     const operation_attributes_t& attributes,
     const tensor_args_t& tensor_args,
@@ -168,4 +168,4 @@ void MultiplyAddDeviceOperation::MultiCore::override_runtime_arguments(
     }
 }
 
-}  // namespace ttnn::operations::mac
+}  // namespace ttnn::operations::multiplyadd
