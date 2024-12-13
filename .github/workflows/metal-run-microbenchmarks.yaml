@@ -1,10 +1,47 @@
-name: "metal - Run microbenchmarks"
+name: "[Internal] metal - Run microbenchmarks"
 
 on:
-  schedule:
-    - cron: "0 1,15 * * *"
-  workflow_dispatch:
   workflow_call:
+    inputs:
+      arch:
+        required: true
+        type: string
+      runner-label:
+        required: true
+        type: string
+      timeout:
+        required: false
+        type: number
+        default: 80
+      os:
+        required: false
+        type: string
+        default: "ubuntu-20.04"
+  workflow_dispatch:
+    inputs:
+      arch:
+        required: true
+        type: choice
+        options:
+          - grayskull
+          - wormhole_b0
+          - blackhole
+      runner-label:
+        required: true
+        type: choice
+        options:
+          - E150
+          - N150
+          - N300
+          - BH
+      timeout:
+        required: false
+        type: number
+        default: 60
+      os:
+        required: false
+        type: string
+        default: "ubuntu-20.04"
 
 jobs:
   run-microbenchmarks:
@@ -12,21 +49,25 @@ jobs:
       # Do not fail-fast because we need to ensure all tests go to completion
       # so we try not to get hanging machines
       fail-fast: false
-      matrix:
-        runner-info: [
-          {arch: grayskull, runs-on: ["E150", "pipeline-perf", "bare-metal", "in-service"]},
-          # Do not run N150 on microbenchmarks for now as we do not have the machines for it
-          # {arch: wormhole_b0, runs-on: ["pipeline-perf", "N150", "bare-metal", "in-service"]},
-          # N300
-          {arch: wormhole_b0, runs-on: ["N300", "pipeline-perf", "bare-metal", "in-service"]},
-          {arch: wormhole_b0, runs-on: ["N300", "pipeline-perf", "bare-metal", "in-service"], ccl: true},
-        ]
+      # matrix:
+      #   runner-info: [
+      #     {arch: grayskull, runs-on: ["E150", "pipeline-perf", "bare-metal", "in-service"]},
+      #     # Do not run N150 on microbenchmarks for now as we do not have the machines for it
+      #     # {arch: wormhole_b0, runs-on: ["pipeline-perf", "N150", "bare-metal", "in-service"]},
+      #     # N300
+      #     {arch: wormhole_b0, runs-on: ["N300", "pipeline-perf", "bare-metal", "in-service"]},
+      #     {arch: wormhole_b0, runs-on: ["N300", "pipeline-perf", "bare-metal", "in-service"], ccl: true},
+      #   ]
     env:
       TT_METAL_ENV: ${{ vars.TT_METAL_ENV }}
       # Use BM for microbenchmarks
-      ARCH_NAME: ${{ matrix.runner-info.arch }}
+      ARCH_NAME: ${{ inputs.arch }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/build/lib
-    runs-on: ${{ matrix.runner-info.runs-on }}
+    runs-on:
+      - ${{ inputs.runner-label }}
+      - "in-service"
+      - "pipeline-perf"
+      - "bare-metal"
     steps:
       - uses: tenstorrent/tt-metal/.github/actions/checkout-with-submodule-lfs@main
       - name: Set up dynamic env vars for build
