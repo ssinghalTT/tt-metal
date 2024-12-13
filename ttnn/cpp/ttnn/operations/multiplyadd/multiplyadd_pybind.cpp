@@ -2,6 +2,7 @@
 #include "pybind11/decorators.hpp"
 #include "ttnn/operations/multiplyadd/multiplyadd.hpp"
 
+namespace ttnn::operations::multiplyadd {
 void bind_multiplyadd_operation(py::module& module) {
     bind_registered_operation(
         module,
@@ -30,3 +31,4 @@ void bind_multiplyadd_operation(py::module& module) {
 }
 
 void py_module(py::module& module) { bind_multiplyadd_operation(module); };
+}  // namespace ttnn::operations::multiplyadd

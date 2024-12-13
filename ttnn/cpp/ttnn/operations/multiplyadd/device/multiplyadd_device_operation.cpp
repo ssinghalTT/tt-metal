@@ -4,7 +4,7 @@
 #include "ttnn/tensor/tensor.hpp"
 #include "ttnn/tensor/types.hpp"
 
-using namespace ::ttnn::operations::multiplyadd;
+namespace ttnn::operations::multiplyadd {
 
 MultiplyAddDeviceOperation::program_factory_t MultiplyAddDeviceOperation::select_program_factory(
     const operation_attributes_t& operation_attributes, const tensor_args_t& tensor_args) {
@@ -46,3 +46,4 @@ MultiplyAddDeviceOperation::invoke(
     const Tensor& input_tensor1, const Tensor& input_tensor2, const Tensor& input_tensor3) {
     return {operation_attributes_t{}, tensor_args_t{input_tensor1, input_tensor2, input_tensor3}};
 }
+}  // namespace ttnn::operations::multiplyadd
