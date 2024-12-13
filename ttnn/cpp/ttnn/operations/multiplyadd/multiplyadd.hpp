@@ -14,10 +14,5 @@ struct MulAddOperation {
 
 }  // namespace mac
 }  // namespace operations
-
-}  // namespace ttnn
-
-namespace ttnn {
-constexpr auto multiplyadd =
-    ttnn::register_operation_with_auto_launch_op<"ttnn::multiplyadd", ttnn::operations::mac::MulAddOperation>();
+constexpr auto multiplyadd = ttnn::register_operation<"ttnn::multiplyadd", ttnn::operations::mac::MulAddOperation>();
 }  // namespace ttnn
