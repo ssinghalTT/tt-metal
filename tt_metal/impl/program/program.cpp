@@ -1062,6 +1062,10 @@ void detail::Program_::populate_dispatch_data(Device *device) {
                 // Spans are now packed into one
                 // TODO: code below can be simplified w/ a single span
                 uint32_t num_spans = kernel_bin.num_spans();
+                if (num_spans != 1) {
+                    std::printf("num spans=%u\n", num_spans);
+                    std::abort();
+                }
                 dst_base_addrs.resize(dst_base_addrs.size() + num_spans);
                 page_offsets.resize(page_offsets.size() + num_spans);
                 lengths.resize(lengths.size() + num_spans);
