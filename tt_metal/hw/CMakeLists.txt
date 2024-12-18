@@ -20,8 +20,8 @@ set(TYPES
 
 include(FetchContent)
 set(SFPI_x86_64_Linux_RELEASE
-    "v6.0.0/sfpi-release.tgz"
-    "d837d26a2312d27815179995fdea83bd"
+    "v6.0.0-multilib/sfpi-release.tgz"
+    "e2d84d12731f8381fd41943893ec8d9f"
 )
 if(DEFINED SFPI_${CMAKE_HOST_SYSTEM_PROCESSOR}_${CMAKE_HOST_SYSTEM_NAME}_RELEASE)
     set(SFPI_RELEASE "${SFPI_${CMAKE_HOST_SYSTEM_PROCESSOR}_${CMAKE_HOST_SYSTEM_NAME}_RELEASE}")
