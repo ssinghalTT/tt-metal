@@ -73,22 +73,6 @@ Pool2D::MultiCore::cached_program_t pool2d_multi_core_sharded_with_halo_v2_impl_
     uint32_t nblocks) {
     TT_FATAL(pool_type == Pool2DType::MAX_POOL2D, "Currently only support max pool2d (#12151)");
 
-    std::cout << "<in_n          " << in_n << std::endl;
-    std::cout << "<in_h          " << in_h << std::endl;
-    std::cout << "<in_w          " << in_w << std::endl;
-    std::cout << "<out_h         " << out_h << std::endl;
-    std::cout << "<out_w         " << out_w << std::endl;
-    std::cout << "<kernel_size_h " << kernel_size_h << std::endl;
-    std::cout << "<kernel_size_w " << kernel_size_w << std::endl;
-    std::cout << "<stride_h      " << stride_h << std::endl;
-    std::cout << "<stride_w      " << stride_w << std::endl;
-    std::cout << "<pad_h         " << pad_h << std::endl;
-    std::cout << "<pad_w         " << pad_w << std::endl;
-    std::cout << "<dilation_h    " << dilation_h << std::endl;
-    std::cout << "<dilation_w    " << dilation_w << std::endl;
-    std::cout << "<num_shards_c  " << num_shards_c << std::endl;
-    std::cout << "<nblocks       " << nblocks << std::endl;
-
     // This should allocate a DRAM buffer on the device
     Device* device = input.device();
     tt::tt_metal::Buffer* src_dram_buffer = input.buffer();
@@ -129,18 +113,6 @@ Pool2D::MultiCore::cached_program_t pool2d_multi_core_sharded_with_halo_v2_impl_
     const bool is_large_kernel = kernel_size_hw > max_rows_for_reduction;
     const bool is_wide_reduction = in_ntiles_c > MAX_TILES_PER_REDUCTION;
 
-    std::cout << "num_shards_c " << num_shards_c << std::endl;
-    std::cout << "indices_nbytes " << indices_nbytes << std::endl;
-    std::cout << "in_nbytes_c " << in_nbytes_c << std::endl;
-    std::cout << "out_nbytes_c " << out_nbytes_c << std::endl;
-    std::cout << "kernel_size_hw " << kernel_size_hw << std::endl;
-    std::cout << "kernel_size_hw_padded " << kernel_size_hw_padded << std::endl;
-    std::cout << "in_ntiles_hw " << in_ntiles_hw << std::endl;
-    std::cout << "in_ntiles_c " << in_ntiles_c << std::endl;
-    std::cout << "out_ntiles_c " << out_ntiles_c << std::endl;
-    std::cout << "is_large_kernel " << is_large_kernel << std::endl;
-    std::cout << "is_wide_reduction " << is_wide_reduction << std::endl;
-
     TT_FATAL(nblocks == 1, "Multiple blocks not yet supported");
 
     uint32_t tile_w = tt::constants::TILE_WIDTH;
@@ -161,12 +133,6 @@ Pool2D::MultiCore::cached_program_t pool2d_multi_core_sharded_with_halo_v2_impl_
     uint32_t in_nhw_per_core_cliff = 0;
     uint32_t out_nhw_per_core = output.shard_spec()->shape[0];
     uint32_t ncores_w = grid_size.x;
-
-    std::cout << "ncores               " << ncores << std::endl;
-    std::cout << "in_nhw_per_core      " << in_nhw_per_core << std::endl;
-    std::cout << "in_nhw_per_core_cliff" << in_nhw_per_core_cliff << std::endl;
-    std::cout << "out_nhw_per_core     " << out_nhw_per_core << std::endl;
-    std::cout << "ncores_w             " << ncores_w << std::endl;
 
     // TODO: support generic nblocks
     TT_FATAL(
@@ -202,9 +168,6 @@ Pool2D::MultiCore::cached_program_t pool2d_multi_core_sharded_with_halo_v2_impl_
     auto raw_in_cb = tt::tt_metal::CreateCircularBuffer(program, all_cores, raw_in_cb_config);
     log_debug(tt::LogOp, "CB {} :: PS = {}, NP = {}", raw_in_cb_id, raw_in_cb_pagesize, raw_in_cb_npages);
 
-    std::cout << "raw_in_cb_npages " << raw_in_cb_npages << std::endl;
-    std::cout << "raw_in_cb_pagesize " << raw_in_cb_pagesize << std::endl;
-
     // INVESTIGATE alignment of 4/16 ?
     // reader indices
     auto in_reader_indices_cb_id = tt::CBIndex::c_3;
@@ -223,9 +186,6 @@ Pool2D::MultiCore::cached_program_t pool2d_multi_core_sharded_with_halo_v2_impl_
             .set_page_size(in_reader_indices_cb_id, in_reader_indices_cb_pagesize)
             .set_globally_allocated_address(*reader_indices_buffer);
     auto in_reader_indices_cb = tt::tt_metal::CreateCircularBuffer(program, all_cores, in_reader_indices_cb_config);
-    std::cout << "indices_nbytes " << indices_nbytes << std::endl;
-    std::cout << "in_reader_indices_cb_npages " << in_reader_indices_cb_npages << std::endl;
-    std::cout << "in_reader_indices_cb_pagesize " << in_reader_indices_cb_pagesize << std::endl;
 
     uint32_t in_cb_sz = 0;
     uint32_t in_nblocks_c = 1;

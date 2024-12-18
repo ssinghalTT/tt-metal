@@ -9,41 +9,24 @@
 #include "compute_kernel_api/pack_untilize.h"
 #include "tt_metal/hw/inc/debug/dprint_tensix.h"
 
-#define DEBUG_PRINT 0
-
-#if DEBUG_PRINT == 1
-    #include "debug/dprint.h"
-
-    inline void print_tile_rows(uint32_t cb_id, uint32_t rows = 32, uint32_t tile_id = 0, bool untilize = false) {
-        // UNPACK(( DPRINT << "======" << ENDL() ));
-        for (uint16_t r = 0; r < rows; ++ r) {
-            UNPACK(( DPRINT << (uint)r << " :: " << TileSlice(cb_id, tile_id, SliceRange{.h0 = (uint8_t)r, .h1 = (uint8_t)(r + 1), .hs = (uint8_t)1, .w0 = (uint8_t)0, .w1 = (uint8_t)32, .ws = (uint8_t)1}, true, untilize) << ENDL() ));
-        }
-        // UNPACK(( DPRINT << "++++++" << ENDL() ));
+inline void print_page(uint32_t l1_addr, uint32_t pagelen) {
+    volatile tt_l1_ptr uint16_t* ptr = reinterpret_cast<volatile tt_l1_ptr uint16_t*>(l1_addr);
+    for (uint32_t i = 0; i < pagelen; ++i) {
+        DPRINT << BF16(*ptr) << " ";
+        ptr++;
     }
+    DPRINT << ENDL();
+}
 
-    // inline void print_full_tile(uint32_t cb_id, uint32_t tile_id = 0, bool untilize = false) {
-    //     UNPACK(( DPRINT << "======" << ENDL() ));
-    //     for (uint16_t r = 0; r < 32; ++ r) {
-    //         SliceRange sr = SliceRange{.h0 = r, .h1 = (uint16_t)(r+1), .hs = 1, .w0 = 0, .w1 = 32, .ws = 1};
-    //         UNPACK(( DPRINT << (uint)r << TileSlice(cb_id, tile_id, sr, true, untilize) << ENDL() ));
-    //     }
-    //     UNPACK(( DPRINT << "++++++" << ENDL() ));
-    // }
-
-    // inline void print_cb_details(uint32_t cb_id) {
-    //     DPRINT << "cb_id " << cb_id << ": { "
-    //             << "size: " << cb_interface[cb_id].fifo_size << ", "
-    //             << "limit: " << cb_interface[cb_id].fifo_limit << ", "
-    //             << "page_size: " << cb_interface[cb_id].fifo_page_size << ", "
-    //             << "num_pages: " << cb_interface[cb_id].fifo_num_pages << ", "
-    //             << "rd_ptr: " << cb_interface[cb_id].fifo_rd_ptr << ", "
-    //             << "wr_ptr: " << cb_interface[cb_id].fifo_wr_ptr << ", "
-    //             << "wr_tile_ptr: " << cb_interface[cb_id].fifo_wr_tile_ptr << " }" << ENDL();
-    // }
-#endif
-
-uint16_t minus_inf = 63487;
+inline void print_page_i(uint32_t l1_addr, uint32_t pagelen, uint32_t page_index) {
+    volatile tt_l1_ptr uint16_t* ptr = reinterpret_cast<volatile tt_l1_ptr uint16_t*>(l1_addr);
+    ptr += pagelen * page_index;
+    for (uint32_t i = 0; i < pagelen; ++i) {
+        DPRINT << BF16(*ptr) << " ";
+        ptr++;
+    }
+    DPRINT << ENDL();
+}
 
 #define ALWI inline __attribute__((always_inline))
 
@@ -69,6 +52,12 @@ inline void reduce_h_fused(
     constexpr uint32_t num_out_rows = 1;
 
     cb_reserve_back(out_cb_id, 1);
+    PACK(DPRINT << "******************" << ENDL(););
+    PACK(DPRINT << "BEFORE OUTPUT PAGE" << ENDL(););
+    PACK(uint32_t out_l1_write_addr = CB_WR_PTR(out_cb_id));
+    PACK(print_page(out_l1_write_addr, 256););
+    PACK(DPRINT << "_________________" << ENDL(););
+
     const uint32_t curr_in_cb_id = split_reader ? (in_cb_id + (in_stick_index & 0x1)) : in_cb_id;
     cb_wait_front(curr_in_cb_id, 1);
     tile_regs_acquire();
@@ -76,17 +65,31 @@ inline void reduce_h_fused(
     for (uint32_t c_i = 0; c_i < num_output_tiles; ++c_i) {
         reduce_tile_math(c_i,  num_faces_in_tile /* reduce 1 or 2 faces */);
     }
-    //if (curr_in_cb_id != in_cb_id) {
-        dprint_tensix_dest_reg(0);
-    //}
+
+    // The issue of finding infinities in the out_cb_id is not dependent on whether the tensix_sync is applied or a
+    // large delay is applied It is verily possible that outputing too much data causes the dprint buffer to extend to
+    // out_cb_id and when we write the negative infinities we are actually overwriting the out_cb_id. tensix_sync();
+    // PACK(add_nops(););
+    for (uint32_t x = 0; x < 8; x++) {
+        dprint_tensix_dest_reg(x);
+    }
+
     cb_pop_front(curr_in_cb_id, 1);
     tile_regs_wait();
     tile_regs_commit();
     pack_untilize_dst<num_output_tiles>(out_cb_id, 1/*out_subblock_h*/, 0, num_out_rows, num_faces_in_tile);  /* pack 1 row (1x16 or 1x32) */
     tile_regs_release();
-    //if (curr_in_cb_id != in_cb_id) {
-    //    print_tile_rows(out_cb_id, 32, 0, false);
-    //}
+
+    // In the last iteration the data will be corrupted on wormhole_b0 for the debug print buffer.
+    // We will have negative infinity as the garbage data, even though we overwrite it, debug print
+    // Will print that negative infinities are there. But if we use the debug print from unpacker
+    // At the end of the program, we will see the correct result.
+    PACK(uint32_t out_l1_write_addr_a = CB_WR_PTR(out_cb_id));
+    PACK(DPRINT << "******************" << ENDL(););
+    PACK(DPRINT << "AFTER OUTPUT PAGE" << ENDL(););
+    PACK(print_page(out_l1_write_addr_a, 256););
+    PACK(DPRINT << "_________________" << ENDL(););
+
     cb_push_back(out_cb_id, 1);
 }
 
@@ -133,32 +136,27 @@ void MAIN {
     for (uint32_t i = 0; i < nsticks_per_core; ++ i) {
         for (uint32_t b_i = 0; b_i < in_nblocks_c; ++ b_i) {
             if (b_i == in_nblocks_c - 1 && partial_iter_output_tiles > 0) {
-                //tilize_uninit(in_cb_id, out_cb_id);
                 pack_untilize_uninit(out_cb_id);
-                /* tilizeA_B_reduce_init_short(in_cb_id,
-                                            in_scalar_cb_id,
-                                            partial_iter_output_tiles,
-                                            out_cb_id,
-                                            num_faces_in_tile,
-                                            window_size_hw); */
                 pack_untilize_dst_init_short<partial_iter_output_tiles>(out_cb_id, num_out_rows, num_faces_in_tile); /* pack 1 row (1x16 or 1x32) */
                 reduce_h_fused<partial_iter_output_tiles, is_partial_tile, split_reader, window_size_hw>(in_cb_id, in_scalar_cb_id, i, out_cb_id);
-            }
-            else {
-                //tilize_uninit(in_cb_id, out_cb_id);
+            } else {
                 pack_untilize_uninit(out_cb_id);
-                /* tilizeA_B_reduce_init_short(in_cb_id,
-                                            in_scalar_cb_id,
-                                            max_tiles_per_iter,
-                                            out_cb_id,
-                                            num_faces_in_tile,
-                                            window_size_hw); */
                 pack_untilize_dst_init_short<max_tiles_per_iter>(out_cb_id, num_out_rows, num_faces_in_tile); /* pack 1 row (1x16 or 1x32) */
                 reduce_h_fused<max_tiles_per_iter, is_partial_tile, split_reader, window_size_hw>(in_cb_id, in_scalar_cb_id, i, out_cb_id);
             }
         }
     }
     cb_pop_front(in_scalar_cb_id, 1);
+
+    // All the pages will show expected data, that is 8 pages, even ones containing 256 4s,
+    // and odd ones containing 128 4s followed by 128 garbage data, which for the last one
+    // Will be negative infinity.
+    UNPACK(DPRINT << "UNPACKER PRINTING OUTPUT PAGES " << ENDL();)
+    UNPACK(uint32_t out_l1_read_addr = CB_RD_PTR(out_cb_id););
+    for (uint32_t x = 0; x < 8; x++) {
+        UNPACK(print_page_i(out_l1_read_addr, 256, x);)
+        UNPACK(DPRINT << ENDL(););
+    }
 }
 
 }  // namespace NAMESPACE

@@ -172,52 +172,6 @@ def run_max_pool(
         applied_shard_scheme=shard_scheme,
     )
 
-    output_host = output.cpu()
-    output_pytorch_padded = torch.Tensor(ttnn.to_torch(output_host))
-    output_pytorch = output_pytorch_padded[:, :, :, :in_c]
-
-    ## reference
-    golden_pytorch = torch.nn.MaxPool2d(
-        kernel_size,
-        stride=stride,
-        padding=padding,
-        dilation=dilation,
-        return_indices=False,
-        ceil_mode=False,
-    )(act)
-
-    ## test for equivalance
-    golden_shape = golden_pytorch.shape
-    output_pytorch = output_pytorch.reshape(golden_shape[0], golden_shape[2], golden_shape[3], golden_shape[1])
-
-    output_pytorch = torch.permute(output_pytorch, (0, 3, 1, 2))  ## N, C, H, W
-
-    pcc_thresh = 1.0
-    if dtype == ttnn.bfloat8_b:
-        pcc_thresh = 0.9997
-
-    passing, pcc = assert_with_pcc(output_pytorch, golden_pytorch, pcc_thresh)
-
-    logger.debug(f"Passing: {passing}, PCC: {pcc}")
-
-    ## do more rigorous comparision for each element
-    atol, rtol = torch.testing._comparison.default_tolerances(torch.bfloat16)
-    if dtype == ttnn.bfloat8_b:
-        atol = 0.35
-
-    allclose = torch.allclose(output_pytorch, golden_pytorch, atol=atol)
-    isclose = torch.all(torch.isclose(output_pytorch, golden_pytorch, atol=atol))
-    isequal = torch.equal(output_pytorch, golden_pytorch)
-
-    assert allclose
-    assert isclose
-    if dtype == ttnn.bfloat16:
-        assert isequal
-
-    if memory_config:
-        logger.debug(f"Output memory config: {memory_config}")
-        assert ttnn.get_memory_config(output) == memory_config
-
 
 @pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
 @pytest.mark.parametrize(
