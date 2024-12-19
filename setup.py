@@ -135,7 +135,9 @@ class CMakeBuild(build_ext):
         dest_ttnn_build_dir = self.build_lib + "/ttnn/build"
         os.makedirs(dest_ttnn_build_dir, exist_ok=True)
         self.copy_tree(build_dir / "lib", dest_ttnn_build_dir + "/lib")
-        # self.copy_tree(source_dir / "runtime", self.build_lib + "/runtime")
+        self.copy_tree(source_dir / "runtime", self.build_lib + "/runtime")
+        # Remove parts that are not needed
+        os.remove(self.build_lib + "/runtime/sfpi/compiler/riscv32-unknown-elf/bin")
 
         # Encode ARCH_NAME into package for later use so user doesn't have to provide
         arch_name_file = self.build_lib + "/ttnn/.ARCH_NAME"
