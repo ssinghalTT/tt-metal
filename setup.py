@@ -3,17 +3,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import re
-import sys
-import sysconfig
-import platform
 import subprocess
 from dataclasses import dataclass
 from functools import partial
 from collections import namedtuple
 
 from pathlib import Path
-from setuptools import setup, Extension, find_namespace_packages
+from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 
 
@@ -39,8 +35,6 @@ def get_arch_name():
 
 
 def get_metal_local_version_scheme(metal_build_config, version):
-    from setuptools_scm.version import ScmVersion, guess_next_version
-
     arch_name = metal_build_config.arch_name
 
     if version.dirty:
@@ -50,8 +44,6 @@ def get_metal_local_version_scheme(metal_build_config, version):
 
 
 def get_metal_main_version_scheme(metal_build_config, version):
-    from setuptools_scm.version import ScmVersion, guess_next_version
-
     is_release_version = version.distance is None or version.distance == 0
     is_dirty = version.dirty
     is_clean_prod_build = (not is_dirty) and is_release_version
@@ -143,7 +135,7 @@ class CMakeBuild(build_ext):
         dest_ttnn_build_dir = self.build_lib + "/ttnn/build"
         os.makedirs(dest_ttnn_build_dir, exist_ok=True)
         self.copy_tree(build_dir / "lib", dest_ttnn_build_dir + "/lib")
-        self.copy_tree(source_dir / "runtime", self.build_lib + "/runtime")
+        # self.copy_tree(source_dir / "runtime", self.build_lib + "/runtime")
 
         # Encode ARCH_NAME into package for later use so user doesn't have to provide
         arch_name_file = self.build_lib + "/ttnn/.ARCH_NAME"

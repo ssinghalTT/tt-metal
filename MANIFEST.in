@@ -50,6 +50,7 @@ exclude .pre-commit-config.yaml
 
 # Some sources we want to exclude and not advertise
 prune ttnn/ttnn/examples/bert/
+prune ttnn/visualizer/
 
 recursive-include runtime *
 
