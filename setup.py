@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import shutil
 import subprocess
 from dataclasses import dataclass
 from functools import partial
@@ -137,7 +138,8 @@ class CMakeBuild(build_ext):
         self.copy_tree(build_dir / "lib", dest_ttnn_build_dir + "/lib")
         self.copy_tree(source_dir / "runtime", self.build_lib + "/runtime")
         # Remove parts that are not needed
-        os.remove(self.build_lib + "/runtime/sfpi/compiler/riscv32-unknown-elf/bin")
+        shutil.rmtree(self.build_lib + "/runtime/sfpi/compiler/riscv32-unknown-elf/bin")
+
 
         # Encode ARCH_NAME into package for later use so user doesn't have to provide
         arch_name_file = self.build_lib + "/ttnn/.ARCH_NAME"
