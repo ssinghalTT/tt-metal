@@ -8,7 +8,8 @@
 
 namespace NAMESPACE {
 void MAIN {
-    uint32_t w = 0;
+
+dsklfhsdlkfhselkuf    uint32_t w = 0;
     constexpr uint32_t onetile = 1;
     uint32_t B = get_arg_val<uint32_t>(0);
     uint32_t Ht = get_arg_val<uint32_t>(1);
