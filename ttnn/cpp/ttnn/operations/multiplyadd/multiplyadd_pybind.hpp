@@ -1,11 +1,11 @@
 #pragma once
+
 #include <pybind11/pybind11.h>
 #include "pybind11/decorators.hpp"
 #include "ttnn/operations/multiplyadd/multiplyadd.hpp"
-namespace py = pybind11;
 
 namespace ttnn::operations::multiplyadd {
-inline void bind_multiplyadd_operation(py::module& module) {
+inline void bind_multiplyadd_operation(pybind11::module& module) {
     bind_registered_operation(
         module,
         ttnn::multiplyadd,
@@ -16,7 +16,7 @@ inline void bind_multiplyadd_operation(py::module& module) {
             input_tensor3 (ttnn.Tensor): the third input tensor.
 
         Returns:
-            ttnn.Tensor: the output tensor.
+            ttnn.Tensor: the output tensor created by multiplying the first and second input tensors and adding the third input tensor.
 
         multiplyadd(input_tensor1: ttnn.Tensor, input_tensor2: ttnn.Tensor, input_tensor3: ttnn.Tensor) -> ttnn.Tensor
         )doc",
@@ -27,10 +27,10 @@ inline void bind_multiplyadd_operation(py::module& module) {
                const ttnn::Tensor& input_tensor3) -> ttnn::Tensor {
                 return self(input_tensor1, input_tensor2, input_tensor3);
             },
-            py::arg("input_tensor1"),
-            py::arg("input_tensor2"),
-            py::arg("input_tensor3")});
+            pybind11::arg("input_tensor1"),
+            pybind11::arg("input_tensor2"),
+            pybind11::arg("input_tensor3")});
 }
 
-inline void py_module(py::module& module) { bind_multiplyadd_operation(module); };
+inline void py_module(pybind11::module& module) { bind_multiplyadd_operation(module); };
 }  // namespace ttnn::operations::multiplyadd

@@ -1,13 +1,7 @@
-#include <cstdint>
 #include "dataflow_api.h"
 #include "hostdevcommon/kernel_structs.h"
-// #include "debug/dprint.h"
-
-using namespace tt;
 
 void kernel_main() {
-    // DPRINT << "READER" << ENDL();
-    constexpr uint32_t oneTile = 1;
     uint8_t src0_cb_index = tt::CBIndex::c_0;
     uint8_t src1_cb_index = tt::CBIndex::c_1;
     uint8_t src2_cb_index = tt::CBIndex::c_2;
@@ -18,12 +12,11 @@ void kernel_main() {
     uint32_t start_id = get_arg_val<uint32_t>(4);
     uint32_t end_id = start_id + batch;
     const uint32_t single_tile_size_bytes = get_tile_size(src0_cb_index);
-    // DPRINT << "READER BATCH:" << batch << ENDL();
 
     const InterleavedAddrGenFast<true> a = {
-        .bank_base_address = src0Addr,         // The base address of the buffer
-        .page_size = single_tile_size_bytes,   // The size of a buffer page
-        .data_format = DataFormat::Float16_b,  // The data format of the buffer
+        .bank_base_address = src0Addr,
+        .page_size = single_tile_size_bytes,
+        .data_format = DataFormat::Float16_b,
     };
     const InterleavedAddrGenFast<true> b = {
         .bank_base_address = src1Addr,
@@ -55,5 +48,4 @@ void kernel_main() {
         cb_push_back(src1_cb_index, 1);
         cb_push_back(src2_cb_index, 1);
     }
-    // DPRINT << "READER END" << ENDL();
 }

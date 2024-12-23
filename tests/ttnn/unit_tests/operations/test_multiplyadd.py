@@ -5,32 +5,20 @@
 import pytest
 
 import torch
-from functools import partial
 
 import ttnn
 from tests.ttnn.utils_for_testing import assert_with_pcc
-from models.utility_functions import torch_random
-
-from tests.tt_eager.python_api_testing.sweep_tests.generation_funcs import gen_func_with_cast_tt
 
 
 @pytest.mark.parametrize(
     "batch_size",
-    [
-        1,
-    ],
+    [1],
 )
 @pytest.mark.parametrize("h", [2 * 32])
 @pytest.mark.parametrize("w", [32, 48, 64, 80, 96, 112, 128])
 @pytest.mark.parametrize("c", [9 * 64])
 @pytest.mark.parametrize("n", [1])
-@pytest.mark.parametrize(
-    "dtype",
-    [
-        ttnn.bfloat16,
-    ],
-)
-def test_multiplyadd(device, batch_size, h, w, c, n, dtype):
+def test_multiplyadd(device, batch_size, h, w, c, n):
     torch.manual_seed(0)
 
     torch_input_tensor1 = torch.randn(batch_size, h, w, c, n, dtype=torch.bfloat16)

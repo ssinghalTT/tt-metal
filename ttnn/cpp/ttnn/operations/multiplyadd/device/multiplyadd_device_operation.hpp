@@ -1,23 +1,18 @@
 #pragma once
 
-#include "common/base_types.hpp"
-#include "ttnn/decorators.hpp"
-
 #include <cstdint>
 #include <cstdio>
 #include "buffers/circular_buffer_types.hpp"
+#include "common/base_types.hpp"
 #include "common/core_coord.hpp"
 #include "common/tt_backend_api_types.hpp"
+#include "common/work_split.hpp"
 #include "kernels/kernel_types.hpp"
 #include "kernels/runtime_args_data.hpp"
-#include "ttnn/tensor/shape/shape.hpp"
+#include "ttnn/decorators.hpp"
 #include "ttnn/tensor/tensor.hpp"
 #include "ttnn/tensor/types.hpp"
-#include "common/work_split.hpp"
-
-using namespace tt;
-using namespace tt::constants;
-using namespace tt::tt_metal;
+#include "ttnn/tensor/shape/shape.hpp"
 
 namespace ttnn {
 
@@ -57,16 +52,14 @@ struct MultiplyAddDeviceOperation {
                                             &shape2 = inputTensor2.get_logical_shape(),
                                             &shape3 = inputTensor3.get_logical_shape();
 
-            uint32_t inputTileSize = tt::tt_metal::detail::TileSize(DataFormat::Float16_b);
+            uint32_t inputTileSize = tt::tt_metal::detail::TileSize(tt::DataFormat::Float16_b);
 
-            uint32_t numTiles = inputTensor1.volume() / TILE_HW;
+            uint32_t numTiles = inputTensor1.volume() / tt::constants::TILE_HW;
 
-            auto src0_buffer = inputTensor1.buffer();
-
-            auto src1_buffer = inputTensor2.buffer();
-
-            auto src2_buffer = inputTensor3.buffer();
-            auto dst_buffer = tensor_return_value.buffer();
+            Buffer* src0_buffer = inputTensor1.buffer();
+            Buffer* src1_buffer = inputTensor2.buffer();
+            Buffer* src2_buffer = inputTensor3.buffer();
+            Buffer* dst_buffer = tensor_return_value.buffer();
 
             uint32_t src0_cb_index = tt::CBIndex::c_0;
             uint32_t src1_cb_index = tt::CBIndex::c_1;
@@ -89,44 +82,44 @@ struct MultiplyAddDeviceOperation {
                     tt::tt_metal::split_work_to_cores(compute_with_storage_grid_size, numTiles);
 
             CircularBufferConfig cb_src0_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{src0_cb_index, DataFormat::Float16_b}})
+                CircularBufferConfig(num_input_tiles * inputTileSize, {{src0_cb_index, tt::DataFormat::Float16_b}})
                     .set_page_size(src0_cb_index, inputTileSize);
             CBHandle cb_src0 = tt::tt_metal::CreateCircularBuffer(program, all_cores, cb_src0_config);
 
             CircularBufferConfig cb_src1_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{src1_cb_index, DataFormat::Float16_b}})
+                CircularBufferConfig(num_input_tiles * inputTileSize, {{src1_cb_index, tt::DataFormat::Float16_b}})
                     .set_page_size(src1_cb_index, inputTileSize);
             CBHandle cb_src1 = tt::tt_metal::CreateCircularBuffer(program, all_cores, cb_src1_config);
 
             CircularBufferConfig cb_src2_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{src2_cb_index, DataFormat::Float16_b}})
+                CircularBufferConfig(num_input_tiles * inputTileSize, {{src2_cb_index, tt::DataFormat::Float16_b}})
                     .set_page_size(src2_cb_index, inputTileSize);
             CBHandle cb_src_intermediate = tt::tt_metal::CreateCircularBuffer(program, all_cores, cb_src2_config);
 
             CircularBufferConfig cb_dst0_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{dst0_cb_index, DataFormat::Float16_b}})
+                CircularBufferConfig(num_input_tiles * inputTileSize, {{dst0_cb_index, tt::DataFormat::Float16_b}})
                     .set_page_size(dst0_cb_index, inputTileSize);
             CBHandle cb_dst0 = tt::tt_metal::CreateCircularBuffer(program, all_cores, cb_dst0_config);
 
             CircularBufferConfig cb_dst1_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{dst1_cb_index, DataFormat::Float16_b}})
+                CircularBufferConfig(num_input_tiles * inputTileSize, {{dst1_cb_index, tt::DataFormat::Float16_b}})
                     .set_page_size(dst1_cb_index, inputTileSize);
             CBHandle cb_dst1 = tt::tt_metal::CreateCircularBuffer(program, all_cores, cb_dst1_config);
 
-            KernelHandle reader_id = tt_metal::CreateKernel(
+            KernelHandle reader_id = tt::tt_metal::CreateKernel(
                 program,
                 "ttnn/cpp/ttnn/operations/multiplyadd/device/kernels/dataflow/reader_interleaved.cpp",
                 all_cores,
                 ReaderDataMovementConfig());
 
-            KernelHandle writer_id = tt_metal::CreateKernel(
+            KernelHandle writer_id = tt::tt_metal::CreateKernel(
                 program,
                 "ttnn/cpp/ttnn/operations/multiplyadd/device/kernels/dataflow/writer_interleaved.cpp",
                 all_cores,
                 WriterDataMovementConfig());
             uint32_t num_tiles_per_core = numTiles / num_cores;
 
-            KernelHandle compute_id = tt_metal::CreateKernel(
+            KernelHandle compute_id = tt::tt_metal::CreateKernel(
                 program,
                 "ttnn/cpp/ttnn/operations/multiplyadd/device/kernels/compute/fpu.cpp",
                 all_cores,
@@ -142,7 +135,7 @@ struct MultiplyAddDeviceOperation {
                 } else {
                     TT_ASSERT(false, "Core not in specified core ranges");
                 }
-                tt_metal::SetRuntimeArgs(
+                tt::tt_metal::SetRuntimeArgs(
                     program,
                     reader_id,
                     core,
@@ -151,8 +144,8 @@ struct MultiplyAddDeviceOperation {
                      src2_buffer->address(),
                      num_tiles_per_core,
                      num_tiles_written});
-                tt_metal::SetRuntimeArgs(program, compute_id, core, {num_tiles_per_core});
-                tt_metal::SetRuntimeArgs(
+                tt::tt_metal::SetRuntimeArgs(program, compute_id, core, {num_tiles_per_core});
+                tt::tt_metal::SetRuntimeArgs(
                     program, writer_id, core, {dst_buffer->address(), num_tiles_per_core, num_tiles_written});
 
                 num_tiles_written += num_tiles_per_core;
@@ -210,54 +203,37 @@ struct MultiplyAddDeviceOperation {
 
     using program_factory_t = std::variant<MultiCore>;
 
-    // Mandatory methods
-
-    // Select the program factory based on the tensor args
     static program_factory_t select_program_factory(
         const operation_attributes_t& operation_attributes, const tensor_args_t&) {
         return MultiCore{};
     }
 
-    // Validate the operation when it creates a program. Usually will have more checks
     static void validate_on_program_cache_miss(
         const operation_attributes_t& attributes, const tensor_args_t& tensor_args) {
-        /*TT_FATAL(
-            !(is_tensor_dram_interleaved(tensor_args.input_tensor1) &&
-              is_tensor_dram_interleaved(tensor_args.input_tensor2) &&
-              is_tensor_dram_interleaved(tensor_args.input_tensor3)),
-            "All tensors need to be DRAM interleaved");*/
-
         validate_on_program_cache_hit(attributes, tensor_args);
     }
 
-    // Validate the operation when it reuses a program. Usually will have less checks
     static void validate_on_program_cache_hit(
         const operation_attributes_t& attributes, const tensor_args_t& tensor_args) {};
 
-    // Compute the output shapes based on the tensor args
     static shape_return_value_t compute_output_shapes(
         const operation_attributes_t& attributes, const tensor_args_t& tensor_args) {
         return tensor_args.input_tensor1.shape();
     }
 
-    // Create the output tensors based on the tensor args
     static tensor_return_value_t create_output_tensors(
         const operation_attributes_t& attributes, const tensor_args_t& tensor_args) {
-        auto output_shape = compute_output_shapes(attributes, tensor_args);
-        const auto& input_tensor1 = tensor_args.input_tensor1;
+        shape_return_value_t output_shape = compute_output_shapes(attributes, tensor_args);
         return create_device_tensor(
-            output_shape, input_tensor1.dtype(), input_tensor1.layout(), input_tensor1.device());
+            output_shape,
+            tensor_args.input_tensor1.dtype(),
+            tensor_args.input_tensor1.layout(),
+            tensor_args.input_tensor1.device());
     }
     static std::tuple<MultiplyAddDeviceOperation::operation_attributes_t, MultiplyAddDeviceOperation::tensor_args_t>
     invoke(const ttnn::Tensor& input_tensor1, const ttnn::Tensor& input_tensor2, const ttnn::Tensor& input_tensor3) {
         return {operation_attributes_t{}, tensor_args_t{input_tensor1, input_tensor2, input_tensor3}};
     };
-
-private:
-    static bool is_tensor_dram_interleaved(const ttnn::Tensor& tensor) {
-        return tensor.memory_config().is_dram() &&
-               tensor.memory_config().memory_layout == TensorMemoryLayout::INTERLEAVED;
-    }
 };
 
 }  // namespace operations::multiplyadd
