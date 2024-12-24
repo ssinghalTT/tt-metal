@@ -48,10 +48,6 @@ struct MultiplyAddDeviceOperation {
             const ttnn::Tensor& inputTensor2 = tensor_args.input_tensor2;
             const ttnn::Tensor& inputTensor3 = tensor_args.input_tensor3;
 
-            const tt::tt_metal::SimpleShape &shape1 = inputTensor1.get_logical_shape(),
-                                            &shape2 = inputTensor2.get_logical_shape(),
-                                            &shape3 = inputTensor3.get_logical_shape();
-
             uint32_t inputTileSize = tt::tt_metal::detail::TileSize(tt::DataFormat::Float16_b);
 
             uint32_t numTiles = inputTensor1.volume() / tt::constants::TILE_HW;
