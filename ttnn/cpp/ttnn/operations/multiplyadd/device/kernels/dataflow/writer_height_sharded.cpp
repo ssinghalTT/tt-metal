@@ -9,7 +9,7 @@ void kernel_main() {
     uint32_t end_id = start_id + batch;
     const uint32_t single_tile_size_bytes = get_tile_size(dst1_cb_index);
 
-    const InterleavedAddrGenFast<true> c = {
+    const InterleavedAddrGenFast<false> c = {
         .bank_base_address = dstAddr,
         .page_size = single_tile_size_bytes,
         .data_format = DataFormat::Float16_b,
