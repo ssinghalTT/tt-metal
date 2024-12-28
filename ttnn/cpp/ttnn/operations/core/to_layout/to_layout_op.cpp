@@ -210,7 +210,12 @@ Tensor to_layout_impl(
 
                 validate_nd_support(tensor_arg, layout);
                 tensor = ttnn::tilize_with_val_padding(
-                    tensor, padded_output_shape, pad_value_variant, output_memory_config, dtype, use_multicore_tilize);
+                    tensor,
+                    ttnn::SimpleShape(padded_output_shape),
+                    pad_value_variant,
+                    output_memory_config,
+                    dtype,
+                    use_multicore_tilize);
             }
 
             return ttnn::reshape(tensor, ttnn::Shape(tt::tt_metal::LegacyShape{output_shape, padded_output_shape}));

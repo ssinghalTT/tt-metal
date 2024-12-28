@@ -113,7 +113,9 @@ Tensor AutoFormat::format_input_tensor(
                 } else {
                     pad_value_variant = (uint32_t)pad_value;
                 }
-                return ttnn::tilize_with_val_padding(formatted_input, padded_shape, pad_value_variant, mem_config);
+                SmallVector<uint32_t> padded_shape_data(padded_shape.begin(), padded_shape.end());
+                return ttnn::tilize_with_val_padding(
+                    formatted_input, ttnn::SimpleShape(std::move(padded_shape_data)), pad_value_variant, mem_config);
             } else if (formatted_input.get_layout() == Layout::TILE && target_layout == Layout::ROW_MAJOR) {
                 formatted_input = ttnn::untilize(formatted_input, mem_config);
                 return ttnn::pad(
