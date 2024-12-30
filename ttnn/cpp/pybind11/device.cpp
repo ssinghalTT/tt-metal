@@ -104,6 +104,20 @@ void py_device_module_types(py::module& m_device) {
     py::class_<SubDeviceId>(m_device, "SubDeviceId", "ID of a sub-device.");
 
     py::class_<SubDeviceManagerId>(m_device, "SubDeviceManagerId", "ID of a sub-device manager.");
+
+    py::class_<tt::tt_metal::detail::MemoryView>(
+        m_device, "MemoryView", "Class representing view of the memory (dram or l1)")
+        .def_readonly("num_banks", &tt::tt_metal::detail::MemoryView::num_banks)
+        .def_readonly("bytes_allocatable_per_bank", &tt::tt_metal::detail::MemoryView::bytes_allocatable_per_bank)
+        .def_readonly("bytes_allocated_per_bank", &tt::tt_metal::detail::MemoryView::bytes_allocated_per_bank)
+        .def_readonly("bytes_free_per_bank", &tt::tt_metal::detail::MemoryView::bytes_free_per_bank)
+        .def_readonly("total_bytes_allocatable", &tt::tt_metal::detail::MemoryView::total_bytes_allocatable)
+        .def_readonly("total_bytes_allocated", &tt::tt_metal::detail::MemoryView::total_bytes_allocated)
+        .def_readonly("total_bytes_free", &tt::tt_metal::detail::MemoryView::total_bytes_free)
+        .def_readonly(
+            "largest_contiguous_bytes_free_per_bank",
+            &tt::tt_metal::detail::MemoryView::largest_contiguous_bytes_free_per_bank)
+        .def_readonly("blockTable", &tt::tt_metal::detail::MemoryView::blockTable);
 }
 
 void device_module(py::module& m_device) {
@@ -515,6 +529,34 @@ void device_module(py::module& m_device) {
         +==================+==================================+=======================+=============+==========+
         | device           | Device to dump memory state for  | ttnn.Device           |             | Yes      |
         | prefix           | Dumped report filename prefix    | str                   |             | No       |
+        +------------------+----------------------------------+-----------------------+-------------+----------+
+    )doc");
+
+    m_device.def(
+        "GetDramMemoryView",
+        &tt::tt_metal::detail::GetDramMemoryView,
+        py::arg().noconvert(),
+        R"doc(
+        Populates MemoryView for DRAM. Used when storing to disk is not an option.
+
+        +------------------+----------------------------------+-----------------------+-------------+----------+
+        | Argument         | Description                      | Data type             | Valid range | Required |
+        +==================+==================================+=======================+=============+==========+
+        | device           | Device to dump memory state for  | ttnn.Device           |             | Yes      |
+        +------------------+----------------------------------+-----------------------+-------------+----------+
+    )doc");
+
+    m_device.def(
+        "GetL1MemoryView",
+        &tt::tt_metal::detail::GetL1MemoryView,
+        py::arg().noconvert(),
+        R"doc(
+        Populates MemoryView for L1. Used when storing to disk is not an option.
+
+        +------------------+----------------------------------+-----------------------+-------------+----------+
+        | Argument         | Description                      | Data type             | Valid range | Required |
+        +==================+==================================+=======================+=============+==========+
+        | device           | Device to dump memory state for  | ttnn.Device           |             | Yes      |
         +------------------+----------------------------------+-----------------------+-------------+----------+
     )doc");
 
