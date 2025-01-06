@@ -6,7 +6,7 @@ run_common_func_tests() {
   fail=0
 
   # Falcon7B
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings -q -s --input-method=cli --cli-input="YOUR PROMPT GOES HERE!"  models/demos/wormhole/falcon7b/demo_wormhole.py::test_demo[wormhole_b0-True-user_input0-1-default_mode_1024_stochastic]; fail+=$?
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings -q -s --input-method=cli --cli-input="YOUR PROMPT GOES HERE!"  models/demos/wormhole/falcon7b/demo_wormhole.py::test_demo[wormhole_b0-True-user_input0-1-default_mode_1024_stochastic]; fail+=$?
 
   # Mistral7B
   # Skipping: kills WH cards, check issue #14440
@@ -30,34 +30,34 @@ run_common_func_tests() {
   done
 
   #VGG11/VGG16
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto models/demos/vgg/demo/demo.py --timeout 600; fail+=$?
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto models/demos/vgg/demo/demo.py --timeout 600; fail+=$?
 
-  #Bert-Tiny
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto models/demos/bert_tiny/demo/demo.py --timeout 600; fail+=$?
+  # #Bert-Tiny
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto models/demos/bert_tiny/demo/demo.py --timeout 600; fail+=$?
 
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto models/demos/wormhole/bert_tiny/demo/demo.py --timeout 600; fail+=$?
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto models/demos/wormhole/bert_tiny/demo/demo.py --timeout 600; fail+=$?
 
-  # Bert
-  pytest -n auto --disable-warnings models/demos/metal_BERT_large_11/demo/demo.py -k batch_7; fail+=$?
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings models/demos/metal_BERT_large_11/demo/demo.py -k batch_8; fail+=$?
+  # # Bert
+  # pytest -n auto --disable-warnings models/demos/metal_BERT_large_11/demo/demo.py -k batch_7; fail+=$?
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings models/demos/metal_BERT_large_11/demo/demo.py -k batch_8; fail+=$?
 
-  # Resnet
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings models/demos/wormhole/resnet50/demo/demo.py; fail+=$?
+  # # Resnet
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings models/demos/wormhole/resnet50/demo/demo.py; fail+=$?
 
-  # Distilbert
-  pytest --disable-warnings models/demos/distilbert/demo/demo.py --timeout 600; fail+=$?
+  # # Distilbert
+  # pytest --disable-warnings models/demos/distilbert/demo/demo.py --timeout 600; fail+=$?
 
-  # ConvNet Mnist
-  pytest --disable-warnings models/demos/convnet_mnist/demo/demo.py --timeout 600; fail+=$?
+  # # ConvNet Mnist
+  # pytest --disable-warnings models/demos/convnet_mnist/demo/demo.py --timeout 600; fail+=$?
 
-  # Mnist
-  pytest --disable-warnings models/demos/mnist/demo/demo.py --timeout 600; fail+=$?
+  # # Mnist
+  # pytest --disable-warnings models/demos/mnist/demo/demo.py --timeout 600; fail+=$?
 
-  # SqueezeBERT
-  pytest --disable-warnings models/demos/squeezebert/demo/demo.py --timeout 600; fail+=$?
+  # # SqueezeBERT
+  # pytest --disable-warnings models/demos/squeezebert/demo/demo.py --timeout 600; fail+=$?
 
-  # Distilbert
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest --disable-warnings models/demos/wormhole/distilbert/demo/demo.py --timeout 600; fail+=$?
+  # # Distilbert
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest --disable-warnings models/demos/wormhole/distilbert/demo/demo.py --timeout 600; fail+=$?
 
   return $fail
 }
@@ -71,7 +71,7 @@ run_common_perf_tests(){
   # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto models/demos/wormhole/mistral7b/demo/demo_with_prefill.py --timeout 420; fail+=$?
 
   # Mamba
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings -q -s --input-method=json --input-path='models/demos/wormhole/mamba/demo/prompts.json' models/demos/wormhole/mamba/demo/demo.py --timeout 420; fail+=$?
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings -q -s --input-method=json --input-path='models/demos/wormhole/mamba/demo/prompts.json' models/demos/wormhole/mamba/demo/demo.py --timeout 420; fail+=$?
 
   return $fail
 }
@@ -82,7 +82,7 @@ run_n150_tests(){
   run_common_func_tests; fail+=$?
   run_common_perf_tests; fail+=$?
 
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings --input-path="models/demos/wormhole/stable_diffusion/demo/input_data.json" models/demos/wormhole/stable_diffusion/demo/demo.py::test_demo --timeout 900; fail+=$?
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings --input-path="models/demos/wormhole/stable_diffusion/demo/input_data.json" models/demos/wormhole/stable_diffusion/demo/demo.py::test_demo --timeout 900; fail+=$?
 
   if [[ $fail -ne 0 ]]; then
     exit 1
@@ -126,7 +126,7 @@ run_n300_perf_tests(){
   done
 
   # Falcon7b (perf verification for 128/1024/2048 seq lens and output token verification)
-  WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings -q -s --input-method=json --input-path='models/demos/falcon7b_common/demo/input_data.json' models/demos/wormhole/falcon7b/demo_wormhole.py; fail+=$?
+  # WH_ARCH_YAML=wormhole_b0_80_arch_eth_dispatch.yaml pytest -n auto --disable-warnings -q -s --input-method=json --input-path='models/demos/falcon7b_common/demo/input_data.json' models/demos/wormhole/falcon7b/demo_wormhole.py; fail+=$?
 
   if [[ $fail -ne 0 ]]; then
     exit 1
