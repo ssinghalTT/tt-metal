@@ -423,10 +423,10 @@ void run_single_core_reduce_program(tt_metal::Device* device, const ReduceConfig
 using namespace unit_tests::compute::reduce;
 
 TEST_F(DeviceFixture, TensixComputeReduceH) {
-    if (this->arch_ != tt::ARCH::BLACKHOLE) {
-        // (issue #10181: disabling due to sporadic failures in slow dispatch mode)
-        GTEST_SKIP();
-    }
+    // if (this->arch_ != tt::ARCH::BLACKHOLE) {
+    //     // (issue #10181: disabling due to sporadic failures in slow dispatch mode)
+    //     GTEST_SKIP();
+    // }
     std::vector<uint32_t> shape = {1, 3, 19 * TILE_HEIGHT, 17 * TILE_WIDTH};
     std::vector<uint32_t> result_shape = {shape[0], shape[1], TILE_HEIGHT, shape[3]};
     for (uint8_t math_fid = uint8_t(MathFidelity::LoFi); math_fid <= uint8_t(MathFidelity::HiFi4); math_fid++) {
@@ -541,10 +541,10 @@ TEST_F(DeviceFixture, DISABLED_TensixComputeReduceHW) {
 }
 
 TEST_F(DeviceFixture, TensixComputeReduceHMathOnly) {
-    if (this->arch_ != tt::ARCH::BLACKHOLE) {
-        // (issue #10181: disabling due to sporadic failures in slow dispatch mode)
-        GTEST_SKIP();
-    }
+    // if (this->arch_ != tt::ARCH::BLACKHOLE) {
+    //     // (issue #10181: disabling due to sporadic failures in slow dispatch mode)
+    //     GTEST_SKIP();
+    // }
     std::vector<uint32_t> shape = {1, 3, 19 * TILE_HEIGHT, 17 * TILE_WIDTH};
     std::vector<uint32_t> result_shape = {shape[0], shape[1], TILE_HEIGHT, shape[3]};
     for (uint8_t math_fid = uint8_t(MathFidelity::LoFi); math_fid <= uint8_t(MathFidelity::HiFi4); math_fid++) {
@@ -660,10 +660,10 @@ TEST_F(DeviceFixture, DISABLED_TensixComputeReduceHWMathOnly) {
 }
 
 TEST_F(DeviceFixture, TensixComputeReduceHShortInit) {
-    if (this->arch_ != tt::ARCH::BLACKHOLE) {
-        // (issue #10181: disabling due to sporadic failures in slow dispatch mode)
-        GTEST_SKIP();
-    }
+    // if (this->arch_ != tt::ARCH::BLACKHOLE) {
+    //     // (issue #10181: disabling due to sporadic failures in slow dispatch mode)
+    //     GTEST_SKIP();
+    // }
     std::vector<uint32_t> shape = {1, 3, 19 * TILE_HEIGHT, 17 * TILE_WIDTH};
     std::vector<uint32_t> result_shape = {shape[0], shape[1], TILE_HEIGHT, shape[3]};
     for (uint8_t math_fid = uint8_t(MathFidelity::LoFi); math_fid <= uint8_t(MathFidelity::HiFi4); math_fid++) {
