@@ -225,10 +225,24 @@ void Cluster::open_driver(const bool &skip_driver_allocs) {
     if (this->target_type_ == TargetDevice::Silicon) {
         std::unordered_set<chip_id_t> all_chips = this->cluster_desc_->get_all_chips();
         std::set<chip_id_t> all_chips_set(all_chips.begin(), all_chips.end());
-        // This is the target/desired number of mem channels per arch/device.
-        // Silicon driver will attempt to open this many hugepages as channels per mmio chip,
-        // and assert if workload uses more than available.
-        uint32_t num_host_mem_ch_per_mmio_device = std::min(HOST_MEM_CHANNELS, (uint32_t)all_chips_set.size());
+
+        // If hugepages are used for sysmem, this represents the number of 1GB
+        // hugepages per PCIe card.  UMD will terminate if the system does not
+        // have adequate hugepages available.
+        //
+        // If hugepages are not used for sysmem, this represents the number of
+        // gigabytes of sysmem per PCIe card that UMD will attempt to allocate
+        // and map for access by the device.
+        uint32_t num_host_mem_ch_per_mmio_device = HOST_MEM_CHANNELS;
+
+        if (this->arch_ == tt::ARCH::GRAYSKULL) {
+            num_host_mem_ch_per_mmio_device = 1;
+        } else if (this->arch_ == tt::ARCH::WORMHOLE_B0) {
+            num_host_mem_ch_per_mmio_device = HOST_MEM_CHANNELS;
+        } else if (this->arch_ == tt::ARCH::BLACKHOLE) {
+            num_host_mem_ch_per_mmio_device = 1;
+        }
+
         // This will remove harvested rows from the soc descriptor
         const bool perform_harvesting = true;
         const bool clean_system_resources = true;
