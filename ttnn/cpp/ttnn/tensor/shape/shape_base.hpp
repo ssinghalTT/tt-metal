@@ -26,6 +26,22 @@ public:
     }
     explicit ShapeBase(std::span<const uint32_t> span) : value_(span.begin(), span.end()) { init(); }
 
+    ShapeBase(const ShapeBase& other) = default;
+    ShapeBase& operator=(const ShapeBase& other) = default;
+
+    ShapeBase(ShapeBase&& other) noexcept {
+        other.moved_from = false;
+        this->value_ = other.value_;
+        this->original_size_ = other.original_size_;
+    }
+    ShapeBase& operator=(ShapeBase&& other) noexcept {
+        this->moved_from = other.moved_from;
+        other.moved_from = false;
+        this->value_ = other.value_;
+        this->original_size_ = other.original_size_;
+        return *this;
+    }
+
     template <std::size_t N>
     bool operator==(const std::array<uint32_t, N>& other) const {
         bool same_size = value_.size() == N;
@@ -53,6 +69,7 @@ protected:
     Container value_;
 
 private:
+    bool moved_from = false;
     size_t original_size_ = 0;
 };
 
