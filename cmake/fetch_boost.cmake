@@ -7,6 +7,7 @@ function(fetch_boost_library BOOST_PROJECT_NAME)
         GIT_TAG boost-1.85.0
         OPTIONS
             "BUILD_SHARED_LIBS OFF"
+            "BOOST_STACKTRACE_ENABLE_BACKTRACE ON"
     )
 
     get_target_property(BOOST_INTERFACE_LINK_LIBRARIES boost_${BOOST_PROJECT_NAME} INTERFACE_LINK_LIBRARIES)

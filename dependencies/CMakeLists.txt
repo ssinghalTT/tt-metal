@@ -14,8 +14,31 @@ fetch_boost_library(core)
 fetch_boost_library(smart_ptr)
 fetch_boost_library(container)
 
+CPMAddPackage(
+    NAME boost_stacktrace
+    GITHUB_REPOSITORY boostorg/stacktrace
+    GIT_TAG boost-1.85.0
+    OPTIONS
+        "BUILD_SHARED_LIBS OFF"
+)
+
+get_target_property(BOOST_INTERFACE_LINK_LIBRARIES boost_stacktrace_basic INTERFACE_LINK_LIBRARIES)
+
+if(NOT BOOST_INTERFACE_LINK_LIBRARIES STREQUAL BOOST_INTERFACE_LINK_LIBRARIES-NOTFOUND)
+    foreach(BOOST_INTERFACE_LINK_LIBRARY IN ITEMS ${BOOST_INTERFACE_LINK_LIBRARIES})
+        if(NOT TARGET ${BOOST_INTERFACE_LINK_LIBRARY} AND BOOST_INTERFACE_LINK_LIBRARY MATCHES "^Boost::([a-z0-9_]+)$")
+            fetch_boost_library(${CMAKE_MATCH_1})
+        endif()
+    endforeach()
+endif()
+
 add_library(span INTERFACE)
-target_link_libraries(span INTERFACE Boost::core)
+target_link_libraries(
+    span
+    INTERFACE
+        Boost::core
+        Boost::stacktrace_basic
+)
 
 ############################################################################################################################
 # yaml-cpp

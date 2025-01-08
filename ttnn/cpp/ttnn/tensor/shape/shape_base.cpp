@@ -7,6 +7,8 @@
 #include "fmt/color.h"
 #include "tt_metal/common/assert.hpp"
 
+#include <boost/stacktrace.hpp>
+
 namespace tt::tt_metal {
 
 namespace {
@@ -42,6 +44,23 @@ void ShapeBase::init() {
     }
 }
 
+ShapeBase::ShapeBase(ShapeBase&& other) noexcept {
+    std::cout << "Move from " << &other << std::endl;
+    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    other.moved_from = false;
+    this->value_ = other.value_;
+    this->original_size_ = other.original_size_;
+}
+ShapeBase& ShapeBase::operator=(ShapeBase&& other) noexcept {
+    std::cout << "Move from " << &other << std::endl;
+    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    this->moved_from = other.moved_from;
+    other.moved_from = false;
+    this->value_ = other.value_;
+    this->original_size_ = other.original_size_;
+    return *this;
+}
+
 bool ShapeBase::empty() const { return original_size_ == 0; }
 
 size_t ShapeBase::size() const { return original_size_; }
@@ -61,11 +80,19 @@ bool ShapeBase::operator==(const std::vector<uint32_t>& other) const {
 }
 
 uint32_t ShapeBase::operator[](int32_t index) const {
+    if (moved_from) {
+        std::cout << "Access fail " << index << " " << this << std::endl;
+        TT_THROW("Accessing moved from shape");
+    }
     auto norm_index = CMAKE_UNIQUE_NAMESPACE::normalized_index(index, original_size_, value_.size());
     return value_[norm_index];
 }
 
 uint32_t& ShapeBase::operator[](int32_t index) {
+    if (moved_from) {
+        std::cout << "Access fail " << index << " " << this << std::endl;
+        TT_THROW("Accessing moved from shape");
+    }
     auto norm_index = CMAKE_UNIQUE_NAMESPACE::normalized_index(index, original_size_, value_.size());
     return value_[norm_index];
 }

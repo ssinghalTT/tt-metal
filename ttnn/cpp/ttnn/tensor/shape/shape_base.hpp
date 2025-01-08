@@ -29,18 +29,8 @@ public:
     ShapeBase(const ShapeBase& other) = default;
     ShapeBase& operator=(const ShapeBase& other) = default;
 
-    ShapeBase(ShapeBase&& other) noexcept {
-        other.moved_from = false;
-        this->value_ = other.value_;
-        this->original_size_ = other.original_size_;
-    }
-    ShapeBase& operator=(ShapeBase&& other) noexcept {
-        this->moved_from = other.moved_from;
-        other.moved_from = false;
-        this->value_ = other.value_;
-        this->original_size_ = other.original_size_;
-        return *this;
-    }
+    ShapeBase(ShapeBase&& other) noexcept;
+    ShapeBase& operator=(ShapeBase&& other) noexcept;
 
     template <std::size_t N>
     bool operator==(const std::array<uint32_t, N>& other) const {
