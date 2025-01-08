@@ -45,17 +45,17 @@ void ShapeBase::init() {
 }
 
 ShapeBase::ShapeBase(ShapeBase&& other) noexcept {
-    std::cout << "Move from " << &other << std::endl;
-    std::cout << boost::stacktrace::stacktrace() << std::endl;
-    other.moved_from = false;
+    // std::cout << "Move from " << &other << std::endl;
+    // std::cout << boost::stacktrace::stacktrace() << std::endl;
+    other.moved_from = true;
     this->value_ = other.value_;
     this->original_size_ = other.original_size_;
 }
 ShapeBase& ShapeBase::operator=(ShapeBase&& other) noexcept {
-    std::cout << "Move from " << &other << std::endl;
-    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    // std::cout << "Move from " << &other << std::endl;
+    // std::cout << boost::stacktrace::stacktrace() << std::endl;
     this->moved_from = other.moved_from;
-    other.moved_from = false;
+    other.moved_from = true;
     this->value_ = other.value_;
     this->original_size_ = other.original_size_;
     return *this;
