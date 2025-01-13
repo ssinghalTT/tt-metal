@@ -49,7 +49,7 @@ struct MultiplyAddDeviceOperation {
             const ttnn::Tensor& inputTensor2 = tensor_args.input_tensor2;
             const ttnn::Tensor& inputTensor3 = tensor_args.input_tensor3;
 
-            uint32_t inputTileSize = tt::tt_metal::detail::TileSize(tt::DataFormat::Float16_b);
+            uint32_t input_tile_size = tt::tt_metal::detail::TileSize(tt::DataFormat::Float16_b);
 
             uint32_t num_tiles = inputTensor1.volume() / tt::constants::TILE_HW;
 
@@ -64,7 +64,7 @@ struct MultiplyAddDeviceOperation {
             uint32_t dst0_cb_index = tt::CBIndex::c_3;
             uint32_t dst1_cb_index = tt::CBIndex::c_4;
 
-            uint32_t num_input_tiles = 1;
+            uint32_t num_input_tiles = 2;
             std::optional<ShardSpec> shard_spec = std::nullopt;
             if (inputTensor1.memory_config().is_sharded()) {
                 shard_spec = inputTensor1.shard_spec().value();
@@ -107,8 +107,6 @@ struct MultiplyAddDeviceOperation {
                     tt::tt_metal::split_work_to_cores(compute_with_storage_grid_size, num_tiles / num_tiles_per_shard);
 
                 num_tiles_per_core_group_1 *= num_tiles_per_shard;
-                // all_cores = shard_spec.value().grid;
-                // num_cores = all_cores.num_cores();
             } else {
                 std::tie(
                     num_cores,
@@ -122,37 +120,37 @@ struct MultiplyAddDeviceOperation {
             }
 
             CircularBufferConfig cb_src0_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{src0_cb_index, tt::DataFormat::Float16_b}})
-                    .set_page_size(src0_cb_index, inputTileSize);
+                CircularBufferConfig(num_input_tiles * input_tile_size, {{src0_cb_index, tt::DataFormat::Float16_b}})
+                    .set_page_size(src0_cb_index, input_tile_size);
             if (inputTensor1.memory_config().is_sharded()) {
                 cb_src0_config = cb_src0_config.set_globally_allocated_address(*src0_buffer);
             }
             CBHandle cb_src0 = tt::tt_metal::CreateCircularBuffer(program, all_cores, cb_src0_config);
 
             CircularBufferConfig cb_src1_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{src1_cb_index, tt::DataFormat::Float16_b}})
-                    .set_page_size(src1_cb_index, inputTileSize);
+                CircularBufferConfig(num_input_tiles * input_tile_size, {{src1_cb_index, tt::DataFormat::Float16_b}})
+                    .set_page_size(src1_cb_index, input_tile_size);
             if (inputTensor2.memory_config().is_sharded()) {
                 cb_src1_config = cb_src1_config.set_globally_allocated_address(*src1_buffer);
             }
             CBHandle cb_src1 = tt::tt_metal::CreateCircularBuffer(program, all_cores, cb_src1_config);
 
             CircularBufferConfig cb_src2_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{src2_cb_index, tt::DataFormat::Float16_b}})
-                    .set_page_size(src2_cb_index, inputTileSize);
+                CircularBufferConfig(num_input_tiles * input_tile_size, {{src2_cb_index, tt::DataFormat::Float16_b}})
+                    .set_page_size(src2_cb_index, input_tile_size);
             if (inputTensor3.memory_config().is_sharded()) {
                 cb_src2_config = cb_src2_config.set_globally_allocated_address(*src2_buffer);
             }
             CBHandle cb_src2 = tt::tt_metal::CreateCircularBuffer(program, all_cores, cb_src2_config);
 
             CircularBufferConfig cb_dst0_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{dst0_cb_index, tt::DataFormat::Float16_b}})
-                    .set_page_size(dst0_cb_index, inputTileSize);
+                CircularBufferConfig(num_input_tiles * input_tile_size, {{dst0_cb_index, tt::DataFormat::Float16_b}})
+                    .set_page_size(dst0_cb_index, input_tile_size);
             CBHandle cb_dst0 = tt::tt_metal::CreateCircularBuffer(program, all_cores, cb_dst0_config);
 
             CircularBufferConfig cb_dst1_config =
-                CircularBufferConfig(num_input_tiles * inputTileSize, {{dst1_cb_index, tt::DataFormat::Float16_b}})
-                    .set_page_size(dst1_cb_index, inputTileSize);
+                CircularBufferConfig(num_input_tiles * input_tile_size, {{dst1_cb_index, tt::DataFormat::Float16_b}})
+                    .set_page_size(dst1_cb_index, input_tile_size);
             if (tensor_return_value.memory_config().is_sharded()) {
                 cb_dst1_config = cb_dst1_config.set_globally_allocated_address(*dst_buffer);
             }
@@ -212,19 +210,19 @@ struct MultiplyAddDeviceOperation {
             }
             if (inputTensor1.memory_config().is_sharded()) {
                 UpdateDynamicCircularBufferAddressAndTotalSize(
-                    program, cb_src0, *src0_buffer, num_tiles_per_core_group_1 * inputTileSize);
+                    program, cb_src0, *src0_buffer, num_tiles_per_core_group_1 * input_tile_size);
             }
             if (inputTensor2.memory_config().is_sharded()) {
                 UpdateDynamicCircularBufferAddressAndTotalSize(
-                    program, cb_src1, *src1_buffer, num_tiles_per_core_group_1 * inputTileSize);
+                    program, cb_src1, *src1_buffer, num_tiles_per_core_group_1 * input_tile_size);
             }
             if (inputTensor3.memory_config().is_sharded()) {
                 UpdateDynamicCircularBufferAddressAndTotalSize(
-                    program, cb_src2, *src2_buffer, num_tiles_per_core_group_1 * inputTileSize);
+                    program, cb_src2, *src2_buffer, num_tiles_per_core_group_1 * input_tile_size);
             }
             if (tensor_return_value.memory_config().is_sharded()) {
                 UpdateDynamicCircularBufferAddressAndTotalSize(
-                    program, cb_dst1, *dst_buffer, num_tiles_per_core_group_1 * inputTileSize);
+                    program, cb_dst1, *dst_buffer, num_tiles_per_core_group_1 * input_tile_size);
             }
 
             return {
