@@ -32,7 +32,7 @@ void EthTunnelerKernel::GenerateStaticConfigs() {
     // Eth L1 size is ~180K
     switch (static_config_.vc_count.value()) {
         case 1:
-        case 2:
+        case 2: static_config_.in_queue_size_words = 65536 >> 4; break;
         case 3:
         case 4:
         case 5: static_config_.in_queue_size_words = 32768 >> 4; break;
