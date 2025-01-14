@@ -57,22 +57,6 @@ CircularBufferConfig& CircularBufferConfig::set_total_size(uint32_t total_size) 
                 "L1 buffer bank size of {} B",
                 total_size,
                 this->max_size_);
-#ifndef DEBUG
-            log_warning(
-                "Cannot set circular buffer size to {}. This is larger than the associated dynamically allocated "
-                "L1 buffer bank size of {} B and may allow this circular buffer to write outside the allocated "
-                "buffer space.",
-                total_size,
-                this->max_size_);
-            if (total_size > this->buffer_size_) {
-                TT_THROW(
-                    "Cannot set circular buffer size to {}. This is larger than the associated dynamically "
-                    "allocated L1 buffer size"
-                    "of {} B",
-                    total_size,
-                    this->buffer_size_);
-            }
-#endif
         }
     }
     if (total_size == 0) {
@@ -103,20 +87,6 @@ CircularBufferConfig& CircularBufferConfig::set_globally_allocated_address_and_t
             "size of {} B",
             total_size,
             this->max_size_);
-#ifndef DEBUG
-        log_warning(
-            "Circular buffer size {} B exceeds allocated L1 buffer bank size of {} B. This may allow this circular "
-            "buffer to write outside the allocated buffer space.",
-            total_size,
-            this->max_size_);
-        if (total_size > this->buffer_size_) {
-            TT_THROW(
-                "Cannot set to globally allocated buffer. Circular buffer size {} B exceeds allocated L1 buffer "
-                "size of {} B",
-                total_size,
-                this->buffer_size_);
-        }
-#endif
     }
     if (total_size == 0) {
         TT_THROW("Total size for circular buffer must be non-zero!");
