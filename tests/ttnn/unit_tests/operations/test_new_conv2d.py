@@ -139,7 +139,7 @@ def run_conv(
     shard_spec = ttnn.ShardSpec(core_grid, shard_shape, ttnn.ShardOrientation.ROW_MAJOR)
     memory_config = ttnn.MemoryConfig(ttnn.TensorMemoryLayout.HEIGHT_SHARDED, ttnn.BufferType.L1, shard_spec)
     tt_input_tensor = ttnn.from_torch(
-        torch_input_tensor,
+        torch_input_tensor.reshape(1, 1, total_batch_size * input_height * input_width, input_channels),
         ttnn.bfloat16,
         mesh_mapper=input_mesh_mapper,
         memory_config=memory_config,
@@ -206,7 +206,10 @@ def run_conv(
         return_output_dim=True,
     )
 
+    print("Conv2d done")
+
     tt_output_tensor = ttnn.from_device(tt_output_tensor_on_device)
+    print("convert to device tensor")
     torch_output_tensor = ttnn.to_torch(tt_output_tensor, mesh_composer=output_mesh_composer)
 
     # torch_output_tensor is in row major layout and NHWC shape
