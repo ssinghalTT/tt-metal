@@ -138,7 +138,7 @@ class CMakeBuild(build_ext):
         self.copy_tree(build_dir / "lib", dest_ttnn_build_dir + "/lib")
         self.copy_tree(source_dir / "runtime", self.build_lib + "/runtime")
         # Remove parts that are not needed
-        # shutil.rmtree(self.build_lib + "/runtime/sfpi/compiler/bin")
+        shutil.rmtree(self.build_lib + "/runtime/sfpi/compiler/riscv32-unknown-elf")
 
 
         # Encode ARCH_NAME into package for later use so user doesn't have to provide
