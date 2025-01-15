@@ -131,7 +131,7 @@ def run_conv(
     # Pre-shard inputs to trigger bad PCC
     core_grid = ttnn.CoreRangeSet(
         {
-            ttnn.CoreRange(ttnn.CoreCoord(0, 0), ttnn.CoreCoord(7, 4)),
+            ttnn.CoreRange(ttnn.CoreCoord(0, 0), ttnn.CoreCoord(7, 6)),
             ttnn.CoreRange(ttnn.CoreCoord(0, 7), ttnn.CoreCoord(3, 7)),
         }
     )
