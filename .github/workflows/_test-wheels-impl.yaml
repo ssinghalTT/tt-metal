@@ -7,6 +7,13 @@ on:
         description: "Use precompiled assets for wheel build"
         default: True
         type: boolean
+      arch:
+        required: true
+        type: string
+      os:
+        required: false
+        type: string
+        default: "ubuntu-20.04"
 
 # Since pre-compiled assets are only built on ubuntu-20.04, we force tests
 # to only be run on ubuntu-20.04.
@@ -66,9 +73,22 @@ jobs:
         run: ./tests/scripts/set_up_end_to_end_tests_env.sh
       - name: Activate env and run release tests - silicon
         timeout-minutes: 2
-        shell: bash
-        run: |
-          source tests/end_to_end_tests/env/bin/activate
-          python3 -m ttnn.examples.usage.run_op_on_device
-          cd tests/end_to_end_tests
-          pytest -c conftest.py . -m eager_package_silicon
+        uses: ./.github/actions/docker-run
+        with:
+          docker_os_arch: tt-metalium/${{ inputs.os }}-amd64
+          docker_password: ${{ secrets.GITHUB_TOKEN }}
+          docker_opts: |
+            -e TT_METAL_HOME=${{ github.workspace }}
+            -e ARCH_NAME=${{ inputs.arch }}
+            -e LD_LIBRARY_PATH=${{ github.workspace }}/build/lib
+          run_args: |
+            source tests/end_to_end_tests/env/bin/activate
+            python3 -m ttnn.examples.usage.run_op_on_device
+            cd tests/end_to_end_tests
+            pytest -c conftest.py . -m eager_package_silicon
+        #shell: bash
+        #run: |
+        #  source tests/end_to_end_tests/env/bin/activate
+        #  python3 -m ttnn.examples.usage.run_op_on_device
+        #  cd tests/end_to_end_tests
+        #  pytest -c conftest.py . -m eager_package_silicon
