@@ -94,8 +94,9 @@ struct MultiplyAddDeviceOperation {
 
             if (shard_spec.has_value()) {
                 // Guaranteed that one core is getting full size shard
-                uint32_t num_tiles_per_shard =
-                    shard_spec.value().shape[0] * shard_spec.value().shape[1] / tt::constants::TILE_HW;
+                uint32_t num_existing_cores = num_cores_x * num_cores_y;
+                uint32_t num_tiles_per_shard = shard_spec.value().shape[0] * shard_spec.value().shape[1] /
+                                               (tt::constants::TILE_HW * num_existing_cores);
                 num_input_tiles = num_tiles_per_shard;
                 std::tie(
                     num_cores,
