@@ -22,8 +22,8 @@ def run_max_pool(
     dilation,
     device,
     dtype,
-    memory_config=None,
-    shard_scheme=None,
+    memory_config=ttnn.L1_MEMORY_CONFIG,
+    shard_scheme=ttnn.TensorMemoryLayout.HEIGHT_SHARDED,
     ceil_mode=False,
 ):
     in_n, in_c, in_h, in_w = act_shape
@@ -115,7 +115,6 @@ def run_max_pool(
             pytest.skip("Block sharding requires channles >= cores")
         if in_c / cores_x < 16:
             pytest.skip("Block sharding requires large enough channels to shard (at least 16 per core)")
-
     torch.manual_seed(0)
     torch.set_printoptions(precision=3, sci_mode=False, linewidth=500, threshold=10000, edgeitems=32)
 
@@ -206,7 +205,7 @@ def run_max_pool(
 
     pcc_thresh = 1.0
     if dtype == ttnn.bfloat8_b:
-        pcc_thresh = 0.9997
+        pcc_thresh = 1.0
 
     passing, pcc = assert_with_pcc(output_pytorch, golden_pytorch, pcc_thresh)
 
@@ -854,6 +853,52 @@ def test_pool_core_nondivis(
 @pytest.mark.parametrize("dtype", [ttnn.bfloat16])
 @pytest.mark.parametrize("ceil_mode", [False, True])
 def test_run_max_pool_squeeze_net_model(
+    act_shape,
+    kernel_size,
+    padding,
+    stride,
+    dilation,
+    device,
+    dtype,
+    use_program_cache,
+    ceil_mode,
+):
+    run_max_pool(
+        act_shape,
+        kernel_size,
+        padding,
+        stride,
+        dilation,
+        device,
+        dtype,
+        ceil_mode=ceil_mode,
+    )
+
+
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
+@pytest.mark.parametrize(
+    "act_shape",
+    (([1, 128, 20, 20],)),
+)
+@pytest.mark.parametrize(
+    "kernel_size",
+    ((5, 5),),
+)
+@pytest.mark.parametrize(
+    "padding",
+    ((2, 2),),
+)
+@pytest.mark.parametrize("stride", ((1, 1),))
+@pytest.mark.parametrize("dilation", ((1, 1),))
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        ttnn.bfloat8_b,
+        ttnn.bfloat16,
+    ],
+)
+@pytest.mark.parametrize("ceil_mode", [False])
+def test_run_max_pool_yolov8n(
     act_shape,
     kernel_size,
     padding,
