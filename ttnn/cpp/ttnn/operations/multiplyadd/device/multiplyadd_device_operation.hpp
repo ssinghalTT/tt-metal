@@ -95,8 +95,8 @@ struct MultiplyAddDeviceOperation {
             if (shard_spec.has_value()) {
                 // Guaranteed that one core is getting full size shard
                 uint32_t num_existing_cores = num_cores_x * num_cores_y;
-                uint32_t num_tiles_per_shard = shard_spec.value().shape[0] * shard_spec.value().shape[1] /
-                                               (tt::constants::TILE_HW * num_existing_cores);
+                uint32_t num_tiles_per_shard =
+                    shard_spec.value().shape[0] * shard_spec.value().shape[1] / tt::constants::TILE_HW;
                 num_input_tiles = num_tiles_per_shard;
                 std::tie(
                     num_cores,
@@ -116,8 +116,8 @@ struct MultiplyAddDeviceOperation {
                     core_group_2,
                     num_tiles_per_core_group_1,
                     num_tiles_per_core_group_2) =
-                    tt::tt_metal::split_work_to_cores(compute_with_storage_grid_size, num_tiles / num_input_tiles);
-                num_tiles_per_core_group_1 *= num_input_tiles;
+                    tt::tt_metal::split_work_to_cores(compute_with_storage_grid_size, num_tiles);
+                num_input_tiles = num_tiles_per_core_group_1;
             }
 
             CircularBufferConfig cb_src0_config =

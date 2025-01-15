@@ -11,7 +11,7 @@ from tests.ttnn.utils_for_testing import assert_with_pcc
 
 
 @pytest.mark.parametrize("h", [32 * 64])  # number of cores that does the work
-@pytest.mark.parametrize("w", [32 * 2])  # shard width, number of tiles per core
+@pytest.mark.parametrize("w", [32 * 128])  # can go up to 128 shard width, number of tiles per core
 def test_multiplyadd(device, h, w):
     torch.manual_seed(0)
     compute_grid_size = device.compute_with_storage_grid_size()
@@ -20,12 +20,18 @@ def test_multiplyadd(device, h, w):
     torch_input_tensor2 = torch.randn((h, w), dtype=torch.bfloat16)
     torch_input_tensor3 = torch.randn((h, w), dtype=torch.bfloat16)
 
-    tensor_memory_config = ttnn.create_sharded_memory_config(
+    tensor_memory_config = ttnn.create_sharded_memory_config_(
         (h, w),
-        ttnn.CoreGrid(y=compute_grid_size.y, x=compute_grid_size.x),
-        strategy=ttnn.ShardStrategy.HEIGHT,
-        orientation=ttnn.ShardOrientation.ROW_MAJOR,
-        use_height_and_width_as_shard_shape=True,
+        ttnn.CoreRangeSet(
+            {
+                ttnn.CoreRange(
+                    ttnn.CoreCoord(0, 0),
+                    ttnn.CoreCoord(compute_grid_size.y - 1, compute_grid_size.x - 1),
+                )
+            }
+        ),
+        ttnn.TensorMemoryLayout.HEIGHT_SHARDED,
+        ttnn.ShardOrientation.ROW_MAJOR,
     )
 
     golden_function = ttnn.get_golden_function(ttnn.multiplyadd)
@@ -36,7 +42,7 @@ def test_multiplyadd(device, h, w):
         dtype=ttnn.bfloat16,
         layout=ttnn.TILE_LAYOUT,
         device=device,
-        memory_config=ttnn.DRAM_MEMORY_CONFIG,
+        memory_config=tensor_memory_config,
     )
 
     input_tensor2 = ttnn.from_torch(
@@ -44,7 +50,7 @@ def test_multiplyadd(device, h, w):
         dtype=ttnn.bfloat16,
         layout=ttnn.TILE_LAYOUT,
         device=device,
-        memory_config=ttnn.DRAM_MEMORY_CONFIG,
+        memory_config=tensor_memory_config,
     )
 
     input_tensor3 = ttnn.from_torch(
@@ -52,7 +58,7 @@ def test_multiplyadd(device, h, w):
         dtype=ttnn.bfloat16,
         layout=ttnn.TILE_LAYOUT,
         device=device,
-        memory_config=ttnn.DRAM_MEMORY_CONFIG,
+        memory_config=tensor_memory_config,
     )
 
     output_tensor = ttnn.multiplyadd(input_tensor1, input_tensor2, input_tensor3)
