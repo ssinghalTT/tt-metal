@@ -7,6 +7,14 @@ on:
         description: "Use precompiled assets for wheel build"
         default: True
         type: boolean
+      # arch and os sections added for dockerizing step
+      arch:
+        required: true
+        type: string
+      os:
+        required: false
+        type: string
+        default: "ubuntu-20.04"
   schedule:
     - cron: "0 0 * * *"
 
