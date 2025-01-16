@@ -257,7 +257,6 @@ include(tracy)
 # Build subdirectories
 ############################################################################################################################
 
-add_subdirectory(tt_fabric)
 add_subdirectory(tt_metal)
 add_subdirectory(ttnn)
 
@@ -273,15 +272,6 @@ endif()
 # Install for build artifacts that will upload build/lib
 include(GNUInstallDirs)
 
-install(
-    TARGETS
-        tt_fabric
-    ARCHIVE
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        COMPONENT dev
-)
 install(
     TARGETS
         tt_metal

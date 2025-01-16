@@ -69,7 +69,7 @@ foreach(arch ${ARCHITECTURES})
                 test_metal_common_libs
             PRIVATE
                 yaml-cpp::yaml-cpp
-                tt_fabric
+                fabric
         )
         target_include_directories(
             ${TEST_TARGET}

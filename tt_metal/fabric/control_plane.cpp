@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "tt_fabric/control_plane.hpp"
+#include "control_plane.hpp"
 #include "tt_metal/hw/inc/wormhole/eth_l1_address_map.h"
 #include <queue>
 

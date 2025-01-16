@@ -1,8 +1,8 @@
-add_library(tt_fabric)
-add_library(TT::Fabric ALIAS tt_fabric)
+add_library(fabric)
+add_library(TT::Fabric ALIAS fabric)
 
 target_sources(
-    tt_fabric
+    fabric
     PRIVATE
         control_plane.cpp
         routing_table_generator.cpp
@@ -10,18 +10,17 @@ target_sources(
 )
 
 target_link_libraries(
-    tt_fabric
+    fabric
     PRIVATE
-        Metalium::Metal
         umd::device
-        metal_common_libs
         magic_enum
         fmt::fmt-header-only
         yaml-cpp::yaml-cpp
+        Metalium::Metal::Impl
 )
 
 target_precompile_headers(
-    tt_fabric
+    fabric
     PRIVATE
         <functional>
         <map>
@@ -31,10 +30,10 @@ target_precompile_headers(
         <vector>
 )
 
-target_compile_options(tt_fabric PRIVATE -Wno-int-to-pointer-cast)
+target_compile_options(fabric PRIVATE -Wno-int-to-pointer-cast)
 
 set_target_properties(
-    tt_fabric
+    fabric
     PROPERTIES
         INSTALL_RPATH
             "${PROJECT_BINARY_DIR}/lib"

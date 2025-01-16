@@ -39,9 +39,9 @@ constexpr uint32_t PQ_TEST_MISC_INDEX = 16;
 
 // careful, may be null
 tt_l1_ptr uint32_t* const kernel_status = reinterpret_cast<tt_l1_ptr uint32_t*>(kernel_status_buf_addr_arg);
-tt_l1_ptr volatile chan_req_buf* fvc_consumer_req_buf =
+volatile tt_l1_ptr chan_req_buf* fvc_consumer_req_buf =
     reinterpret_cast<tt_l1_ptr chan_req_buf*>(FABRIC_ROUTER_REQ_QUEUE_START);
-tt_l1_ptr volatile tt::tt_fabric::fabric_router_l1_config_t* routing_table =
+volatile tt_l1_ptr tt::tt_fabric::fabric_router_l1_config_t* routing_table =
     reinterpret_cast<tt_l1_ptr tt::tt_fabric::fabric_router_l1_config_t*>(
         eth_l1_mem::address_map::FABRIC_ROUTER_CONFIG_BASE);
 uint64_t xy_local_addr;

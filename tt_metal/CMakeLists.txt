@@ -28,6 +28,7 @@ target_link_libraries(
         llrt
         detail
         distributed
+        fabric
 )
 
 target_precompile_headers(
@@ -73,6 +74,7 @@ add_subdirectory(impl)
 add_subdirectory(detail)
 add_subdirectory(distributed)
 add_subdirectory(tt_stl)
+add_subdirectory(fabric)
 
 if(BUILD_PROGRAMMING_EXAMPLES)
     add_subdirectory(programming_examples)
