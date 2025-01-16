@@ -15,6 +15,20 @@ on:
         required: false
         type: string
         default: "ubuntu-20.04"
+  # workflow dispatch added to test out dockerization
+  workflow_dispatch:
+    inputs:
+      from-precompiled:
+        description: "Use precompiled assets for wheel build"
+        default: True
+        type: boolean
+      arch:
+        required: true
+        type: string
+      os:
+        required: false
+        type: string
+        default: "ubuntu-20.04"
 
 # Since pre-compiled assets are only built on ubuntu-20.04, we force tests
 # to only be run on ubuntu-20.04.
