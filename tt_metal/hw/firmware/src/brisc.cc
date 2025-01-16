@@ -384,6 +384,7 @@ int main() {
     noc_init(MEM_NOC_ATOMIC_RET_VAL_ADDR);
     noc_local_state_init(noc_index);
     uint8_t prev_noc_mode = DM_DEDICATED_NOC;
+    kernel_profiler::init_profiler();
 
     while (1) {
         init_sync_registers();
@@ -391,6 +392,7 @@ int main() {
 
         WAYPOINT("GW");
         uint8_t go_message_signal = RUN_MSG_DONE;
+        uint32_t time_out = 0;
         // kernel_configs.preload is last in the launch message. so other data is
         // valid by the time it's set. All multicast data from the dispatcher is
         // written in order, so it will arrive in order. We also have a barrier
@@ -425,14 +427,23 @@ int main() {
                     false /*linked*/,
                     true /*posted*/);
             }
+
+            if (time_out++ > 4000000) {
+                if (kernel_profiler::wIndex > kernel_profiler::CUSTOM_MARKERS) {
+                    // kernel_profiler::wIndex -= kernel_profiler::PROFILER_L1_MARKER_UINT32_SIZE;
+                    kernel_profiler::quick_push<true>();
+                    time_out = 0;
+                }
+            }
         }
 
         WAYPOINT("GD");
 
         {
-            // Only include this iteration in the device profile if the launch message is valid. This is because all workers get a go signal regardless of whether
-            // they're running a kernel or not. We don't want to profile "invalid" iterations.
             DeviceZoneScopedMainN("BRISC-FW");
+            // Only include this iteration in the device profile if the launch message is valid. This is because all
+            // workers get a go signal regardless of whether they're running a kernel or not. We don't want to profile
+            // "invalid" iterations.
             uint32_t launch_msg_rd_ptr = mailboxes->launch_msg_rd_ptr;
             launch_msg_t* launch_msg_address = &(mailboxes->launch[launch_msg_rd_ptr]);
             DeviceValidateProfiler(launch_msg_address->kernel_config.enables);
