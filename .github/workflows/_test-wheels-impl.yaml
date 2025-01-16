@@ -24,7 +24,11 @@ on:
         type: boolean
       arch:
         required: true
-        type: string
+        type: choice
+        options:
+          - grayskull
+          - wormhole_b0
+          - blackhole
       os:
         required: false
         type: string
