@@ -874,3 +874,65 @@ def test_run_max_pool_squeeze_net_model(
         dtype,
         ceil_mode=ceil_mode,
     )
+
+
+@pytest.mark.parametrize("device_params", [{"l1_small_size": 24576}], indirect=True)
+@pytest.mark.parametrize(
+    "act_shape",
+    (([1, 288, 20, 20],)),
+)
+@pytest.mark.parametrize(
+    "kernel_size",
+    ((5, 5),),
+)
+@pytest.mark.parametrize(
+    "padding",
+    ((2, 2),),
+)
+@pytest.mark.parametrize("stride", ((1, 1),))
+@pytest.mark.parametrize("dilation", ((1, 1),))
+@pytest.mark.parametrize(
+    "dtype",
+    [
+        ttnn.bfloat8_b,
+        ttnn.bfloat16,
+    ],
+)
+@pytest.mark.parametrize("ceil_mode", [True])
+@pytest.mark.parametrize(
+    "shard_scheme",
+    [
+        ttnn.TensorMemoryLayout.HEIGHT_SHARDED,
+        ttnn.TensorMemoryLayout.BLOCK_SHARDED,
+        ttnn.TensorMemoryLayout.WIDTH_SHARDED,
+    ],
+)
+@pytest.mark.parametrize(
+    "memory_config",
+    [ttnn.L1_MEMORY_CONFIG, ttnn.DRAM_MEMORY_CONFIG],
+)
+def test_run_max_pool_yolov8m(
+    act_shape,
+    kernel_size,
+    padding,
+    stride,
+    dilation,
+    device,
+    dtype,
+    use_program_cache,
+    ceil_mode,
+    shard_scheme,
+    memory_config,
+):
+    run_max_pool(
+        act_shape,
+        kernel_size,
+        padding,
+        stride,
+        dilation,
+        device,
+        dtype,
+        ceil_mode=ceil_mode,
+        shard_scheme=shard_scheme,
+        memory_config=memory_config,
+    )
