@@ -169,6 +169,7 @@ void py_bind_conv2d(py::module& module) {
         py::arg("weight_tensor"),
         py::arg("input_memory_config"),
         py::arg("input_tensor_layout"),
+        py::arg("input_tensor_dtype"),
         py::arg("weights_format"),
         py::arg("in_channels"),
         py::arg("out_channels"),
@@ -181,6 +182,7 @@ void py_bind_conv2d(py::module& module) {
         py::arg("dilation"),
         py::arg("groups"),
         py::arg("device"),
+        py::arg("has_bias"),
         py::arg("conv_config") = std::nullopt,
         py::arg("compute_config") = std::nullopt);
 
@@ -191,6 +193,7 @@ void py_bind_conv2d(py::module& module) {
         py::arg("weight_tensor"),
         py::arg("input_memory_config"),
         py::arg("input_tensor_layout"),
+        py::arg("input_tensor_dtype"),
         py::arg("weights_format"),
         py::arg("in_channels"),
         py::arg("out_channels"),
@@ -203,6 +206,7 @@ void py_bind_conv2d(py::module& module) {
         py::arg("dilation"),
         py::arg("groups"),
         py::arg("device"),
+        py::arg("has_bias"),
         py::arg("conv_config") = std::nullopt,
         py::arg("compute_config") = std::nullopt);
 
