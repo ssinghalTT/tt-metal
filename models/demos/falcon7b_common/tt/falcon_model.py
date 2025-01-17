@@ -19,6 +19,7 @@ from models.demos.falcon7b_common.tests.test_utils import (
     dump_device_profiler,
 )
 from tqdm import tqdm
+import time
 
 
 class TtFalconModelShared(torch.nn.Module):
@@ -126,6 +127,8 @@ class TtFalconModelShared(torch.nn.Module):
                     self.config.num_attention_heads,
                     num_input_tokens,
                 )
+
+                start_send_mask = time.time()
                 # Send attn masks to device
                 attn_masks_unordered = [
                     tt_from_torch(
@@ -138,6 +141,7 @@ class TtFalconModelShared(torch.nn.Module):
                     )
                     for attention_mask_slice in attention_mask_
                 ]
+                print(f"Time to send attn mask to device: {time.time() - start_send_mask}")
                 # Tilize attn masks
                 tt_attention_mask = [
                     ttnn.tilize(
@@ -170,7 +174,7 @@ class TtFalconModelShared(torch.nn.Module):
                     memory_config=self.model_config["ATTN_MASK_MEMCFG"],
                     dtype=self.model_config["ATTN_MASK_DTYPE"],
                 )
-
+            start_send_ids = time.time()
             tt_input_ids = tt_from_torch(
                 input_ids,
                 dtype=self.model_config["INPUT_DTYPE"],
@@ -179,6 +183,7 @@ class TtFalconModelShared(torch.nn.Module):
                 memory_config=self.model_config["INPUT_MEMCFG"],
                 mesh_mapper=ShardTensorToMesh(self.mesh_device, dim=0),
             )
+            print(f"Time to send input ids to device: {time.time() - start_send_ids}")
         elif llm_mode == "decode":
             assert batch_size % 32 == 0, "For decode, batch_size must be multiple of 32!"
             assert sequence_size == 1, "For decode, q_len must be 1!"

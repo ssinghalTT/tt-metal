@@ -356,7 +356,10 @@ def run_falcon_demo_kv(
         ) = tt_FalconCausalLM.model_preprocessing(
             "prefill", prefill_ids[user_id::batch_size], 0, num_input_tokens=nearest_32(num_input_tokens)
         )
+        logger.info(f"time to preprocess: {time.time() - time_prefill_inference_start}")
         assert tt_prefill_attention_mask is not None
+
+        time_fwd_start = time.time()
 
         tt_logits, kv_cache = tt_FalconCausalLM(
             input_ids=tt_prefill_input_ids,
@@ -368,6 +371,7 @@ def run_falcon_demo_kv(
             use_cache=use_cache,
         )
         synchronize_devices(mesh_device)
+        logger.info(f"time to forward: {time.time() - time_fwd_start}")
 
         if tt_prefill_attention_mask is not None:
             if isinstance(tt_prefill_attention_mask, ttnn.Tensor):
@@ -378,7 +382,10 @@ def run_falcon_demo_kv(
             else:
                 raise ValueError("Invalid type for tt_attention_mask")
 
+        start_to_torch = time.time()
+
         logits = tt_tensors_to_torch_tensors(tt_logits, mesh_device, concat_dim=0).squeeze(1)
+        logger.info(f"time to convert to torch: {time.time() - start_to_torch}")
 
         tt_prefill_input_ids.deallocate()
         tt_logits.deallocate()

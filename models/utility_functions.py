@@ -197,10 +197,11 @@ def torch2tt_tensor(
 def tt_tensors_to_torch_tensors(
     tt_tensors_device: ttnn.Tensor, mesh_device: Union[ttnn.MeshDevice, ttnn.Device], concat_dim: int = 0
 ):
+    # breakpoint()
     # Convert tensors to interleaved
     if tt_tensors_device.is_sharded():
         tt_tensors_device = ttnn.sharded_to_interleaved(tt_tensors_device)
-
+    # breakpoint()
     # Convert tensors to RM layout
     if tt_tensors_device.layout == ttnn.TILE_LAYOUT:
         # Convert to bfloat16 to ensure untilize works
@@ -211,9 +212,11 @@ def tt_tensors_to_torch_tensors(
         # Untilize using singlecore since multicore version runs out of l1 memory (Issue #9022)
         tt_tensors_device = ttnn.untilize(tt_tensors_device, use_multicore=False)
 
+    start_to_torch = time.time()
     tt_tensors_device = ttnn.to_torch(
         tt_tensors_device, mesh_composer=ttnn.ConcatMeshToTensor(mesh_device, dim=concat_dim), device=mesh_device
     )
+    logger.info(f"Time to convert TT tensors to torch tensors: {time.time() - start_to_torch:.3f}s")
 
     return tt_tensors_device
 
