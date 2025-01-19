@@ -18,6 +18,7 @@
 #include <tt-metalium/logger.hpp>
 #include "tt_metal/common/scoped_timer.hpp"
 #include <tt-metalium/host_api.hpp>
+#include "lightmetal_capture_utils.hpp"
 
 using std::vector;
 using namespace tt;
@@ -162,7 +163,9 @@ TEST_F(SingleDeviceLightMetalFixture, CreateBufferEnqueueWriteRead_Sanity) {
 
         // Write data to buffer, then read outputs and verify against expected.
         EnqueueWriteBuffer(command_queue, *buffer, input_data.data(), true);
-        EnqueueReadBuffer(command_queue, *buffer, readback_data.data(), true);
+        // This will verify that readback matches between capture + replay
+        LightMetalCompareToCapture(command_queue, *buffer, readback_data.data());
+
         EXPECT_TRUE(input_data == readback_data);
 
         // For dev/debug go ahead and print the results. Had a replay bug, was seeing wrong data.
@@ -203,7 +206,9 @@ TEST_F(SingleDeviceLightMetalFixture, SingleRISCDataMovementSanity) {
     // Write data to buffer, enqueue program, then read outputs and verify against expected.
     EnqueueWriteBuffer(command_queue, *input, input_data.data(), true);
     EnqueueProgram(command_queue, simple_program, true);
-    EnqueueReadBuffer(command_queue, *output, eager_output_data.data(), true);
+    // This will verify that outputs matches between capture + replay
+    LightMetalCompareToCapture(command_queue, *output, eager_output_data.data());
+
     EXPECT_TRUE(eager_output_data == input_data);
 
     // For dev/debug go ahead and print the results
@@ -234,18 +239,11 @@ TEST_F(SingleDeviceLightMetalFixture, ThreeRISCDataMovementComputeSanity) {
         input_data[i] = i;
     }
 
-    vector<uint32_t> eager_output_data;
-    eager_output_data.resize(input_data.size());
-
     // Write data to buffer, enqueue program, then read outputs.
     EnqueueWriteBuffer(command_queue, *input, input_data.data(), true);
     EnqueueProgram(command_queue, simple_program, true);
-    EnqueueReadBuffer(command_queue, *output, eager_output_data.data(), true);
-
-    // For dev/debug go ahead and print the results
-    for (size_t i = 0; i < eager_output_data.size(); i++) {
-        log_debug(tt::LogMetalTrace, "i: {:3d} input: {} output: {}", i, input_data[i], eager_output_data[i]);
-    }
+    // This will verify that outputs matches between capture + replay
+    LightMetalCompareToCapture(command_queue, *output);  // No read return
 
     Finish(command_queue);
 }
@@ -275,18 +273,11 @@ TEST_F(SingleDeviceLightMetalFixture, ThreeRISCDataMovementComputeSanityDynamicC
         input_data[i] = i;
     }
 
-    vector<uint32_t> eager_output_data;
-    eager_output_data.resize(input_data.size());
-
     // Write data to buffer, enqueue program, then read outputs.
     EnqueueWriteBuffer(command_queue, *input, input_data.data(), true);
     EnqueueProgram(command_queue, simple_program, true);
-    EnqueueReadBuffer(command_queue, *output, eager_output_data.data(), true);
-
-    // For dev/debug go ahead and print the results
-    for (size_t i = 0; i < eager_output_data.size(); i++) {
-        log_info(tt::LogMetalTrace, "i: {:3d} input: {} output: {}", i, input_data[i], eager_output_data[i]);
-    }
+    // This will verify that outputs matches between capture + replay
+    LightMetalCompareToCapture(command_queue, *output);  // No read return
 
     Finish(command_queue);
 }
@@ -314,7 +305,8 @@ TEST_F(SingleDeviceLightMetalFixture, SingleProgramTraceCapture) {
     // Initial run w/o trace. Preloads binary cache, and captures golden output.
     EnqueueWriteBuffer(command_queue, *input, input_data.data(), true);
     EnqueueProgram(command_queue, simple_program, true);
-    EnqueueReadBuffer(command_queue, *output, eager_output_data.data(), true);
+    // This will verify that outputs matches between capture + replay.
+    LightMetalCompareToCapture(command_queue, *output, eager_output_data.data());
 
     // Write junk to output buffer to help make sure trace run from standalone binary works.
     lightmetal_test_helpers::write_junk_to_buffer(command_queue, *output);
@@ -325,7 +317,7 @@ TEST_F(SingleDeviceLightMetalFixture, SingleProgramTraceCapture) {
     EndTraceCapture(this->device_, command_queue.id(), tid);
 
     // Verify trace output during replay matches expected output from original capture.
-    // LightMetalCompareToGolden(command_queue, *output, eager_output_data.data());
+    LightMetalCompareToGolden(command_queue, *output, eager_output_data.data());
 
     // Done
     Finish(command_queue);
@@ -359,7 +351,8 @@ TEST_F(SingleDeviceLightMetalFixture, TwoProgramTraceCapture) {
     EnqueueWriteBuffer(command_queue, *input, input_data.data(), true);
     EnqueueProgram(command_queue, op0, true);
     EnqueueProgram(command_queue, op1, true);
-    EnqueueReadBuffer(command_queue, *output, eager_output_data.data(), true);
+    // This will verify that outputs matches between capture + replay.
+    LightMetalCompareToCapture(command_queue, *output, eager_output_data.data());
     Finish(command_queue);
 
     // Write junk to output buffer to help make sure trace run from standalone binary works.
@@ -372,7 +365,7 @@ TEST_F(SingleDeviceLightMetalFixture, TwoProgramTraceCapture) {
     EndTraceCapture(this->device_, command_queue.id(), tid);
 
     // Verify trace output during replay matches expected output from original capture.
-    // LightMetalCompareToGolden(command_queue, *output, eager_output_data.data());
+    LightMetalCompareToGolden(command_queue, *output, eager_output_data.data());
 
     // Done
     Finish(command_queue);
