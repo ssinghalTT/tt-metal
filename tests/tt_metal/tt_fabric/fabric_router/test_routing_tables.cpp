@@ -65,5 +65,12 @@ TEST_F(ControlPlaneFixture, TestT3kFabricRoutes) {
     }
 }
 
+TEST_F(ControlPlaneFixture, TestQuantaGalaxyControlPlaneInit) {
+    const std::filesystem::path quanta_galaxy_mesh_graph_desc_path =
+        std::filesystem::path(tt::llrt::RunTimeOptions::get_instance().get_root_dir()) /
+        "tt_metal/fabric/mesh_graph_descriptors/quanta_galaxy_mesh_graph_descriptor.yaml";
+    auto control_plane = std::make_unique<ControlPlane>(quanta_galaxy_mesh_graph_desc_path.string());
+}
+
 }  // namespace fabric_router_tests
 }  // namespace tt::tt_fabric

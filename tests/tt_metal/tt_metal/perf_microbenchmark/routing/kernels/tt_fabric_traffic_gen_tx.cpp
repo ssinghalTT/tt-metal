@@ -5,9 +5,9 @@
 // clang-format off
 #include "dataflow_api.h"
 #include "debug/dprint.h"
-#include "tt_fabric/hw/inc/tt_fabric.h"
+#include "tt_metal/fabric/hw/inc/tt_fabric.h"
 #include "tests/tt_metal/tt_metal/perf_microbenchmark/routing/kernels/tt_fabric_traffic_gen.hpp"
-#include "tt_fabric/hw/inc/tt_fabric_interface.h"
+#include "tt_metal/fabric/hw/inc/tt_fabric_interface.h"
 // clang-format on
 
 uint32_t src_endpoint_id;

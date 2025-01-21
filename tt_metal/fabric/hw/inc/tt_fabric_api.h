@@ -9,7 +9,6 @@
 #include "dataflow_api.h"
 #include "noc_overlay_parameters.h"
 #include "ethernet/dataflow_api.h"
-#include "tt_fabric.hpp"
 
 typedef struct tt_fabric_endpoint_sync {
     uint32_t sync_addr : 24;
