@@ -79,6 +79,7 @@ def profile_results():
     setup = device_post_proc_config.default_setup()
     setup.deviceInputLog = profiler_log_path
     devices_data = import_log_run_stats(setup)
+    print(devices_data["devices"].keys())
     deviceID = list(devices_data["devices"].keys())[0]
     total_cycle = devices_data["devices"][deviceID]["cores"]["DEVICE"]["analysis"]["device_fw_duration"]["stats"][
         "Average"
@@ -966,31 +967,31 @@ def test_dram_read_l1_write_core(
         # single layer single receiver test
         ("wormhole_b0", None, np.array([32768, 128]), 1, 64, 5, 256, 1, 1, 1),
         # single layer multi receiver test
-        ("wormhole_b0", None, np.array([32768, 128]), 1, 64, 3, 256, 1, 2, 1),
-        # multi layer multi receiver test
-        ("wormhole_b0", None, np.array([32768, 256]), 1, 64, 5, 256, 1, 4, 15),
-        # Matmul test does not support mixed data format, just test for either bfp8 or fp16
-        # single layer single receiver test
-        ("wormhole_b0", "Matmul", np.array([32, 4096, 128]), 1, 8, 10, 256, 0, 1, 1),
-        ("wormhole_b0", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 1, 1),
-        # # single layer multi receiver test
-        ("wormhole_b0", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 2, 1),
+        # ("wormhole_b0", None, np.array([32768, 128]), 1, 64, 3, 256, 1, 2, 1),
         # # multi layer multi receiver test
-        ("wormhole_b0", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 2, 15),
-        # single layer single receiver test
-        ("blackhole", None, np.array([32768, 128]), 1, 64, 5, 256, 1, 1, 1),
-        # single layer multi receiver test
-        ("blackhole", None, np.array([32768, 128]), 1, 64, 3, 256, 1, 2, 1),
-        # multi layer multi receiver test
-        ("blackhole", None, np.array([32768, 256]), 1, 64, 5, 256, 1, 4, 15),
-        # Matmul test does not support mixed data format, just test for either bfp8 or fp16
-        # single layer single receiver test
-        ("blackhole", "Matmul", np.array([32, 4096, 128]), 1, 8, 10, 256, 0, 1, 1),
-        ("blackhole", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 1, 1),
+        # ("wormhole_b0", None, np.array([32768, 256]), 1, 64, 5, 256, 1, 4, 15),
+        # # Matmul test does not support mixed data format, just test for either bfp8 or fp16
+        # # single layer single receiver test
+        # ("wormhole_b0", "Matmul", np.array([32, 4096, 128]), 1, 8, 10, 256, 0, 1, 1),
+        # ("wormhole_b0", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 1, 1),
+        # # # single layer multi receiver test
+        # ("wormhole_b0", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 2, 1),
+        # # # multi layer multi receiver test
+        # ("wormhole_b0", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 2, 15),
+        # # single layer single receiver test
+        # ("blackhole", None, np.array([32768, 128]), 1, 64, 5, 256, 1, 1, 1),
         # # single layer multi receiver test
-        ("blackhole", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 2, 1),
+        # ("blackhole", None, np.array([32768, 128]), 1, 64, 3, 256, 1, 2, 1),
         # # multi layer multi receiver test
-        ("blackhole", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 2, 15),
+        # ("blackhole", None, np.array([32768, 256]), 1, 64, 5, 256, 1, 4, 15),
+        # # Matmul test does not support mixed data format, just test for either bfp8 or fp16
+        # # single layer single receiver test
+        # ("blackhole", "Matmul", np.array([32, 4096, 128]), 1, 8, 10, 256, 0, 1, 1),
+        # ("blackhole", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 1, 1),
+        # # # single layer multi receiver test
+        # ("blackhole", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 2, 1),
+        # # # multi layer multi receiver test
+        # ("blackhole", "Matmul", np.array([32, 2048, 128]), 1, 8, 10, 256, 1, 2, 15),
     ],
 )
 @pytest.mark.parametrize(

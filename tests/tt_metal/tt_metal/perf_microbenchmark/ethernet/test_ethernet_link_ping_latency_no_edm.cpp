@@ -101,6 +101,9 @@ std::tuple<Program, Program> build(
             static_cast<uint32_t>(sample_page_size)};
     };
 
+    tt::log_info("eth_sender_core: {}", eth_sender_core);
+    tt::log_info("eth_receiver_core: {}", eth_receiver_core);
+
     local_kernel = tt_metal::CreateKernel(
         program0,
         "tests/tt_metal/tt_metal/test_kernels/dataflow/unit_tests/erisc/ethernet_ping_latency_ubench_sender.cpp",

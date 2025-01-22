@@ -198,6 +198,23 @@ void eth_send_bytes_over_channel_payload_only(
     }
 }
 
+FORCE_INLINE
+void eth_send_bytes_over_channel_payload_only_set_state(
+    uint32_t src_addr, uint32_t dst_addr, uint32_t num_bytes_per_send_word_size = 1) {
+    while (eth_txq_reg_read(0, ETH_TXQ_CMD) != 0) {
+    }
+    eth_txq_reg_write(0, ETH_TXQ_TRANSFER_START_ADDR, src_addr << 4);
+    eth_txq_reg_write(0, ETH_TXQ_DEST_ADDR, dst_addr << 4);
+    eth_txq_reg_write(0, ETH_TXQ_TRANSFER_SIZE_BYTES, num_bytes_per_send_word_size << 4);
+}
+
+FORCE_INLINE
+void eth_send_bytes_over_channel_payload_only_with_state() {
+    while (eth_txq_reg_read(0, ETH_TXQ_CMD) != 0) {
+    }
+    eth_txq_reg_write(0, ETH_TXQ_CMD, ETH_TXQ_CMD_START_DATA);
+}
+
 // Calls the unsafe variant of eth_send_packet under the hood which is guaranteed not to context switch
 // We want this for code size reasons
 FORCE_INLINE
