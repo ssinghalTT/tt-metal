@@ -34,7 +34,7 @@ struct ExecuteTranspose {
 
 }  // namespace operations::data_movement
 
-constexpr auto transpose =
-    ttnn::register_operation<"ttnn::transpose", ttnn::operations::data_movement::ExecuteTranspose>();
+constexpr auto transpose = ttnn::
+    register_operation_with_auto_launch_op<"ttnn::transpose", ttnn::operations::data_movement::ExecuteTranspose>();
 
 }  // namespace ttnn
