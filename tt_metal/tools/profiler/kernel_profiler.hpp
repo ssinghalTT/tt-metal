@@ -290,9 +290,9 @@ __attribute__((noinline)) void quick_push() {
 
     uint64_t dram_bank_dst_noc_addr = s.get_noc_addr(bank, dram_offset);
 
-    // for (uint32_t i = 0; i < (wIndex % NOC_ALIGNMENT_FACTOR); i++) {
-    // mark_padding();
-    //}
+    for (uint32_t i = 0; i < (wIndex % NOC_ALIGNMENT_FACTOR); i++) {
+        mark_padding();
+    }
     // uint32_t currEndIndex = profiler_control_buffer[HOST_BUFFER_END_INDEX_BR_ER + myRiscID];
 
     // if (currEndIndex <= PROFILER_FULL_HOST_VECTOR_SIZE_PER_RISC) {
@@ -352,16 +352,15 @@ struct profileScopeGuaranteed {
         wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
     }
     inline __attribute__((always_inline)) ~profileScopeGuaranteed() {
-        mark_time_at_index_inlined(wIndex, get_const_id(timer_id, ZONE_END));
-        wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
-        if (wIndex >= (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE)) ||
-            doPush) {
-            doPush = false;
+        if (wIndex > CUSTOM_MARKERS) {
+            mark_time_at_index_inlined(wIndex, get_const_id(timer_id, ZONE_END));
+            wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
+        }
+        if (wIndex >= (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
             // SrcLocNameToHash("PROFILER-NOC-PUSH-MARK");
             // mark_time_at_index_inlined(start_index + 2 * PROFILER_L1_MARKER_UINT32_SIZE, hash);
             // mark_time_at_index_inlined(end_index + 2 * PROFILER_L1_MARKER_UINT32_SIZE, get_const_id(hash, ZONE_END));
-            quick_push<true>();
-            wIndex = CUSTOM_MARKERS;
+            quick_push<false>();
         }
     }
 #else

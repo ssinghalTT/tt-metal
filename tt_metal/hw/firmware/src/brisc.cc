@@ -430,25 +430,30 @@ int main() {
                     true /*posted*/);
             }
 
-            if (time_out++ > 4000000) {
-                if (kernel_profiler::wIndex > kernel_profiler::CUSTOM_MARKERS) {
-                    kernel_profiler::doPush = true;
+            if (time_out++ > 1000000) {
+                if (kernel_profiler::wIndex >
+                    kernel_profiler::CUSTOM_MARKERS + kernel_profiler::PROFILER_L1_MARKER_UINT32_SIZE) {
+                    kernel_profiler::wIndex -= kernel_profiler::PROFILER_L1_MARKER_UINT32_SIZE;
+                    if (((kernel_profiler::profiler_data_buffer[0][kernel_profiler::wIndex] >> 28) & 0x7) ==
+                        kernel_profiler::ZONE_END) {
+                        kernel_profiler::wIndex += kernel_profiler::PROFILER_L1_MARKER_UINT32_SIZE;
+                    }
                     time_out = 0;
-                    break;
+                    kernel_profiler::quick_push<true>();
                 }
             }
         }
 
         WAYPOINT("GD");
-        if (!kernel_profiler::doPush) {
+        {
             // Only include this iteration in the device profile if the launch message is valid. This is because all
             // workers get a go signal regardless of whether they're running a kernel or not. We don't want to profile
             // "invalid" iterations.
             uint32_t launch_msg_rd_ptr = mailboxes->launch_msg_rd_ptr;
             launch_msg_t* launch_msg_address = &(mailboxes->launch[launch_msg_rd_ptr]);
             DeviceValidateProfiler(launch_msg_address->kernel_config.enables);
-            DeviceZoneSetCounter(launch_msg_address->kernel_config.host_assigned_id);
-            // Copies from L1 to IRAM on chips where NCRISC has IRAM
+            // DeviceZoneSetCounter(launch_msg_address->kernel_config.host_assigned_id);
+            //  Copies from L1 to IRAM on chips where NCRISC has IRAM
             uint32_t kernel_config_base = firmware_config_init(mailboxes, ProgrammableCoreType::TENSIX, DISPATCH_CLASS_TENSIX_DM0);
             int ncrisc_index = static_cast<std::underlying_type<TensixProcessorTypes>::type>(TensixProcessorTypes::DM1);
             uint32_t ncrisc_kernel_src_address =
