@@ -78,18 +78,18 @@ void kernel_main() {
     // upper dimension stride in read and in write. Note in write we need to consider the repetitions of the r dimension
     uint32_t u_r_offset = higher_dim_start * higher_jump;
     uint32_t u_w_offset = higher_dim_start * higher_jump * repetitions;
-    for (int l = lower_dim_start; l < lower_dim_end; l++) {
-        for (int r = 0; r < REP_DIM; r++) {
+    for (uint32_t l = lower_dim_start; l < lower_dim_end; l++) {
+        for (uint32_t r = 0; r < REP_DIM; r++) {
             uint32_t combined_offset = l_offset + r_offset;
-            for (int h = higher_dim_start; h < higher_dim_end; h++) {
+            for (uint32_t h = higher_dim_start; h < higher_dim_end; h++) {
                 // Perform the read
                 src_noc_addr = s.get_noc_addr(combined_offset + u_r_offset, 0);
-                data_location = input_buffer + (src_noc_addr & offset_to_use);  // Guaranteed aligned to src_noc_addr
+                data_location = input_buffer + (src_noc_addr & w_offset_to_use);  // Guaranteed aligned to src_noc_addr
                 tt::data_movement::common::enhanced_noc_async_read<original_page_size_bytes, false>(
                     src_noc_addr, data_location, original_page_size_bytes);
                 combined_offset += u_w_offset;  // offset of the higher dims
                 noc_async_read_barrier();
-                for (int n = 0; n < repetitions; n++) {
+                for (uint32_t n = 0; n < repetitions; n++) {
                     // Perform the writes
                     const uint64_t dst_noc_addr = d.get_noc_addr(combined_offset, 0);
                     combined_offset += higher_jump;
