@@ -17,7 +17,6 @@
 #include "tdma_xmov.h"
 #include "noc_nonblocking_api.h"
 #include "firmware_common.h"
-#include "tools/profiler/kernel_profiler.hpp"
 #include "dev_msgs.h"
 #include "risc_attribs.h"
 #include "circular_buffer.h"
@@ -82,6 +81,7 @@ int32_t bank_to_l1_offset[NUM_L1_BANKS] __attribute__((used));
 #if defined(PROFILE_KERNEL)
 namespace kernel_profiler {
     uint32_t wIndex __attribute__((used));
+    uint32_t time_out __attribute__((used));
     uint32_t doPush __attribute__((used));
     uint32_t stackSize __attribute__((used));
     uint32_t sums[SUM_COUNT] __attribute__((used));
@@ -388,13 +388,12 @@ int main() {
     kernel_profiler::init_profiler();
 
     while (1) {
-        DeviceZoneScopedMainN("BRISC-FW");
+        DeviceZoneScopedPush();
         init_sync_registers();
         reset_ncrisc_with_iram();
 
         WAYPOINT("GW");
         uint8_t go_message_signal = RUN_MSG_DONE;
-        uint32_t time_out = 0;
         // kernel_configs.preload is last in the launch message. so other data is
         // valid by the time it's set. All multicast data from the dispatcher is
         // written in order, so it will arrive in order. We also have a barrier
@@ -429,26 +428,15 @@ int main() {
                     false /*linked*/,
                     true /*posted*/);
             }
-
-            if (time_out++ > 1000000) {
-                if (kernel_profiler::wIndex >
-                    kernel_profiler::CUSTOM_MARKERS + kernel_profiler::PROFILER_L1_MARKER_UINT32_SIZE) {
-                    kernel_profiler::wIndex -= kernel_profiler::PROFILER_L1_MARKER_UINT32_SIZE;
-                    if (((kernel_profiler::profiler_data_buffer[0][kernel_profiler::wIndex] >> 28) & 0x7) ==
-                        kernel_profiler::ZONE_END) {
-                        kernel_profiler::wIndex += kernel_profiler::PROFILER_L1_MARKER_UINT32_SIZE;
-                    }
-                    time_out = 0;
-                    kernel_profiler::quick_push<true>();
-                }
-            }
+            DeviceZonesPush();
         }
 
         WAYPOINT("GD");
         {
-            // Only include this iteration in the device profile if the launch message is valid. This is because all
-            // workers get a go signal regardless of whether they're running a kernel or not. We don't want to profile
-            // "invalid" iterations.
+            // DeviceZoneScopedMainN("BRISC-FW");
+            //  Only include this iteration in the device profile if the launch message is valid. This is because all
+            //  workers get a go signal regardless of whether they're running a kernel or not. We don't want to profile
+            //  "invalid" iterations.
             uint32_t launch_msg_rd_ptr = mailboxes->launch_msg_rd_ptr;
             launch_msg_t* launch_msg_address = &(mailboxes->launch[launch_msg_rd_ptr]);
             DeviceValidateProfiler(launch_msg_address->kernel_config.enables);

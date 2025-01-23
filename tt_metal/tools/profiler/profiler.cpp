@@ -418,9 +418,9 @@ void DeviceProfiler::dumpResults(IDevice* device, const std::vector<CoreCoord>& 
         const auto USE_FAST_DISPATCH = std::getenv("TT_METAL_SLOW_DISPATCH_MODE") == nullptr;
         if (USE_FAST_DISPATCH) {
             if (state == ProfilerDumpState::LAST_CLOSE_DEVICE) {
-                if (tt::llrt::RunTimeOptions::get_instance().get_profiler_do_dispatch_cores()) {
-                    tt_metal::detail::ReadFromBuffer(output_dram_buffer, profile_buffer);
-                }
+                // if (tt::llrt::RunTimeOptions::get_instance().get_profiler_do_dispatch_cores()) {
+                tt_metal::detail::ReadFromBuffer(output_dram_buffer, profile_buffer);
+                //}
             } else {
                 EnqueueReadBuffer(device->command_queue(), output_dram_buffer, profile_buffer, true);
             }
@@ -503,12 +503,9 @@ void DeviceProfiler::pushTracyDeviceResults() {
 
     for (auto event : device_events) {
         std::pair<uint32_t, CoreCoord> device_core = {event.chip_id, (CoreCoord){event.core_x, event.core_y}};
-<<<<<<< HEAD
         event.timestamp = event.timestamp * this->freqScale + this->shift;
-=======
         // std::cout << event.timestamp <<  "," <<  event.zone_name << "," <<magic_enum::enum_name(event.zone_phase) <<
         // std::endl;
->>>>>>> Working timeout push
         if (event.zone_phase == tracy::TTDeviceEventPhase::begin) {
             TracyTTPushStartZone(device_tracy_contexts[device_core], event);
         } else if (event.zone_phase == tracy::TTDeviceEventPhase::end) {

@@ -39,6 +39,7 @@
 namespace kernel_profiler {
 
 extern uint32_t wIndex;
+extern uint32_t time_out;
 extern uint32_t doPush;
 extern uint32_t stackSize;
 
@@ -307,6 +308,7 @@ __attribute__((noinline)) void quick_push() {
     //}
 
     wIndex = CUSTOM_MARKERS;
+    doPush = false;
 
 #endif
 }
@@ -339,6 +341,36 @@ struct profileScope {
     }
 };
 
+void push_time_out() {
+#if defined(COMPILE_FOR_BRISC)
+    if (time_out++ > 10000) {
+        if (wIndex > CUSTOM_MARKERS + PROFILER_L1_MARKER_UINT32_SIZE) {
+            wIndex -= PROFILER_L1_MARKER_UINT32_SIZE;
+            if (((profiler_data_buffer[0][wIndex] >> 28) & 0x7) == ZONE_END) {
+                wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
+            }
+            time_out = 0;
+            quick_push<true>();
+        }
+    }
+#endif
+}
+
+struct scopePush {
+#if defined(COMPILE_FOR_BRISC)
+    inline __attribute__((always_inline)) scopePush() { doPush = true; }
+    inline __attribute__((always_inline)) ~scopePush() {
+        if (doPush) {
+            wIndex += 2 * PROFILER_L1_MARKER_UINT32_SIZE;
+            if (wIndex >= (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
+                quick_push<true>();
+            }
+        }
+    }
+#else
+#endif
+};
+
 template <uint32_t timer_id, uint32_t index>
 struct profileScopeGuaranteed {
     static constexpr uint32_t start_index = (2 * index * PROFILER_L1_MARKER_UINT32_SIZE) + GUARANTEED_MARKER_1_H;
@@ -347,21 +379,12 @@ struct profileScopeGuaranteed {
     static_assert(start_index < CUSTOM_MARKERS);
     static_assert(end_index < CUSTOM_MARKERS);
 #if defined(COMPILE_FOR_BRISC)
-    inline __attribute__((always_inline)) profileScopeGuaranteed() {
-        mark_time_at_index_inlined(wIndex, timer_id);
-        wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
-    }
+    inline __attribute__((always_inline)) profileScopeGuaranteed() { mark_time_at_index_inlined(wIndex, timer_id); }
     inline __attribute__((always_inline)) ~profileScopeGuaranteed() {
-        if (wIndex > CUSTOM_MARKERS) {
-            mark_time_at_index_inlined(wIndex, get_const_id(timer_id, ZONE_END));
-            wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
-        }
-        if (wIndex >= (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
-            // SrcLocNameToHash("PROFILER-NOC-PUSH-MARK");
-            // mark_time_at_index_inlined(start_index + 2 * PROFILER_L1_MARKER_UINT32_SIZE, hash);
-            // mark_time_at_index_inlined(end_index + 2 * PROFILER_L1_MARKER_UINT32_SIZE, get_const_id(hash, ZONE_END));
-            quick_push<false>();
-        }
+        mark_time_at_index_inlined(wIndex + PROFILER_L1_MARKER_UINT32_SIZE, get_const_id(timer_id, ZONE_END));
+        //}else{
+        // wIndex -= 2 * PROFILER_L1_MARKER_UINT32_SIZE;
+        //}
     }
 #else
     // inline __attribute__((always_inline)) profileScopeGuaranteed() {
@@ -460,6 +483,8 @@ inline __attribute__((always_inline)) void recordEvent(uint16_t event_id) {
     auto constexpr hash = kernel_profiler::Hash16_CT(PROFILER_MSG_NAME(name)); \
     kernel_profiler::profileScopeGuaranteed<hash, 0> zone = kernel_profiler::profileScopeGuaranteed<hash, 0>();
 
+#define DeviceZoneScopedPush() kernel_profiler::scopePush scope_push = kernel_profiler::scopePush();
+
 #define DeviceZoneScopedMainChildN(name)                                       \
     DO_PRAGMA(message(PROFILER_MSG_NAME(name)));                               \
     auto constexpr hash = kernel_profiler::Hash16_CT(PROFILER_MSG_NAME(name)); \
@@ -477,11 +502,15 @@ inline __attribute__((always_inline)) void recordEvent(uint16_t event_id) {
 
 #define DeviceZoneSetCounter(counter) kernel_profiler::set_host_counter(counter);
 
+#define DeviceZonesPush() kernel_profiler::push_time_out();
+
 #else
 
 #define DeviceValidateProfiler(condition)
 
 #define DeviceZoneScopedMainN(name)
+
+#define DeviceZoneScopedPush()
 
 #define DeviceZoneScopedMainChildN(name)
 
@@ -496,5 +525,7 @@ inline __attribute__((always_inline)) void recordEvent(uint16_t event_id) {
 #define DeviceTimestampedData(data_id, data)
 
 #define DeviceRecordEvent(event_id)
+
+#define DeviceZonesPush()
 
 #endif
