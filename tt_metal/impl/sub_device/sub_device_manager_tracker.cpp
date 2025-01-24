@@ -14,6 +14,9 @@
 #include <buffer_constants.hpp>
 #include <command_queue.hpp>
 #include <hardware_command_queue.hpp>
+#include <tt-metalium/device_impl.hpp>
+#include <tt-metalium/mesh_device.hpp>
+#include <tt-metalium/mesh_command_queue.hpp>
 #include <data_types.hpp>
 #include <sub_device.hpp>
 #include <sub_device_manager.hpp>
@@ -61,10 +64,19 @@ std::tuple<SubDeviceManagerId, SubDeviceId> SubDeviceManagerTracker::create_sub_
 
 void SubDeviceManagerTracker::reset_sub_device_state(const std::unique_ptr<SubDeviceManager>& sub_device_manager) {
     auto num_sub_devices = sub_device_manager->num_sub_devices();
-    for (uint8_t cq_id = 0; cq_id < device_->num_hw_cqs(); ++cq_id) {
-        auto& hw_cq = device_->hw_command_queue(cq_id);
-        // Only need to reset launch messages once, so reset on cq 0
-        hw_cq.reset_worker_state(cq_id == 0, num_sub_devices, sub_device_manager->noc_mcast_unicast_data());
+    // Dynamic resolution of device types is unclean and poor design. This will be cleaned up
+    // when MeshCommandQueue + CommandQueue are unified under the same API
+    if (dynamic_cast<v0::Device*>(device_)) {
+        v0::Device* device = dynamic_cast<v0::Device*>(device_);
+        for (uint8_t cq_id = 0; cq_id < device->num_hw_cqs(); ++cq_id) {
+            auto& hw_cq = device->hw_command_queue(cq_id);
+            // Only need to reset launch messages once, so reset on cq 0
+            hw_cq.reset_worker_state(cq_id == 0, num_sub_devices, sub_device_manager->noc_mcast_unicast_data());
+        }
+    } else {
+        distributed::MeshDevice* mesh_device = dynamic_cast<distributed::MeshDevice*>(device_);
+        mesh_device->mesh_command_queue().reset_worker_state(
+            true, num_sub_devices, sub_device_manager->noc_mcast_unicast_data());
     }
     sub_device_manager->reset_sub_device_stall_group();
 }

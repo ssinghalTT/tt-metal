@@ -1335,7 +1335,7 @@ void Program::generate_dispatch_commands(IDevice* device) {
 
 void Program::allocate_kernel_bin_buf_on_device(IDevice* device) { pimpl_->allocate_kernel_bin_buf_on_device(device); }
 
-void detail::Program_::compile(IDevice*device, bool fd_bootloader_mode) {
+void detail::Program_::compile(IDevice* device, bool fd_bootloader_mode) {
     //ZoneScoped;
     if (compiled_.contains(device->build_key())) {
         return;

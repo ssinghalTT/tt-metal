@@ -11,6 +11,7 @@
 
 #include "tests/tt_metal/tt_metal/dispatch/dispatch_test_utils.hpp"
 #include "tests/tt_metal/tt_metal/common/multi_device_fixture.hpp"
+#include "tests/tt_metal/tt_metal/dispatch/sub_device_test_utils.hpp"
 
 namespace tt::tt_metal::distributed::test {
 namespace {
@@ -360,7 +361,6 @@ std::vector<std::shared_ptr<Program>> create_eltwise_bin_programs(
                 auto src1_dram_buffer =
                     MeshBuffer::create(global_buffer_config, per_device_buffer_config, mesh_device.get());
                 src1_bufs.push_back(src1_dram_buffer);
-
                 auto dst_dram_buffer =
                     MeshBuffer::create(global_buffer_config, per_device_buffer_config, mesh_device.get());
                 output_bufs.push_back(dst_dram_buffer);
@@ -508,123 +508,23 @@ void validate_sems(
 
 using MeshWorkloadTest = T3000MultiDeviceFixture;
 
-TEST_F(MeshWorkloadTest, MeshWorkloadOnActiveEth) {
-    uint32_t num_workloads = 10;
-    auto random_seed = 0;
-    uint32_t num_iters = 500;
-    uint32_t seed = tt::parse_env("TT_METAL_SEED", random_seed);
-    std::vector<std::shared_ptr<MeshWorkload>> workloads = {};
-    log_info("Create {} workloads", num_workloads);
-    for (int i = 0; i < num_workloads; i++) {
-        std::shared_ptr<MeshWorkload> workload = std::make_shared<MeshWorkload>();
-        for (std::size_t logical_x = 0; logical_x < mesh_device_->num_cols(); logical_x++) {
-            for (std::size_t logical_y = 0; logical_y < mesh_device_->num_rows(); logical_y++) {
-                IDevice* device = mesh_device_->get_device(logical_y, logical_x);
-                auto programs = create_random_programs(
-                    1, mesh_device_->compute_with_storage_grid_size(), seed, device->get_active_ethernet_cores(true));
-                LogicalDeviceRange devices = {{logical_x, logical_y}, {logical_x + 1, logical_y + 1}};
-                AddProgramToMeshWorkload(*workload, *programs[0], devices);
-            }
-        }
-        EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), *workload, false);
-        workloads.push_back(workload);
-    }
-    for (int i = 0; i < num_iters; i++) {
-        if (i % 100 == 0) {
-            log_info(tt::LogTest, "Run MeshWorkloads for iteration {}", i);
-        }
-        for (auto& workload : workloads) {
-            EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), *workload, false);
+TEST_F(MeshWorkloadTest, MeshWorkloadOnActiveEthAsserts) {
+    // A MeshWorkload cannot be run on ethernet core - Runtime should assert if the
+    // user tries this. Verify this functionality here.
+    std::shared_ptr<MeshWorkload> workload = std::make_shared<MeshWorkload>();
+    uint32_t x_end = mesh_device_->num_cols();
+    uint32_t y_end = mesh_device_->num_rows();
+    uint32_t seed = 0;
+    for (std::size_t logical_x = 0; logical_x < x_end; logical_x++) {
+        for (std::size_t logical_y = 0; logical_y < y_end; logical_y++) {
+            IDevice* device = mesh_device_->get_device(logical_y, logical_x);
+            auto programs = create_random_programs(
+                1, mesh_device_->compute_with_storage_grid_size(), seed, device->get_active_ethernet_cores(true));
+            LogicalDeviceRange devices = {{logical_x, logical_y}, {logical_x + 1, logical_y + 1}};
+            AddProgramToMeshWorkload(*workload, *programs[0], devices);
         }
     }
-    Finish(mesh_device_->mesh_command_queue());
-}
-
-TEST_F(MeshWorkloadTest, MeshWorkloadMixedTensixEth) {
-    uint32_t num_workloads = 20;
-    auto random_seed = 0;
-    uint32_t num_iters = 30;
-    uint32_t seed = tt::parse_env("TT_METAL_SEED", random_seed);
-    // Setup rng to query if first program in Mesh runs on ethernet
-    // cores or not. This allows devices to alternate running program
-    // on ethernet across loops
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::bernoulli_distribution gen_run_on_eth(0.5);
-
-    std::vector<std::shared_ptr<MeshWorkload>> workloads = {};
-    log_info("Create {} workloads", num_workloads);
-    for (int i = 0; i < num_workloads; i++) {
-        bool run_on_eth = gen_run_on_eth(gen);
-        std::shared_ptr<MeshWorkload> workload = std::make_shared<MeshWorkload>();
-        for (std::size_t logical_x = 0; logical_x < mesh_device_->num_cols(); logical_x++) {
-            for (std::size_t logical_y = 0; logical_y < mesh_device_->num_rows(); logical_y++) {
-                IDevice* device = mesh_device_->get_device(logical_y, logical_x);
-                LogicalDeviceRange devices = {{logical_x, logical_y}, {logical_x + 1, logical_y + 1}};
-                if (run_on_eth) {
-                    auto programs = create_random_programs(
-                        1,
-                        mesh_device_->compute_with_storage_grid_size(),
-                        seed,
-                        device->get_active_ethernet_cores(true));
-                    AddProgramToMeshWorkload(*workload, *programs[0], devices);
-                } else {
-                    auto programs = create_random_programs(1, mesh_device_->compute_with_storage_grid_size(), seed);
-                    AddProgramToMeshWorkload(*workload, *programs[0], devices);
-                }
-                run_on_eth = !run_on_eth;
-            }
-        }
-        EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), *workload, false);
-        workloads.push_back(workload);
-    }
-
-    for (int i = 0; i < num_iters; i++) {
-        if (i % 10 == 0) {
-            log_info(tt::LogTest, "Run MeshWorkloads for iteration {}", i);
-        }
-        for (auto& workload : workloads) {
-            EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), *workload, false);
-        }
-    }
-    Finish(mesh_device_->mesh_command_queue());
-}
-
-TEST_F(MeshWorkloadTest, MeshWorkloadOnActiveEthRandomGridSize) {
-    uint32_t num_workloads = 30;
-    auto random_seed = 0;
-    uint32_t num_iters = 500;
-    uint32_t seed = tt::parse_env("TT_METAL_SEED", random_seed);
-    std::vector<std::shared_ptr<MeshWorkload>> workloads = {};
-    std::mt19937 rng(seed);
-    std::uniform_int_distribution<int> gen_x(1, 4);
-    std::uniform_int_distribution<int> gen_y(1, 2);
-    log_info("Create {} randomized workloads", num_workloads);
-    for (int i = 0; i < num_workloads; i++) {
-        std::shared_ptr<MeshWorkload> workload = std::make_shared<MeshWorkload>();
-        uint32_t x_end = gen_x(rng);
-        uint32_t y_end = gen_y(rng);
-        for (std::size_t logical_x = 0; logical_x < x_end; logical_x++) {
-            for (std::size_t logical_y = 0; logical_y < y_end; logical_y++) {
-                IDevice* device = mesh_device_->get_device(logical_y, logical_x);
-                auto programs = create_random_programs(
-                    1, mesh_device_->compute_with_storage_grid_size(), seed, device->get_active_ethernet_cores(true));
-                LogicalDeviceRange devices = {{logical_x, logical_y}, {logical_x + 1, logical_y + 1}};
-                AddProgramToMeshWorkload(*workload, *programs[0], devices);
-            }
-        }
-        EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), *workload, false);
-        workloads.push_back(workload);
-    }
-    for (int i = 0; i < num_iters; i++) {
-        if (i % 100 == 0) {
-            log_info(tt::LogTest, "Run MeshWorkloads for iteration {}", i);
-        }
-        for (auto& workload : workloads) {
-            EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), *workload, false);
-        }
-    }
-    Finish(mesh_device_->mesh_command_queue());
+    EXPECT_THROW(EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), *workload, false), std::exception);
 }
 
 TEST_F(MeshWorkloadTest, SimultaneousMeshWorkloads) {
@@ -1005,6 +905,150 @@ TEST_F(MeshWorkloadTest, MeshWorkloadSemaphoreDifferentPrograms) {
         for (std::size_t logical_y = devices_1.start_coord.y; logical_y < devices_1.end_coord.y; logical_y++) {
             auto device = mesh_device_->get_device(logical_y, logical_x);
             validate_sems(mesh_device_, device, full_grid, mesh_workload, expected_semaphore_values_1);
+        }
+    }
+}
+
+TEST_F(MeshWorkloadTest, SyncWorkloadsOnSubDevice) {
+    SubDevice sub_device_1(std::array{CoreRangeSet(CoreRange({0, 0}, {2, 2}))});
+    SubDevice sub_device_2(std::array{CoreRangeSet(std::vector{CoreRange({3, 3}, {3, 3}), CoreRange({4, 4}, {4, 4})})});
+
+    uint32_t num_iters = 5;
+    auto sub_device_manager = mesh_device_->create_sub_device_manager({sub_device_1, sub_device_2}, 3200);
+    mesh_device_->load_sub_device_manager(sub_device_manager);
+
+    auto [waiter_program, syncer_program, incrementer_program, global_sem] =
+        create_basic_sync_program(mesh_device_.get(), sub_device_1, sub_device_2);
+
+    LogicalDeviceRange devices = LogicalDeviceRange({0, 0}, {4, 2});
+    auto waiter_mesh_workload = CreateMeshWorkload();
+    auto syncer_mesh_workload = CreateMeshWorkload();
+    auto incrementer_mesh_workload = CreateMeshWorkload();
+    AddProgramToMeshWorkload(waiter_mesh_workload, waiter_program, devices);
+    AddProgramToMeshWorkload(syncer_mesh_workload, syncer_program, devices);
+    AddProgramToMeshWorkload(incrementer_mesh_workload, incrementer_program, devices);
+    for (uint32_t i = 0; i < num_iters; i++) {
+        EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), waiter_mesh_workload, false);
+        mesh_device_->set_sub_device_stall_group({SubDeviceId{0}});
+        EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), syncer_mesh_workload, true);
+        EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), incrementer_mesh_workload, false);
+        mesh_device_->reset_sub_device_stall_group();
+    }
+    Finish(mesh_device_->mesh_command_queue());
+}
+
+TEST_F(MeshWorkloadTest, DataCopyOnSubDevices) {
+    SubDevice sub_device_1(std::array{CoreRangeSet(CoreRange({0, 0}, {0, 0}))});
+    SubDevice sub_device_2(std::array{CoreRangeSet(CoreRange({1, 1}, {1, 1}))});
+    SubDevice sub_device_3(std::array{CoreRangeSet(CoreRange({2, 2}, {2, 2}))});
+
+    uint32_t single_tile_size = ::tt::tt_metal::detail::TileSize(DataFormat::UInt32);
+    uint32_t num_tiles = 32;
+    DeviceLocalBufferConfig per_device_buffer_config{
+        .page_size = single_tile_size * num_tiles,
+        .buffer_type = tt_metal::BufferType::DRAM,
+        .buffer_layout = TensorMemoryLayout::INTERLEAVED,
+        .bottom_up = true};
+
+    ReplicatedBufferConfig global_buffer_config{
+        .size = single_tile_size * num_tiles,
+    };
+    // Create IO Buffers
+    auto input_buf = MeshBuffer::create(global_buffer_config, per_device_buffer_config, mesh_device_.get());
+    auto output_buf = MeshBuffer::create(global_buffer_config, per_device_buffer_config, mesh_device_.get());
+
+    // Create and Load SubDeviceConfig on the mesh
+    auto sub_device_manager = mesh_device_->create_sub_device_manager({sub_device_1, sub_device_2, sub_device_3}, 3200);
+    mesh_device_->load_sub_device_manager(sub_device_manager);
+
+    auto syncer_coord = sub_device_1.cores(HalProgrammableCoreType::TENSIX).ranges().at(0).start_coord;
+    auto syncer_core = CoreRangeSet(CoreRange(syncer_coord, syncer_coord));
+    auto syncer_core_phys = mesh_device_->worker_core_from_logical_core(syncer_coord);
+    auto datacopy_coord = sub_device_2.cores(HalProgrammableCoreType::TENSIX).ranges().at(0).start_coord;
+    auto datacopy_core = CoreRangeSet(CoreRange(datacopy_coord, datacopy_coord));
+    auto datacopy_core_phys = mesh_device_->worker_core_from_logical_core(datacopy_coord);
+
+    auto all_cores = syncer_core.merge(datacopy_core);
+    auto global_sem = CreateGlobalSemaphore(mesh_device_.get(), all_cores, 0);
+
+    Program sync_and_incr_program = CreateProgram();
+    auto sync_kernel = CreateKernel(
+        sync_and_incr_program,
+        "tests/tt_metal/tt_metal/test_kernels/misc/sub_device/sync_and_increment.cpp",
+        syncer_core,
+        DataMovementConfig{.processor = DataMovementProcessor::RISCV_0, .noc = NOC::RISCV_0_default});
+    std::array<uint32_t, 3> sync_rt_args = {global_sem.address(), datacopy_core_phys.x, datacopy_core_phys.y};
+    SetRuntimeArgs(sync_and_incr_program, sync_kernel, syncer_core, sync_rt_args);
+
+    Program datacopy_program = CreateProgram();
+    auto datacopy_kernel = CreateKernel(
+        datacopy_program,
+        "tests/tt_metal/tt_metal/test_kernels/misc/sub_device/sync_and_datacopy.cpp",
+        datacopy_core,
+        DataMovementConfig{.processor = DataMovementProcessor::RISCV_0, .noc = NOC::RISCV_0_default});
+    std::array<uint32_t, 6> datacopy_rt_args = {
+        global_sem.address(), 0, 0, input_buf->address(), output_buf->address(), num_tiles};
+    SetRuntimeArgs(datacopy_program, datacopy_kernel, datacopy_core, datacopy_rt_args);
+    constexpr uint32_t src0_cb_index = CBIndex::c_0;
+    CircularBufferConfig cb_src0_config =
+        CircularBufferConfig(single_tile_size * num_tiles, {{src0_cb_index, DataFormat::UInt32}})
+            .set_page_size(src0_cb_index, single_tile_size);
+    CBHandle cb_src0 = CreateCircularBuffer(datacopy_program, datacopy_core, cb_src0_config);
+
+    auto syncer_mesh_workload = CreateMeshWorkload();
+    auto datacopy_mesh_workload = CreateMeshWorkload();
+    LogicalDeviceRange devices = LogicalDeviceRange({0, 0}, {4, 2});
+
+    AddProgramToMeshWorkload(syncer_mesh_workload, sync_and_incr_program, devices);
+    AddProgramToMeshWorkload(datacopy_mesh_workload, datacopy_program, devices);
+
+    for (int i = 0; i < 50; i++) {
+        mesh_device_->set_sub_device_stall_group({SubDeviceId{2}});
+        EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), syncer_mesh_workload, false);
+        EnqueueMeshWorkload(mesh_device_->mesh_command_queue(), datacopy_mesh_workload, false);
+
+        std::vector<uint32_t> src_vec(input_buf->size() / sizeof(uint32_t));
+        std::iota(src_vec.begin(), src_vec.end(), i);
+        EnqueueWriteMeshBuffer(mesh_device_->mesh_command_queue(), input_buf, src_vec, false);
+        // Read Back global semaphore value across all cores to verify that it has been reset to 0
+        // before updating it through host
+        auto shard_parameters =
+            ShardSpecBuffer(all_cores, {1, 1}, ShardOrientation::ROW_MAJOR, {1, 1}, {all_cores.size(), 1});
+        DeviceLocalBufferConfig global_sem_buf_local_config{
+            .page_size = sizeof(uint32_t),
+            .buffer_type = BufferType::L1,
+            .buffer_layout = TensorMemoryLayout::HEIGHT_SHARDED,
+            .shard_parameters = shard_parameters,
+            .bottom_up = false};
+        ReplicatedBufferConfig global_sem_buf_global_config{
+            .size = all_cores.size() * sizeof(uint32_t),
+        };
+
+        auto global_sem_buf = MeshBuffer::create(
+            global_sem_buf_global_config, global_sem_buf_local_config, mesh_device_.get(), global_sem.address());
+
+        for (std::size_t logical_x = 0; logical_x < input_buf->device()->num_cols(); logical_x++) {
+            for (std::size_t logical_y = 0; logical_y < input_buf->device()->num_rows(); logical_y++) {
+                std::vector<uint32_t> dst_vec;
+                ReadShard(
+                    mesh_device_->mesh_command_queue(), dst_vec, global_sem_buf, Coordinate(logical_y, logical_x));
+                for (const auto& val : dst_vec) {
+                    EXPECT_EQ(val, 0);
+                }
+            }
+        }
+
+        for (auto device : mesh_device_->get_devices()) {
+            tt::llrt::write_hex_vec_to_core(
+                device->id(), syncer_core_phys, std::vector<uint32_t>{1}, global_sem.address());
+        }
+        mesh_device_->reset_sub_device_stall_group();
+        for (std::size_t logical_x = 0; logical_x < output_buf->device()->num_cols(); logical_x++) {
+            for (std::size_t logical_y = 0; logical_y < output_buf->device()->num_rows(); logical_y++) {
+                std::vector<uint32_t> dst_vec;
+                ReadShard(mesh_device_->mesh_command_queue(), dst_vec, output_buf, Coordinate(logical_y, logical_x));
+                EXPECT_EQ(dst_vec, src_vec);
+            }
         }
     }
 }
