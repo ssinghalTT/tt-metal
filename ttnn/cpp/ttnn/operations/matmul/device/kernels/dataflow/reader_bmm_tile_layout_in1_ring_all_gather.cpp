@@ -17,10 +17,15 @@ void kernel_main() {
     constexpr uint32_t in1_block_num_tiles = get_compile_time_arg_val(3);
     constexpr uint32_t batch = get_compile_time_arg_val(4);
 
-    constexpr uint32_t cb_id_in1 = tt::CBIndex::c_1;
-    constexpr uint32_t sync_cb = tt::CBIndex::c_3;
-    constexpr uint32_t sync_cb2 = tt::CBIndex::c_4;
-    constexpr uint32_t remote_cb_id = tt::CBIndex::c_31;
+    constexpr uint32_t cb_id_in1 = get_compile_time_arg_val(5);
+    constexpr uint32_t sync_cb = get_compile_time_arg_val(6);
+    constexpr uint32_t sync_cb2 = get_compile_time_arg_val(7);
+    constexpr uint32_t remote_cb_id = get_compile_time_arg_val(8);
+
+    //     constexpr uint32_t cb_id_in1 = tt::CBIndex::c_1;
+    //     constexpr uint32_t sync_cb = tt::CBIndex::c_3;
+    //     constexpr uint32_t sync_cb2 = tt::CBIndex::c_4;
+    //     constexpr uint32_t remote_cb_id = tt::CBIndex::c_31;
     constexpr uint32_t shard_size_in_tiles = shard_width_in_tiles * shard_height_in_tiles;
 
     for (uint32_t b = 0; b < batch; ++b) {

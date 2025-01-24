@@ -111,15 +111,21 @@ void MAIN {
 
     constexpr uint32_t out_block_w = out_subblock_w * in1_num_subblocks;
 
-    constexpr uint32_t in0_cb_id = tt::CBIndex::c_0;
-    constexpr uint32_t in1_cb_id = tt::CBIndex::c_1;
-    constexpr uint32_t out_cb_id = tt::CBIndex::c_16;
-    constexpr uint32_t mm_partials_cb_id = tt::CBIndex::c_24;
+    constexpr uint32_t in0_cb_id = get_compile_time_arg_val(16);
+    constexpr uint32_t in1_cb_id = get_compile_time_arg_val(17);
+    constexpr uint32_t out_cb_id = get_compile_time_arg_val(18);
+    constexpr uint32_t mm_partials_cb_id = get_compile_time_arg_val(19);
+
+    // constexpr uint32_t in0_cb_id = tt::CBIndex::c_0;
+    // constexpr uint32_t in1_cb_id = tt::CBIndex::c_1;
+    // constexpr uint32_t out_cb_id = tt::CBIndex::c_16;
+    // constexpr uint32_t mm_partials_cb_id = tt::CBIndex::c_24;
 
     constexpr uint32_t untilize_mode_out_cb_id = untilize_out ? mm_partials_cb_id : out_cb_id;
 
 #ifdef FUSE_BIAS
-    constexpr uint32_t bias_cb_id = tt::CBIndex::c_3;
+    constexpr uint32_t bias_cb_id = get_compile_time_arg_val(20);
+    // constexpr uint32_t bias_cb_id = tt::CBIndex::c_3;
     constexpr uint32_t mm_out_cb_id = mm_partials_cb_id;
 #else
     constexpr uint32_t mm_out_cb_id = untilize_mode_out_cb_id;

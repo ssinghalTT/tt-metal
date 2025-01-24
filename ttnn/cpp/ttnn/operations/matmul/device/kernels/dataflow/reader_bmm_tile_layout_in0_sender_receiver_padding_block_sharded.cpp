@@ -43,8 +43,11 @@ void kernel_main() {
     tt_l1_ptr uint32_t* in0_mcast_noc_x = (tt_l1_ptr uint32_t*)(get_arg_addr(increment_arg_idx(rt_args_idx, num_x)));
     tt_l1_ptr uint32_t* in0_mcast_noc_y = (tt_l1_ptr uint32_t*)(get_arg_addr(increment_arg_idx(rt_args_idx, num_y)));
 
-    constexpr uint32_t cb_id_in0 = 0;
-    constexpr uint32_t cb_id_in2 = 2;  // Sharded cb
+    constexpr uint32_t cb_id_in0 = get_compile_time_arg_val(20);
+    constexpr uint32_t cb_id_in2 = get_compile_time_arg_val(21);
+
+    // constexpr uint32_t cb_id_in0 = 0;
+    // constexpr uint32_t cb_id_in2 = 2;  // Sharded cb
 
     constexpr uint32_t in0_single_tile_size_bytes = get_tile_size(cb_id_in0);
     constexpr DataFormat in0_data_format = get_dataformat(cb_id_in0);

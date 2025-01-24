@@ -25,7 +25,9 @@ void kernel_main() {
     // batch args
     constexpr uint32_t batch = get_compile_time_arg_val(6);
 
-    constexpr uint32_t cb_id_in0 = 0;
+    constexpr uint32_t cb_id_in0 = get_compile_time_arg_val(7);
+
+    // constexpr uint32_t cb_id_in0 = 0;
 
     volatile tt_l1_ptr uint32_t* in0_mcast_receiver_semaphore_addr_ptr =
         reinterpret_cast<volatile tt_l1_ptr uint32_t*>(in0_mcast_receiver_semaphore_addr);

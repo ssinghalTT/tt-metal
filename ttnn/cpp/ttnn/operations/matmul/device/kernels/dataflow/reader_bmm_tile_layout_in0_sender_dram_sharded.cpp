@@ -42,8 +42,11 @@ void kernel_main() {
 
     const uint32_t sender_block_id = sender_id * num_blocks_per_shard;
 
-    constexpr uint32_t cb_id_in0 = 0;
-    constexpr uint32_t cb_id_in2 = 2;  // Sharded cb
+    constexpr uint32_t cb_id_in0 = get_compile_time_arg_val(13);
+    constexpr uint32_t cb_id_in2 = get_compile_time_arg_val(14);  // Sharded cb
+
+    // constexpr uint32_t cb_id_in0 = 0;
+    // constexpr uint32_t cb_id_in2 = 2;  // Sharded cb
 
     const uint32_t in0_single_tile_size_bytes = get_tile_size(cb_id_in0);
     const DataFormat in0_data_format = get_dataformat(cb_id_in0);

@@ -70,15 +70,18 @@ void kernel_main() {
     // in3 block args
     constexpr uint32_t in3_block_w = get_compile_time_arg_val(18);
 
-    constexpr uint32_t cb_id_in3 = 3;
+    constexpr uint32_t cb_id_in3 = get_compile_time_arg_val(17);
+    // constexpr uint32_t cb_id_in3 = 3;
 #endif
 
     // WRITER
 
-    constexpr uint32_t cb_id_in1 = 1;
+    constexpr uint32_t cb_id_in1 = get_compile_time_arg_val(18);
+    // constexpr uint32_t cb_id_in1 = 1;
 
     // WRITER
-    constexpr uint32_t cb_id_out0 = 16;
+    constexpr uint32_t cb_id_out0 = get_compile_time_arg_val(19);
+    // constexpr uint32_t cb_id_out0 = 16;
 
     // WRITER
     // single-tile

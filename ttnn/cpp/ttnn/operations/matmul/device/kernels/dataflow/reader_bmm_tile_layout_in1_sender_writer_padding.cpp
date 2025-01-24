@@ -83,6 +83,10 @@ void kernel_main() {
     constexpr uint32_t MtNt = get_compile_time_arg_val(28);  // if 0
     // Don't need batch; same as batch from READER args
 
+    constexpr uint32_t cb_id_in1 = get_compile_time_arg_val(11);
+    constexpr uint32_t cb_id_in3 = get_compile_time_arg_val(12);
+    constexpr uint32_t cb_id_out0 = get_compile_time_arg_val(13);
+
 #ifdef FUSE_BIAS
     // in3 mcast args
     const uint32_t in3_tensor_addr = get_arg_val<uint32_t>(rt_args_idx++);
@@ -91,7 +95,7 @@ void kernel_main() {
     constexpr bool in3_is_dram = get_compile_time_arg_val(29) == 1;
     constexpr uint32_t in3_tensor_stride_w = get_compile_time_arg_val(30);
 
-    constexpr uint32_t cb_id_in3 = 3;
+    // constexpr uint32_t cb_id_in3 = 3;
     constexpr uint32_t bias_single_tile_size_bytes = get_tile_size(cb_id_in3);
     constexpr DataFormat bias_data_format = get_dataformat(cb_id_in3);
     constexpr const uint32_t in3_tile_hw = get_tile_hw(cb_id_in3);

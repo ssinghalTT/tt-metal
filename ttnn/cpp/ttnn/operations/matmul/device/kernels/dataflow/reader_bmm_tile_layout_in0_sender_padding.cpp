@@ -63,7 +63,9 @@ void kernel_main() {
         );
     }
 
-    constexpr uint32_t cb_id_in0 = 0;
+    constexpr uint32_t cb_id_in0 = get_compile_time_arg_val(21);
+
+    // constexpr uint32_t cb_id_in0 = 0;
     constexpr uint32_t in0_single_tile_size_bytes = get_tile_size(cb_id_in0);
     constexpr uint32_t in0_block_size_bytes = in0_block_num_tiles * in0_single_tile_size_bytes;
 
@@ -77,7 +79,8 @@ void kernel_main() {
 
     uint32_t noc_shard_read_start_addr = 0;
     if constexpr (extract_shard_sub_blocks) {
-        constexpr uint32_t cb_id_in2 = 2;  // in0 sharded cb if extract_shard_sub_blocks
+        constexpr uint32_t cb_id_in2 = get_compile_time_arg_val(22);
+        // constexpr uint32_t cb_id_in2 = 2;  // in0 sharded cb if extract_shard_sub_blocks
         noc_shard_read_start_addr = get_read_ptr(cb_id_in2);
     } else {
         cb_reserve_back(cb_id_in0, shard_num_tiles);
