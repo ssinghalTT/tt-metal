@@ -78,9 +78,9 @@ void kernel_main() {
         }
     }
 
-    if constexpr (my_rd_dst_addr) {
-        noc_async_read_barrier();
-    }
+    // if constexpr (my_rd_dst_addr) {
+    //     noc_async_read_barrier();
+    // }
 
     auto end = get_cycles();
     my_cycles[0] = end - start;
