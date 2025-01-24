@@ -174,7 +174,12 @@ Tensor to_layout_impl(
                 }
 
                 tensor = ttnn::tilize_with_val_padding(
-                    tensor, SimpleShape(padded_output_shape), pad_value_variant, output_memory_config, dtype, true);
+                    tensor,
+                    SimpleShape(padded_output_shape),
+                    pad_value_variant,
+                    output_memory_config,
+                    dtype,
+                    use_multicore_tilize);
             }
 
             return ttnn::reshape(
