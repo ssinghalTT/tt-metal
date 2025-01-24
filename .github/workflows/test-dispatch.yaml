@@ -58,7 +58,7 @@ jobs:
   test-dispatch:
     # needs: setup
     needs: build-artifact
-    timeout-minutes: 1440
+    timeout-minutes: 45
     env:
       TT_METAL_ENV: ${{ vars.TT_METAL_ENV }}
       ARCH_NAME: ${{ inputs.arch }}
