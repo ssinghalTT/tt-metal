@@ -23,6 +23,7 @@ FORCE_INLINE void setup_local_cb_read_write_interfaces(
     volatile tt_l1_ptr uint32_t* circular_buffer_config_addr =
         cb_l1_base + start_cb_index * UINT32_WORDS_PER_LOCAL_CIRCULAR_BUFFER_CONFIG;
 
+
     for (uint32_t cb_id = start_cb_index; cb_id < max_cb_index; cb_id++) {
         // NOTE: fifo_addr, fifo_size and fifo_limit in 16B words!
         uint32_t fifo_addr = circular_buffer_config_addr[0] >> cb_addr_shift;
@@ -53,6 +54,14 @@ FORCE_INLINE void setup_local_cb_read_write_interfaces(
         if (init_wr_tile_ptr) {
             local_interface.fifo_wr_tile_ptr = 0;
         }
+        #if defined(COMPILE_FOR_BRISC)
+        volatile tt_reg_ptr uint* tiles_received_ptr;
+        volatile tt_reg_ptr uint* tiles_acked_ptr;
+        tiles_received_ptr = get_cb_tiles_received_ptr(cb_id);
+        tiles_received_ptr[0] = 0;
+        tiles_acked_ptr = get_cb_tiles_acked_ptr(cb_id);
+        tiles_acked_ptr[0] = 0;
+        #endif
 
         circular_buffer_config_addr += UINT32_WORDS_PER_LOCAL_CIRCULAR_BUFFER_CONFIG;
     }
@@ -103,6 +112,14 @@ inline void setup_remote_cb_interfaces(uint32_t tt_l1_ptr* cb_l1_base, uint32_t 
             receiver_cb_interface.aligned_pages_acked_ptr = aligned_pages_acked_addr;
             resize_remote_receiver_cb_interface<update_remote_over_noc>(cb_id, page_size, noc);
         }
+        #if defined(COMPILE_FOR_BRISC)
+        volatile tt_reg_ptr uint* tiles_received_ptr;
+        volatile tt_reg_ptr uint* tiles_acked_ptr;
+        tiles_received_ptr = get_cb_tiles_received_ptr(cb_id);
+        tiles_received_ptr[0] = 0;
+        tiles_acked_ptr = get_cb_tiles_acked_ptr(cb_id);
+        tiles_acked_ptr[0] = 0;
+        #endif
         circular_buffer_config_addr += UINT32_WORDS_PER_REMOTE_CIRCULAR_BUFFER_CONFIG;
     }
 }

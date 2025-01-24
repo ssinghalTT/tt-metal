@@ -267,17 +267,6 @@ void device_setup() {
     // core.ex_sem_init(semaphore::CFG_STATE_BUSY, MAX_CONFIG_STATES, 0, instrn_buf[0]);
 }
 
-void init_sync_registers() {
-    volatile tt_reg_ptr uint* tiles_received_ptr;
-    volatile tt_reg_ptr uint* tiles_acked_ptr;
-    for (uint32_t operand = 0; operand < NUM_CIRCULAR_BUFFERS; operand++) {
-        tiles_received_ptr = get_cb_tiles_received_ptr(operand);
-        tiles_received_ptr[0] = 0;
-        tiles_acked_ptr = get_cb_tiles_acked_ptr(operand);
-        tiles_acked_ptr[0] = 0;
-    }
-}
-
 inline void init_ncrisc_iram() {
 #ifdef NCRISC_HAS_IRAM
     uint16_t fw_size16 = mailboxes->launch[mailboxes->launch_msg_rd_ptr].kernel_config.ncrisc_kernel_size16;
@@ -386,7 +375,6 @@ int main() {
     uint8_t prev_noc_mode = DM_DEDICATED_NOC;
 
     while (1) {
-        init_sync_registers();
         reset_ncrisc_with_iram();
 
         WAYPOINT("GW");
