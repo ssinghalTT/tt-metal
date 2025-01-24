@@ -37,7 +37,7 @@ enum SessionCommand : uint32_t {
 };
 
 #define INVALID 0x0
-#define DATA 0x1
+#define MCAST_ACTIVE 0x1
 #define MCAST_DATA 0x2
 #define SYNC 0x4
 #define FORWARD 0x8
@@ -72,11 +72,11 @@ typedef struct _tt_session {
 static_assert(sizeof(tt_session) == 20);
 
 typedef struct _mcast_params {
+    uint32_t socket_id;  // Socket Id for DSocket Multicast. Ignored for ASYNC multicast.
     uint16_t east;
     uint16_t west;
     uint16_t north;
     uint16_t south;
-    uint32_t socket_id;  // Socket Id for DSocket Multicast. Ignored for ASYNC multicast.
 } mcast_params;
 
 typedef struct _socket_params {
