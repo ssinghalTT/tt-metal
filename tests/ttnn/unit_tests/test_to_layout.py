@@ -231,3 +231,19 @@ def test_to_layout_sharded(dtype, device, use_program_cache):
     output = ttnn.to_layout(ttnn_input_tensor1, ttnn.ROW_MAJOR_LAYOUT)
 
     assert_with_pcc(torch_input_tensor1, ttnn.to_torch(output), 0.9999)
+
+
+@pytest.mark.parametrize(
+    "shape", [[8, 2, 49, 2048], [1, 1, 2, 1536], [3, 76, 978], [1, 1, 120, 7300], [1, 1, 100, 7104]]
+)
+@pytest.mark.parametrize("input_layout", [ttnn.ROW_MAJOR_LAYOUT])
+@pytest.mark.parametrize("output_layout", [ttnn.TILE_LAYOUT])
+def test_tilize_perf(shape, input_layout, output_layout, device):
+    torch.manual_seed(2005)
+
+    input_a = torch.rand(shape, dtype=torch.bfloat16)
+    input_tensor = ttnn.from_torch(input_a, device=device, layout=input_layout, dtype=ttnn.bfloat16)
+    output_tensor = ttnn.to_layout(input_tensor, output_layout)
+    output_tensor = ttnn.to_torch(output_tensor)
+
+    assert_with_pcc(input_a, output_tensor)
