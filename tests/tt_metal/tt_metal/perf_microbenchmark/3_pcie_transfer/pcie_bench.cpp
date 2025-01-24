@@ -28,35 +28,9 @@ using namespace tt::tt_metal;
 using namespace tt::tt_metal::dispatch;  // _KB, _MB, _GB
 using namespace std::chrono_literals;    // s
 
-template <bool host_read, bool host_write, bool dev_read, bool dev_write, bool split_kernels, bool write_from_base>
-struct MemCpyPcieBenchParams {
-    // Enable host to read from HugePage.
-    static constexpr auto k_DoHostReadHP = host_read;
-
-    // Enable host to write to HugePage.
-    static constexpr auto k_DoHostWriteHP = host_write;
-
-    // Enable kernel to read from PCIe.
-    static constexpr auto k_DoDeviceRead = dev_read;
-
-    // Enable kernel to write to PCIe.
-    static constexpr auto k_DoDeviceWrite = dev_write;
-
-    // Split the reader and writer kernel.
-    static constexpr auto k_SplitKernels = split_kernels;
-
-    // The writer kernel will write to the same PCIe region, possibly
-    // the same as what's being read by the reader kernel.
-    static constexpr auto k_WriteFromBase = write_from_base;
-
-    static_assert(
-        !k_SplitKernels || (k_DoDeviceRead && k_DoDeviceWrite),
-        "split_kernels is not possible if both read and write are not true");
-    static_assert(!k_WriteFromBase || k_DoDeviceWrite, "write_from_base will not be active if dev_write is false");
-};
-
 // Uses low level APIs to benchmark Pcie transfer.
 // Fast dispatch needs to be disabled because this benchmark will write into hugepage.
+// For better benchmark outputs, run it with TT_METAL_LOGGER_LEVEL=FATAL
 class MemCpyPcieBench : public benchmark::Fixture {
 private:
     static constexpr std::string_view k_PcieBenchKernel =
@@ -69,9 +43,9 @@ private:
         int64_t host_wr_bytes;
 
         // Device Results
-        uint32_t dev_cycles;
-        int64_t dev_rd_bytes;
-        int64_t dev_wr_bytes;
+        std::vector<int64_t> dev_cycles;
+        std::vector<int64_t> dev_rd_bytes;
+        std::vector<int64_t> dev_wr_bytes;
     };
 
     // Mini Mem Map
@@ -105,10 +79,16 @@ private:
         return vec;
     }
 
-    uint32_t GetWordFromDevice(const CoreCoord& core, uint32_t addr) {
-        std::vector<uint32_t> data;
-        detail::ReadFromDeviceL1(device, core, addr, sizeof(uint32_t), data);
-        return data[0];
+    std::vector<int64_t> GetWordsFromDevice(const CoreRange& core, uint32_t addr) {
+        std::vector<int64_t> data;
+        for (int xi = core.start_coord.x; xi <= core.end_coord.x; xi++) {
+            for (int yi = core.start_coord.y; yi <= core.end_coord.y; yi++) {
+                std::vector<uint32_t> single_data;
+                detail::ReadFromDeviceL1(device, CoreCoord{xi, yi}, addr, sizeof(uint32_t), single_data);
+                data.push_back(single_data[0]);
+            }
+        }
+        return data;
     }
 
     DeviceAddresses GetDevAddrMap() const {
@@ -122,23 +102,39 @@ private:
     }
 
     std::chrono::duration<double> HostWriteHP(
-        void* hugepage_base, const std::vector<uint32_t>& src_data, size_t total_size, size_t transfer_size) {
-        auto start = std::chrono::high_resolution_clock::now();
+        void* hugepage_base,
+        uint32_t hugepage_size,
+        const std::vector<uint32_t>& src_data,
+        size_t total_size,
+        size_t page_size) {
         uint64_t hugepage_addr = reinterpret_cast<uint64_t>(hugepage_base);
+        uint64_t hugepage_end = hugepage_addr + hugepage_size;
         uint64_t src_addr = align_addr(reinterpret_cast<uint64_t>(src_data.data()), sizeof(__m256i));
-        auto num_pages = total_size / transfer_size;
-        for (int i = 0; i < num_pages; i++) {
-            memcpy_to_device<false /*fence*/>((void*)(hugepage_addr), (void*)(src_addr), transfer_size);
+        size_t num_pages;
+        if (!page_size) {
+            num_pages = 1;
+            page_size = total_size;
+        } else {
+            num_pages = total_size / page_size;
+        }
 
-            hugepage_addr += transfer_size;
-            src_addr += transfer_size;
+        auto start = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < num_pages; i++) {
+            memcpy_to_device<false /*fence*/>((void*)(hugepage_addr), (void*)(src_addr), page_size);
+
+            hugepage_addr += page_size;
+            src_addr += page_size;
+
+            // This may exceed the maximum hugepage
+            if (hugepage_addr >= hugepage_end) {
+                hugepage_addr = reinterpret_cast<uint64_t>(hugepage_base);
+            }
         }
         auto end = std::chrono::high_resolution_clock::now();
 
         return std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
     }
 
-    template <typename Params>
     void ConfigureReaderKernels(
         Program& program,
         const DeviceAddresses& dev_addrs,
@@ -147,6 +143,9 @@ private:
         uint32_t page_size,
         uint32_t pcie_size,
         uint32_t pcie_offset = 0) const {
+        if (!page_size) {
+            page_size = total_size;
+        }
         [[maybe_unused]] KernelHandle read_kernel = CreateKernel(
             program,
             std::string{k_PcieBenchKernel},
@@ -180,7 +179,10 @@ public:
     // Device under test
     IDevice* device;
 
-    MemCpyPcieBench() : benchmark::Fixture{} { UseManualTime(); }
+    MemCpyPcieBench() : benchmark::Fixture{} {
+        UseManualTime();
+        // Iterations(10);
+    }
 
     void SetUp(benchmark::State& state) override {
         const chip_id_t target_device_id = 0;
@@ -200,50 +202,56 @@ public:
         tt::DevicePool::instance().close_device(this->device->id());
     }
 
-    template <typename Params>
     void BenchmarkDefineFImpl(benchmark::State& state) {
         const auto total_size = state.range(0);
         const auto page_size = state.range(1);
+        const auto num_readers = state.range(2);
 
         int64_t program_wait_time = 0;
         int64_t host_bytes = 0;
-        int64_t dev_cycles = 0;
-        int64_t dev_bytes = 0;
+        int64_t dev_cycles = 0;  // All cores
+        int64_t dev_bytes = 0;   // All cores
+
         for (auto _ : state) {
-            PcieTransferResults result = this->BenchPcieTransfer<Params>(total_size, page_size);
+            PcieTransferResults result = this->BenchPcieTransfer(total_size, page_size, num_readers);
 
             state.SetIterationTime(result.host_seconds.count());
-            host_bytes += result.host_wr_bytes;
 
-            program_wait_time += result.program_wait_seconds.count();
-            dev_cycles += result.dev_cycles;
-            dev_bytes += result.dev_rd_bytes + result.dev_wr_bytes;
+            host_bytes += result.host_wr_bytes;
+            program_wait_time += result.program_wait_seconds.count() * 1000;
+            dev_cycles += std::reduce(result.dev_cycles.begin(), result.dev_cycles.end());
+            dev_bytes += std::reduce(result.dev_rd_bytes.begin(), result.dev_rd_bytes.end());
+            dev_bytes += std::reduce(result.dev_wr_bytes.begin(), result.dev_wr_bytes.end());
         }
 
         state.SetBytesProcessed(host_bytes);
-        state.counters["program_wait_time"] = program_wait_time;
+        state.counters["program_wait_time_ms"] = program_wait_time;
+        state.counters["host_bytes"] = host_bytes;
         state.counters["dev_cycles"] = dev_cycles;
-        state.counters["dev_bytes"] = double(dev_bytes) / dev_cycles;
+        state.counters["dev_bytes"] = dev_bytes;
     }
 
-    template <typename Params>
-    PcieTransferResults BenchPcieTransfer(const uint32_t total_size, const uint32_t page_size) {
+    PcieTransferResults BenchPcieTransfer(
+        const uint32_t total_size, const uint32_t page_size, const uint32_t num_readers) {
         auto src_data = this->GenSrcData(total_size, sizeof(__m256i));
         const auto pages = total_size / page_size;
-        const auto pcie_size = Params::k_SplitKernels ? this->GetHostHugePageSize() / 2 : this->GetHostHugePageSize();
-        const auto pcie_base = Params::k_SplitKernels ? this->GetHostHugePage(pcie_size) : this->GetHostHugePage(0);
+        const auto pcie_size = this->GetHostHugePageSize();
+        const auto pcie_base = this->GetHostHugePage(0);
         const auto pcie_end = reinterpret_cast<uint64_t>(pcie_base) + pcie_size;
+
         uint32_t bytes_transferred = 0;
         uint32_t pcie_rd_offset = 0;
         uint32_t pcie_wr_offset = 0;
 
         // Device
-        CoreCoord reader_coord{0, 0};
+        CoreCoord reader_start{0, 0};
+        CoreCoord reader_end{reader_start.x, reader_start.y + num_readers - 1};
+        CoreRange reader_range{reader_start, reader_end};
         const auto dev_addrs = this->GetDevAddrMap();
 
         auto program = Program();
-        if (Params::k_DoDeviceRead) {
-            ConfigureReaderKernels<Params>(program, dev_addrs, reader_coord, total_size, page_size, pcie_size);
+        if (reader_range.size()) {
+            ConfigureReaderKernels(program, dev_addrs, reader_range, total_size, page_size, pcie_size);
         }
 
         // IO caused by wait_until_cores_done should not affect the results much
@@ -254,36 +262,29 @@ public:
             return std::chrono::duration_cast<std::chrono::duration<double>>(launch_start - launch_end);
         });
 
-        auto hp_duration = HostWriteHP(pcie_base, src_data, total_size, total_size);
+        auto hp_duration = HostWriteHP(pcie_base, pcie_size, src_data, total_size, page_size);
         auto program_duration = device_elapsed_seconds.get();
 
         return {
             .host_seconds = hp_duration,
             .program_wait_seconds = program_duration,
             .host_wr_bytes = total_size,  // bytes_transferred,
-            .dev_cycles = this->GetWordFromDevice(reader_coord, dev_addrs.cycles),
-            .dev_rd_bytes = this->GetWordFromDevice(reader_coord, dev_addrs.rd_bytes),
-            .dev_wr_bytes = 0,
+            .dev_cycles = this->GetWordsFromDevice(reader_range, dev_addrs.cycles),
+            .dev_rd_bytes = this->GetWordsFromDevice(reader_range, dev_addrs.rd_bytes),
+            .dev_wr_bytes = {},
         };
     }
 };
 
-BENCHMARK_DEFINE_F(MemCpyPcieBench, BM_HostWrite_DeviceRead)(benchmark::State& state) {
-    using Params = MemCpyPcieBenchParams<
-        false,  // Host Read
-        false,  // Host Write
-        true,   // Device Read
-        false,  // Device Write
-        false,  // Split Kernels
-        false   // Write from HP Base
-        >;
-    BenchmarkDefineFImpl<Params>(state);
-}
+BENCHMARK_DEFINE_F(MemCpyPcieBench, BM_HostWrite_DeviceRead)(benchmark::State& state) { BenchmarkDefineFImpl(state); }
 
 BENCHMARK_REGISTER_F(MemCpyPcieBench, BM_HostWrite_DeviceRead)
-    ->Args({
-        512_MB,  // Total
-        32_KB,   // Page size
+    ->ArgsProduct({
+        {512_MB, 1_GB},        // Total
+        {8_KB, 16_KB, 32_KB},  // Page Size
+        {1, 4},                // Number of Reader kernels
+        {0},                   // Number of Writer kernels
+        {0},                   // Split Kernels
     });
 
 BENCHMARK_MAIN();

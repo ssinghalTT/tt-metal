@@ -51,7 +51,7 @@ uint64_t get_cycles() {
 
 void kernel_main() {
     DPRINT << "Start pcie_bench kernel (reader = " << (uint32_t)(my_rd_dst_addr != 0)
-           << ", writer = " << (uint32_t)(my_wr_src_addr != 0) << ")" << ENDL();
+           << ", writer = " << (uint32_t)(my_wr_src_addr != 0) << ") " << +my_x[0] << "," << +my_y[0] << "\n";
     if constexpr (my_rd_dst_addr) {
         my_bytes_read[0] = 0;
     }
