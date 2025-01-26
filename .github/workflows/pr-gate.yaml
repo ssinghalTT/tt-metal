@@ -31,8 +31,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-artifact:
+  build-2204-release:
     uses: ./.github/workflows/build-artifact.yaml
     secrets: inherit
     with:
       os: "ubuntu-22.04-amd64"
+      build-type: Release
+
+  build-2204-debug:
+    uses: ./.github/workflows/build-artifact.yaml
+    secrets: inherit
+    with:
+      os: "ubuntu-22.04-amd64"
+      build-type: Debug
