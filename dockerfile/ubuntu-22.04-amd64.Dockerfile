@@ -86,7 +86,7 @@ RUN apt-get -y update \
     lld-17 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN cd /usr/bin; ln -s lld-17 lld
+RUN cd /usr/bin; ls lld*; ln -s lld-17 lld; ls lld*
 
 RUN cmake --version
 RUN ld --version
