@@ -332,4 +332,4 @@ cmake "${cmake_args[@]}"
 
 # Build libraries and cpp tests
 echo "INFO: Building Project"
-cmake --build $build_dir --target install
+# cmake --build $build_dir --target install

@@ -104,7 +104,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull docker image
         run: docker pull ${{ env.TT_METAL_DOCKER_IMAGE_TAG }}
-      - name: Build tt-metal and libs
+      - name: 🔧 CMake Configure
         uses: tenstorrent/docker-run-action@v5
         with:
           image: ${{ env.TT_METAL_DOCKER_IMAGE_TAG }}
@@ -140,7 +140,7 @@ jobs:
               build_command="$build_command --enable-profiler"
             fi
             nice -n 19 $build_command
-      - name: Build tt-metal and libs
+      - name: 🛠️ Compile
         uses: tenstorrent/docker-run-action@v5
         with:
           image: ${{ env.TT_METAL_DOCKER_IMAGE_TAG }}
