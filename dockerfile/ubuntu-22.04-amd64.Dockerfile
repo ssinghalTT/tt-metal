@@ -86,13 +86,13 @@ RUN apt-get -y update \
     lld-17 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN cd /usr/bin; ls lld*; ls ld*; ln -s lld-17 lld; ls lld*; ls ld*
+# RUN cd /usr/bin; ls lld*; ls ld*; ln -s lld-17 lld; ls lld*; ls ld*
 
 RUN cmake --version
 RUN ld --version
 RUN gold --version
 RUN mold --version
-RUN ld.lld --version
+RUN ld.lld-17 --version
 
 # Setup Env variables to setup Python Virtualenv - Install TT-Metal Python deps
 ENV TT_METAL_INFRA_DIR=/opt/tt_metal_infra
