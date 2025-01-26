@@ -312,7 +312,7 @@ if [ "$build_all" = "ON" ]; then
     cmake_args+=("-DTT_METAL_BUILD_TESTS=ON")
     cmake_args+=("-DTTNN_BUILD_TESTS=ON")
     cmake_args+=("-DBUILD_PROGRAMMING_EXAMPLES=ON")
-    cmake_args+=("-DBUILD_TT_TRAIN=ON")
+    cmake_args+=("-DBUILD_TT_TRAIN=OFF")
 fi
 
 # toolchain and cxx_compiler settings would conflict with eachother
