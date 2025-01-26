@@ -6,6 +6,13 @@ ARG UBUNTU_VERSION=22.04
 ENV DOXYGEN_VERSION=1.9.6
 ENV CCACHE_TEMPDIR=/tmp/ccache
 
+# Use a newer version of CMake than what is available from Canonical for 20.04
+RUN apt -y update \
+    && apt install -y --no-install-recommends ca-certificates gpg wget \
+    && wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null \
+    && echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN apt update -y && apt install software-properties-common gpg-agent -y
 
 # add custom repo
@@ -22,6 +29,12 @@ COPY /scripts/docker/requirements_dev.txt /opt/tt_metal_infra/scripts/docker/req
 RUN apt-get -y update \
     && xargs -a /opt/tt_metal_infra/scripts/docker/requirements_dev.txt apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
+
+RUN cmake --version
+RUN ld --version
+RUN lld --version
+RUN gold --version
+RUN mold --version
 
 ## Test Related Dependencies
 COPY /scripts/docker/install_test_deps.sh /opt/tt_metal_infra/scripts/docker/install_test_deps.sh
