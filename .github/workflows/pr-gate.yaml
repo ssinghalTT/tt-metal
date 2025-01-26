@@ -32,6 +32,7 @@ concurrency:
 
 jobs:
   build-2204-release:
+    name: "🛠️ 22.04 Release"
     uses: ./.github/workflows/build-artifact.yaml
     secrets: inherit
     with:
@@ -39,6 +40,7 @@ jobs:
       build-type: Release
 
   build-2204-debug:
+    name: "🛠️ 22.04 Debug"
     uses: ./.github/workflows/build-artifact.yaml
     secrets: inherit
     with:
