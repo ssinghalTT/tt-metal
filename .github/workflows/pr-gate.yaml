@@ -38,6 +38,7 @@ jobs:
     with:
       os: "ubuntu-22.04-amd64"
       build-type: Release
+      publish-artifact: false
 
   build-2204-debug:
     name: "🛠️ 22.04 Debug"
@@ -46,3 +47,4 @@ jobs:
     with:
       os: "ubuntu-22.04-amd64"
       build-type: Debug
+      publish-artifact: false
