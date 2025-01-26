@@ -140,6 +140,27 @@ jobs:
               build_command="$build_command --enable-profiler"
             fi
             nice -n 19 $build_command
+      - name: Build tt-metal and libs
+        uses: tenstorrent/docker-run-action@v5
+        with:
+          image: ${{ env.TT_METAL_DOCKER_IMAGE_TAG }}
+          options: |
+            --rm
+            --tmpfs /tmp
+            -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
+            --group-add 1457
+            -v ${{ github.workspace }}:${{ github.workspace }}
+            -v /etc/passwd:/etc/passwd:ro
+            -v /etc/shadow:/etc/shadow:ro
+            -v /etc/bashrc:/etc/bashrc:ro
+            -v /home/ubuntu/.ccache-ci:/home/ubuntu/.ccache
+            -v /mnt/MLPerf/ccache:/mnt/MLPerf/ccache
+            -e CARGO_HOME=${{ github.workspace }}/.cargo
+            -w ${{ github.workspace }}
+          run: |
+            set -eu # basic shell hygiene
+            export CCACHE_TEMPDIR=/tmp/ccache
+            nice -n 19 cmake --build build --target install
             ccache -s > build/ccache.stats
       - name: Publish Ccache summary
         run: |

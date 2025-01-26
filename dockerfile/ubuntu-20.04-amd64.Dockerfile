@@ -25,8 +25,6 @@ RUN apt-get -y update \
     && xargs -a /opt/tt_metal_infra/scripts/docker/requirements_dev.txt apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-RUN cmake --version
-
 ## Test Related Dependencies
 COPY /scripts/docker/install_test_deps.sh /opt/tt_metal_infra/scripts/docker/install_test_deps.sh
 RUN /bin/bash /opt/tt_metal_infra/scripts/docker/install_test_deps.sh ${DOXYGEN_VERSION}
