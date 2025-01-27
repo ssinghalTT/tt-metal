@@ -22,7 +22,7 @@ set(TYPES
 include(FetchContent)
 set(SFPI_x86_64_Linux_RELEASE
     "v6.0.0-cmp-signedness/sfpi-release.tgz"
-    "07baa65ce87a50ab2e15f6c662936879"
+    "dc36bfc9c7ae94e1edf61d1b4f8f05fa"
 )
 if(DEFINED SFPI_${CMAKE_HOST_SYSTEM_PROCESSOR}_${CMAKE_HOST_SYSTEM_NAME}_RELEASE)
     set(SFPI_RELEASE "${SFPI_${CMAKE_HOST_SYSTEM_PROCESSOR}_${CMAKE_HOST_SYSTEM_NAME}_RELEASE}")
