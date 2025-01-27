@@ -28,7 +28,7 @@ concurrency:
   # Possibly PRs can also just use `github.ref`, but for now just copy/pasting from
   # https://www.meziantou.net/how-to-cancel-github-workflows-when-pushing-new-commits-on-a-branch.htm
   group: ${{ github.workflow }}-${{ github.ref_protected && github.run_id || github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # cancel-in-progress: true
 
 jobs:
   build-2204-release:
