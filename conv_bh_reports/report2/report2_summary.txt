@@ -1,0 +1,6 @@
+65 failed, 2244 passed
+
+failed:
+/localdev/skrstic/tt-metal/ttnn/cpp/ttnn/operations/conv/conv2d/device/conv2d_op_width_sharded_program_factory.cpp:306: num_blocks_act_w % input_num_cores == 0 - 18
+PCC - 39
+post_op_l1_stats == (this->pre_op_l1_allocation_size_bytes + calc_output_size) - 8
