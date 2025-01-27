@@ -32,15 +32,18 @@ jobs:
       - in-service
     steps:
       - uses: tenstorrent/tt-metal/.github/actions/checkout-with-submodule-lfs@main
+        if: false
         with:
           fetch-depth: 0
       - name: Login to GitHub Container Registry
+        if: false
         uses: docker/login-action@v3
         with:
           registry: https://ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Get all test, doc and src files that have changed
+        if: false
         id: changed-files-specific
         uses: tj-actions/changed-files@v45
         with:
@@ -52,6 +55,7 @@ jobs:
               tt_metal/python_env/requirements-dev.txt
           base_sha: 'main'
       - name: Determine docker image tag
+        if: false
         uses: ./.github/actions/generate-docker-tag
         with:
           image: tt-metalium/${{ inputs.os }}
@@ -67,10 +71,10 @@ jobs:
           cache-to: type=inline
           pull: true
       - name: Tag Docker main image as current image
-        if: steps.changed-files-specific.outputs.any_changed != 'true'
+        if: steps.changed-files-specific.outputs.any_changed != 'true' && false
         run: |
           docker pull ghcr.io/${{ github.repository }}/tt-metalium/${{ env.TT_METAL_DOCKER_IMAGE }}:latest
           docker tag ghcr.io/${{ github.repository }}/tt-metalium/${{ env.TT_METAL_DOCKER_IMAGE }}:latest ${{ env.TT_METAL_DOCKER_IMAGE_TAG}}
-      - name: ☁ Push Docker image to GitHub Container Registry
+      - name: ☁ Push Docker image to GitHub Container Registry && false
         run: |
           docker push ${{ env.TT_METAL_DOCKER_IMAGE_TAG }}
