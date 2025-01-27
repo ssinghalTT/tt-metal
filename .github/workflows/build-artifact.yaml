@@ -160,7 +160,7 @@ jobs:
           run: |
             set -eu # basic shell hygiene
             export CCACHE_TEMPDIR=/tmp/ccache
-            nice -n 19 cmake --build build
+            nice -n 19 cmake --build build -- -j1
             ccache -s > build/ccache.stats
       - name: 🎁️ Package
         uses: tenstorrent/docker-run-action@v5
