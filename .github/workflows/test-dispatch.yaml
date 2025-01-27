@@ -35,6 +35,10 @@ on:
         type: string
         default: "Custom test dispatch"
         required: false
+      timeout:
+        required: false
+        type: number
+        default: 1440
 
 run-name: ${{ inputs.description }}
 jobs:
@@ -58,7 +62,7 @@ jobs:
   test-dispatch:
     # needs: setup
     needs: build-artifact
-    timeout-minutes: 45
+    timeout-minutes: ${{ inputs.timeout }}
     env:
       TT_METAL_ENV: ${{ vars.TT_METAL_ENV }}
       ARCH_NAME: ${{ inputs.arch }}
