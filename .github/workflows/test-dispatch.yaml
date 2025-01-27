@@ -62,7 +62,8 @@ jobs:
   test-dispatch:
     # needs: setup
     needs: build-artifact
-    timeout-minutes: ${{ inputs.timeout }}
+    # https://github.com/orgs/community/discussions/67182
+    timeout-minutes: ${{ fromJson(inputs.timeout) }}
     env:
       TT_METAL_ENV: ${{ vars.TT_METAL_ENV }}
       ARCH_NAME: ${{ inputs.arch }}
