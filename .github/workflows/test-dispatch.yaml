@@ -89,4 +89,11 @@ jobs:
           pip install pytest-repeat
           cd $TT_METAL_HOME
           export PYTHONPATH=$TT_METAL_HOME
-          ${{ inputs.command }}
+          set -ex
+          for i in {1..5}
+          do
+            echo "Running iteration $i"
+            tt-smi-metal -r0
+            ${{ inputs.command }}
+            ./opt/tt_metal_infra/scripts/ci/grayskull/cleanup.sh
+          done
