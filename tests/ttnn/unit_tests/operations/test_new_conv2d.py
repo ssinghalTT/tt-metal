@@ -138,9 +138,7 @@ def run_conv(
         dtype=activations_dtype,
         weights_dtype=weights_dtype,
         shard_layout=shard_layout,
-        input_channels_alignment=(
-            16 if use_shallow_conv_variant or (input_channels == 16 and input_height == 115) else 32
-        ),
+        input_channels_alignment=32,
         deallocate_activation=deallocate_activation,
         enable_act_double_buffer=False,
         enable_split_reader=False,
