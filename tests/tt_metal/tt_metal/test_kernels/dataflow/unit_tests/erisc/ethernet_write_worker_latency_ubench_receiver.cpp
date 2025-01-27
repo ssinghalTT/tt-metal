@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: © 2023 Tenstorrent Inc.
+// SPDX-FileCopyrightText: © 2025 Tenstorrent Inc.
 //
 // SPDX-License-Identifier: Apache-2.0
 
@@ -38,7 +38,7 @@ FORCE_INLINE void run_loop_iteration(
         {
             DeviceZoneScopedN("PING-REPLIES");
             for (uint32_t i = 0; i < NUM_CHANNELS; i++) {
-                while (channel_sync_dadrs[i]->bytes_sent == 0) {
+                while (channel_sync_addrs[i]->bytes_sent == 0) {
                 }
 
                 channel_sync_addrs[i]->bytes_sent = 0;

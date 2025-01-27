@@ -77,31 +77,61 @@ struct ChipSenderReceiverEthCore {
     CoreCoord receiver_core;
 };
 
-std::tuple<Program, Program> build(
+bool validation(const std::shared_ptr<tt::tt_metal::Buffer>& worker_buffer) {
+    bool pass = true;
+    std::vector<uint8_t> golden_vec(worker_buffer->size(), 0);
+    std::vector<uint8_t> result_vec(worker_buffer->size(), 0);
+
+    for (int i = 0; i < worker_buffer->size(); ++i) {
+        golden_vec[i] = i;
+    }
+
+    tt::tt_metal::detail::ReadFromBuffer(worker_buffer, result_vec);
+
+    for (int i = 0; i < golden_vec.size(); ++i) {
+        std::cout << (uint)golden_vec[i] << " ";
+        if ((i + 1) % 32 == 0) {
+            std::cout << std::endl;
+        }
+    }
+
+    std::cout << std::endl;
+
+    for (int i = 0; i < result_vec.size(); ++i) {
+        std::cout << (uint)result_vec[i] << " ";
+        if ((i + 1) % 32 == 0) {
+            std::cout << std::endl;
+        }
+    }
+
+    pass = golden_vec == result_vec;
+    TT_FATAL(pass, "validation failed");
+    return pass;
+}
+
+std::vector<Program> build(
     IDevice* device0,
     IDevice* device1,
     CoreCoord eth_sender_core,
     CoreCoord eth_receiver_core,
+    CoreCoord worker_core,
     std::size_t num_samples,
     std::size_t sample_page_size,
     std::size_t num_channels,
     KernelHandle& local_kernel,
-    KernelHandle& remote_kernel) {
+    KernelHandle& remote_kernel,
+    KernelHandle& worker_kernel,
+    std::shared_ptr<Buffer>& worker_buffer) {
     Program program0;
     Program program1;
     Program program2;
 
     // worker core coords
-    worker_core = CoreCoord(0, 0);
-    uint32_t worker_noc_x = device->worker_core_from_logical_core(worker_core).x;
-    uint32_t worker_noc_y = device->worker_core_from_logical_core(worker_core).y;
 
-    // create a buffer on worker core
-    auto buffer_config = tt::tt_metal::BufferConfig{
-        .device = device, .size = sample_page_size, .page_size = sample_page_size, .buffer_type = BufferType::L1};
+    uint32_t worker_noc_x = device1->worker_core_from_logical_core(worker_core).x;
+    uint32_t worker_noc_y = device1->worker_core_from_logical_core(worker_core).y;
 
-    auto worker_buffer = CreateBuffer(config);
-    uint32_t worker_buffer_addr = worker_buffer.address();
+    uint32_t worker_buffer_addr = worker_buffer->address();
 
     // eth core ct args
     const std::vector<uint32_t>& eth_sender_ct_args = {num_channels};
@@ -132,14 +162,7 @@ std::tuple<Program, Program> build(
     tt_metal::SetRuntimeArgs(program1, remote_kernel, eth_receiver_core, eth_rt_args());
 
     // worker
-    uint32_t cb_id = 0;
-    tt_metal::CircularBufferConfig worker_cb_config =
-        tt_metal::CircularBufferConfig(sample_page_size, {{cb_id, tt::DataFormat::bfloat16}})
-            .set_page_size(cb_id, sample_page_size)
-            .set_globally_allocated_address(worker_buffer);
-    auto worker_cb = tt_metal::CreateCircularBuffer(program2, worker_core, worker_cb_config);
-
-    const std::vector<uint32_t>& worker_ct_args = {num_channels * num_samples};
+    const std::vector<uint32_t>& worker_ct_args = {num_channels * num_samples, worker_buffer_addr};
 
     worker_kernel = tt_metal::CreateKernel(
         program2,
@@ -147,18 +170,23 @@ std::tuple<Program, Program> build(
         "ethernet_write_worker_latency_ubench_worker.cpp",
         worker_core,
         tt_metal::DataMovementConfig{.noc = tt_metal::NOC::RISCV_0_default, .compile_args = worker_ct_args});
-    tt_metal::SetRuntimeArgs(program2, worker_kernel, worker_core);
+    tt_metal::SetRuntimeArgs(program2, worker_kernel, worker_core, {});
 
     // Launch
     try {
         tt::tt_metal::detail::CompileProgram(device0, program0);
         tt::tt_metal::detail::CompileProgram(device1, program1);
+        tt::tt_metal::detail::CompileProgram(device1, program2);
     } catch (std::exception& e) {
         log_error(tt::LogTest, "Failed compile: {}", e.what());
         throw e;
     }
 
-    return std::tuple<Program, Program>{std::move(program0), std::move(program1)};
+    std::vector<Program> programs;
+    programs.push_back(std::move(program0));
+    programs.push_back(std::move(program1));
+    programs.push_back(std::move(program2));
+    return programs;
 }
 
 void run(
@@ -166,14 +194,18 @@ void run(
     IDevice* device1,
     Program& program0,
     Program& program1,
+    Program& program2,
     KernelHandle local_kernel,
     KernelHandle remote_kernel,
+    KernelHandle worker_kernel,
 
     CoreCoord eth_sender_core,
     CoreCoord eth_receiver_core,
+    CoreCoord worker_core,
     std::size_t num_samples,
     std::size_t sample_page_size,
-    std::size_t max_channels_per_direction) {
+    std::size_t max_channels_per_direction,
+    std::shared_ptr<Buffer>& worker_buffer) {
     auto eth_rt_args = [&]() -> std::vector<uint32_t> {
         return std::vector<uint32_t>{
             eth_l1_mem::address_map::ERISC_L1_UNRESERVED_BASE,
@@ -184,16 +216,20 @@ void run(
 
     tt_metal::SetRuntimeArgs(program0, local_kernel, eth_sender_core, eth_rt_args());
     tt_metal::SetRuntimeArgs(program1, remote_kernel, eth_receiver_core, eth_rt_args());
+    tt_metal::SetRuntimeArgs(program2, worker_kernel, worker_core, {});
 
     if (std::getenv("TT_METAL_SLOW_DISPATCH_MODE")) {
         std::thread th2 = std::thread([&] { tt_metal::detail::LaunchProgram(device0, program0); });
         std::thread th1 = std::thread([&] { tt_metal::detail::LaunchProgram(device1, program1); });
+        std::thread th3 = std::thread([&] { tt_metal::detail::LaunchProgram(device1, program2); });
 
         th2.join();
         th1.join();
+        th3.join();
     } else {
         tt_metal::EnqueueProgram(device0->command_queue(), program0, false);
         tt_metal::EnqueueProgram(device1->command_queue(), program1, false);
+        tt_metal::EnqueueProgram(device1->command_queue(), program2, false);
 
         std::cout << "Calling Finish" << std::endl;
         tt_metal::Finish(device0->command_queue());
@@ -201,6 +237,8 @@ void run(
     }
     tt::tt_metal::detail::DumpDeviceProfileResults(device0);
     tt::tt_metal::detail::DumpDeviceProfileResults(device1);
+
+    validation(worker_buffer);
 }
 
 int main(int argc, char** argv) {
@@ -269,11 +307,14 @@ int main(int argc, char** argv) {
         eth_sender_core = *eth_sender_core_iter;
         eth_sender_core_iter++;
     } while (device_id != 1);
+
     std::cout << "5" << std::endl;
     TT_ASSERT(device_id == 1);
     std::cout << "6" << std::endl;
     const auto& device_1 = test_fixture.devices_.at(device_id);
     std::cout << "7" << std::endl;
+    // worker
+    auto worker_core = CoreCoord(0, 0);
     // Add more configurations here until proper argc parsing added
     bool success = false;
     success = true;
@@ -290,29 +331,45 @@ int main(int argc, char** argv) {
                         max_channels_per_direction);
                     KernelHandle local_kernel;
                     KernelHandle remote_kernel;
+                    KernelHandle worker_kernel;
                     try {
-                        auto [program0, program1] = build(
+                        // create a buffer on worker core
+                        auto buffer_config = tt::tt_metal::BufferConfig{
+                            .device = device_1,
+                            .size = sample_page_size,
+                            .page_size = sample_page_size,
+                            .buffer_type = BufferType::L1};
+                        auto worker_buffer = CreateBuffer(buffer_config);
+
+                        auto programs = build(
                             device_0,
                             device_1,
                             eth_sender_core,
                             eth_receiver_core,
+                            worker_core,
                             num_samples,
                             sample_page_size,
                             max_channels_per_direction,
                             local_kernel,
-                            remote_kernel);
+                            remote_kernel,
+                            worker_kernel,
+                            worker_buffer);
                         run(device_0,
                             device_1,
-                            program0,
-                            program1,
+                            programs[0],
+                            programs[1],
+                            programs[2],
                             local_kernel,
                             remote_kernel,
+                            worker_kernel,
 
                             eth_sender_core,
                             eth_receiver_core,
+                            worker_core,
                             num_samples,
                             sample_page_size,
-                            max_channels_per_direction);
+                            max_channels_per_direction,
+                            worker_buffer);
                     } catch (std::exception& e) {
                         log_error(tt::LogTest, "Caught exception: {}", e.what());
                         test_fixture.TearDown();
