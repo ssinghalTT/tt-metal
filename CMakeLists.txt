@@ -5,7 +5,7 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tt_metal/third_party/umd/CMakeLists.t
     message(FATAL_ERROR "Missing submodules.  Run: git submodule update --init --recursive")
 endif()
 
-set(CMAKE_LINKER_TYPE LLD)
+set(CMAKE_LINKER_TYPE BFD)
 
 ############################################
 # Project setup
