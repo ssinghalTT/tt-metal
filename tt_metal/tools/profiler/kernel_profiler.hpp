@@ -343,7 +343,7 @@ struct profileScope {
 
 void push_time_out() {
 #if defined(COMPILE_FOR_BRISC)
-    if (time_out++ > 10000) {
+    if (time_out++ > 100000) {
         if (wIndex > CUSTOM_MARKERS + PROFILER_L1_MARKER_UINT32_SIZE) {
             wIndex -= PROFILER_L1_MARKER_UINT32_SIZE;
             if (((profiler_data_buffer[0][wIndex] >> 28) & 0x7) == ZONE_END) {
@@ -358,15 +358,9 @@ void push_time_out() {
 
 struct scopePush {
 #if defined(COMPILE_FOR_BRISC)
-    inline __attribute__((always_inline)) scopePush() { doPush = true; }
-    inline __attribute__((always_inline)) ~scopePush() {
-        if (doPush) {
-            wIndex += 2 * PROFILER_L1_MARKER_UINT32_SIZE;
-            if (wIndex >= (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
-                quick_push<true>();
-            }
-        }
-    }
+    inline __attribute__((always_inline)) scopePush() {}
+
+    inline __attribute__((always_inline)) ~scopePush() {}
 #else
 #endif
 };
@@ -379,12 +373,31 @@ struct profileScopeGuaranteed {
     static_assert(start_index < CUSTOM_MARKERS);
     static_assert(end_index < CUSTOM_MARKERS);
 #if defined(COMPILE_FOR_BRISC)
-    inline __attribute__((always_inline)) profileScopeGuaranteed() { mark_time_at_index_inlined(wIndex, timer_id); }
+    bool start_marked = false;
+    inline __attribute__((always_inline)) profileScopeGuaranteed() {
+        if (wIndex < (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
+            uint32_t runCounter = profiler_control_buffer[RUN_COUNTER];
+            profiler_data_buffer[myRiscID][wIndex] = (runCounter & 0xFFFF) |
+                                                     ((((core_flat_id & 0xFF) << 3) | myRiscID) << 16) |
+                                                     ((runCounter & 0xF) << 27) | (0x1 << 31);
+            stackSize += PROFILER_L1_MARKER_UINT32_SIZE;
+            doPush = true;
+            start_marked = true;
+            mark_time_at_index_inlined(wIndex, timer_id);
+            wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
+        }
+    }
+
     inline __attribute__((always_inline)) ~profileScopeGuaranteed() {
-        mark_time_at_index_inlined(wIndex + PROFILER_L1_MARKER_UINT32_SIZE, get_const_id(timer_id, ZONE_END));
-        //}else{
-        // wIndex -= 2 * PROFILER_L1_MARKER_UINT32_SIZE;
-        //}
+        if (start_marked and doPush) {
+            mark_time_at_index_inlined(wIndex, get_const_id(timer_id, ZONE_END));
+            wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
+            start_marked = false;
+            stackSize -= PROFILER_L1_MARKER_UINT32_SIZE;
+            if (wIndex >= (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
+                quick_push<true>();
+            }
+        }
     }
 #else
     // inline __attribute__((always_inline)) profileScopeGuaranteed() {
