@@ -12,7 +12,11 @@
 
 namespace tt::tt_metal {
 
-static constexpr uint32_t MEMCPY_ALIGNMENT = sizeof(__m128i);
+// Source and Destination address alignment for using memcpy_to_device
+//
+// Largest intrinsic size
+//
+static constexpr uint32_t MEMCPY_ALIGNMENT = sizeof(__m256i);
 
 template <typename T>
 using vector_memcpy_aligned = std::vector<T, tt::stl::aligned_allocator<T, MEMCPY_ALIGNMENT>>;
@@ -24,6 +28,7 @@ using vector_memcpy_aligned = std::vector<T, tt::stl::aligned_allocator<T, MEMCP
 template <bool debug_sync = false>
 static inline void memcpy_to_device(void* __restrict dst, const void* __restrict src, size_t n) {
     TT_ASSERT((uintptr_t)dst % MEMCPY_ALIGNMENT == 0);
+    TT_ASSERT((uintptr_t)src % MEMCPY_ALIGNMENT == 0);
 
     static constexpr uint32_t inner_loop = 8;
     static constexpr uint32_t inner_blk_size = inner_loop * sizeof(__m256i);
