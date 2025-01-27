@@ -165,7 +165,10 @@ void MAIN {
 
         // perform the reduction over the either whole or partial chunk N
         pack_untilize_uninit(out_cb_id);
-        pack_untilize_dst_init_short<partial_iter_output_tiles>(out_cb_id, num_out_rows, num_faces_in_output_tile);
+        // Omitted pasing in_ntiles_c as template argument to pack_untilize_dst_init_short
+        // Workaround for tt-metal#15824
+        pack_untilize_dst_init_short<partial_iter_output_tiles == 1 ? 4 : 8>(
+            out_cb_id, num_out_rows, num_faces_in_output_tile);
         reduce_h_fused<partial_iter_output_tiles, is_partial_tile, max_rows_for_reduction>(
             interm_cb_id, in_scalar_cb_id, out_cb_id);
     }

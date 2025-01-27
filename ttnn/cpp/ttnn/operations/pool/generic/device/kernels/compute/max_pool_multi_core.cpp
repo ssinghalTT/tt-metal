@@ -78,6 +78,8 @@ void MAIN {
     constexpr uint32_t partial_iter_output_tiles =
         in_ntiles_c % MAX_TILES_PER_REDUCTION == 0 ? max_tiles_per_iter : in_ntiles_c % MAX_TILES_PER_REDUCTION;
     tilizeA_B_reduce_init(in_cb_id, in_scalar_cb_id, max_tiles_per_iter, out_cb_id, num_faces_in_tile, window_size_hw);
+    // Omitted pasing in_ntiles_c as template argument to pack_untilize_dst_init_short
+    // Workaround for tt-metal#15824
     pack_untilize_dst_init_short(out_cb_id, num_out_rows, num_faces_in_tile);
 
     cb_wait_front(in_scalar_cb_id, 1);
