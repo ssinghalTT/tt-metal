@@ -95,5 +95,5 @@ jobs:
             echo "Running iteration $i"
             tt-smi-metal -r0
             ${{ inputs.command }}
-            ./opt/tt_metal_infra/scripts/ci/grayskull/cleanup.sh
+            /opt/tt_metal_infra/scripts/ci/grayskull/cleanup.sh
           done
