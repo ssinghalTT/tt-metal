@@ -50,8 +50,6 @@ uint64_t get_cycles() {
 }
 
 void kernel_main() {
-    DPRINT << "Start pcie_bench kernel (reader = " << (uint32_t)(my_rd_dst_addr != 0)
-           << ", writer = " << (uint32_t)(my_wr_src_addr != 0) << ") " << +my_x[0] << "," << +my_y[0] << "\n";
     if constexpr (my_rd_dst_addr) {
         my_bytes_read[0] = 0;
     }
@@ -70,7 +68,6 @@ void kernel_main() {
                 my_rd_dst_addr,  // any L1
                 pcie_rd_transfer_size);
             rd_ptr += pcie_rd_transfer_size;
-            my_bytes_read[0] += pcie_rd_transfer_size;
             bytes_done += pcie_rd_transfer_size;
             if (rd_ptr >= pcie_rd_end) {
                 rd_ptr = pcie_rd_base;
@@ -78,12 +75,11 @@ void kernel_main() {
         }
     }
 
-    // if constexpr (my_rd_dst_addr) {
-    //     noc_async_read_barrier();
-    // }
+    if constexpr (my_rd_dst_addr) {
+        noc_async_read_barrier();
+    }
 
     auto end = get_cycles();
     my_cycles[0] = end - start;
-
-    DPRINT << "pcie_bench terminate\n";
+    my_bytes_read[0] = bytes_done;
 }
