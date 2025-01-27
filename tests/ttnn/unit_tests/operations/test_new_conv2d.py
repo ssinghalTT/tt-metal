@@ -445,7 +445,7 @@ def test_conv_features(
 
 
 @skip_for_grayskull()
-@skip_for_blackhole()
+# @skip_for_blackhole()
 @pytest.mark.parametrize("device_params", [{"l1_small_size": 2 * 16384}], indirect=True)
 @pytest.mark.parametrize("groups", [1, 2])
 @pytest.mark.parametrize("stride", [2])
@@ -578,8 +578,8 @@ def test_conv_ws(
     auto_shard,
     tilized_input,
 ):
-    if device.core_grid.y != 8:
-        pytest.skip("Needs 8x8 Grid")
+    # if device.core_grid.y != 8:
+    #     pytest.skip("Needs 8x8 Grid")
 
     stride_h = stride
     stride_w = stride
@@ -879,7 +879,7 @@ def test_resnet50_conv_gs(
 
 
 @skip_for_grayskull()
-@skip_for_blackhole()
+# @skip_for_blackhole()
 @pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
 @pytest.mark.parametrize(
     "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override",
@@ -1017,7 +1017,7 @@ def test_resnet50_conv_wh(
 
 
 @skip_for_grayskull()
-@skip_for_blackhole()
+# @skip_for_blackhole()
 @pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
 @pytest.mark.parametrize(
     "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override",
@@ -1336,7 +1336,7 @@ def test_sd_conv(
 
 
 @skip_for_grayskull()
-@skip_for_blackhole()
+# @skip_for_blackhole()
 @pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
 @pytest.mark.parametrize(
     "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override",
@@ -1607,7 +1607,7 @@ def test_unet_conv(
 
 
 @skip_for_grayskull()
-@skip_for_blackhole()
+# @skip_for_blackhole()
 @pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
 @pytest.mark.parametrize(
     "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override, use_shallow_conv_variant",
@@ -1700,7 +1700,7 @@ def test_unet_conv_wh(
 
 
 @skip_for_grayskull()
-@skip_for_blackhole()
+# @skip_for_blackhole()
 @pytest.mark.parametrize(
     "batch_size",
     [1],
@@ -1800,7 +1800,7 @@ def test_unet_conv_groups_2_wh(
 
 
 @skip_for_grayskull()
-@skip_for_blackhole()
+# @skip_for_blackhole()
 @pytest.mark.parametrize(
     "batch_size",
     [1],
@@ -1900,7 +1900,7 @@ def test_unet_conv_groups_4_6_wh(
 
 
 @skip_for_grayskull()
-@skip_for_blackhole()
+# @skip_for_blackhole()
 @pytest.mark.parametrize(
     "batch_size",
     [1],
@@ -2718,7 +2718,7 @@ def test_conv_for_vanilla_unet(
     )
 
 
-@skip_for_blackhole()
+# @skip_for_blackhole()
 @pytest.mark.parametrize("device_params", [{"l1_small_size": 16384}], indirect=True)
 @pytest.mark.parametrize(
     "batch_size, output_channels, input_channels, input_height, input_width, filter_height, filter_width, stride_h, stride_w, pad_h, pad_w, use_1d_systolic_array, config_override",

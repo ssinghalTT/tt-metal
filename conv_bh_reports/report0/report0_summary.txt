@@ -1,0 +1,3 @@
+PCC - 105
+post_op_l1_stats == (this->pre_op_l1_allocation_size_bytes + calc_output_size) - 8
+num_cores_x < 13 - 220
