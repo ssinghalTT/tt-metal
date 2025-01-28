@@ -63,9 +63,6 @@ def test_llama_lm_head_inference(seq_len, batch_size, mesh_device, use_program_c
         n_tensors=0,
         n_layers=model_args.n_layers,
     )
-    # Clear global circular buffer
-    del prefetcher_setup.global_circular_buffer
-    prefetcher_setup.global_circular_buffer = None
 
     mesh_device.set_sub_device_stall_group(
         [prefetcher_setup.prefetcher_sub_device_id, prefetcher_setup.worker_sub_device_id]
@@ -97,13 +94,17 @@ def test_llama_lm_head_inference(seq_len, batch_size, mesh_device, use_program_c
     )
 
     logger.info("Run Llama_LM_Head")
-    tt_output = tt_model(tt_input)
-    tt_output_torch = ttnn.to_torch(
-        tt_output,
-        mesh_composer=ttnn.ConcatMesh2dToTensor(
-            mesh_device, model_args.cluster_shape, dims=(3, 1) if model_args.is_galaxy else (1, 3)
-        ),
-    )
+    tt_outputs = tt_model(tt_input)
+    tt_outputs = [
+        ttnn.to_torch(
+            tt_output,
+            mesh_composer=ttnn.ConcatMesh2dToTensor(
+                mesh_device, model_args.cluster_shape, dims=(3, 1) if model_args.is_galaxy else (1, 3)
+            ),
+        )
+        for tt_output in tt_outputs
+    ]
+    tt_output_torch = torch.concat(tt_outputs, dim=-1)
     tt_output_torch = tt_output_torch[:, 0:1, :, : model_args.vocab_size]
 
     pcc_required = 0.99

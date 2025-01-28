@@ -729,8 +729,8 @@ class TtModelArgs:
                 use_height_and_width_as_shard_shape=True,
             )
 
-            LM_HEAD_RING_SIZE = 48
-            self.lm_head_shape = (12288 // 4, 128 * 1024 // 8 + 512)
+            LM_HEAD_RING_SIZE = 32
+            self.lm_head_shape = (8192 // 4, 128 * 1024 // 8 // 4)
             lm_head_ring_core_range_set = ttnn.num_cores_to_corerangeset_in_subcoregrids(
                 self.start_core, LM_HEAD_RING_SIZE, self.sub_core_grids, row_wise=True
             )

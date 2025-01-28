@@ -370,16 +370,9 @@ class TtTransformer(LightweightModule):
         x_norm = self.norm(x, mode=mode)
         x.deallocate(True)
 
-        print("x_norm", x_norm)
-        self.tt_ccl.close()
-        exit()
         if mode == "decode" and self.args.is_galaxy:
             x = ttnn.to_memory_config(x_norm, self.args.model_config["SHARDED_LM_HEAD_INPUT_RING_MEMCFG"])
             x_norm.deallocate(True)
-            # Clear global circular buffer
-            del self.prefetcher_setup.global_circular_buffer
-            self.prefetcher_setup.global_circular_buffer = None
-            ttnn.deallocate(self.trans_mats_dict["decode"])
             for sin_i in rot_mats:
                 sin_i.deallocate(True)
 

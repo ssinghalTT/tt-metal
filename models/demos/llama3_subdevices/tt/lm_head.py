@@ -44,6 +44,7 @@ class LMHead(LightweightModule):
 
         self.output_weights = []
         if args.is_galaxy:
+            num_splits = 4
             cache_file_name = (
                 None if args.dummy_weights else weight_cache_path / f"output_lm_head_{num_splits}_split_shard_0"
             )
@@ -58,17 +59,19 @@ class LMHead(LightweightModule):
                     if args.dim == 2048
                     else args.create_dram_sharded_mem_config(k=args.dim // 4, n=self.padded_vocab_size // 8)
                 )
-            self.output_weights.append(  # (2k, 16k) 128* 1024
-                ttnn.as_tensor(
-                    padded_lm_head,
-                    device=mesh_device,
-                    mesh_mapper=ttnn.ShardTensor2dMesh(mesh_device, dims=(3, 2), mesh_shape=args.cluster_shape),
-                    layout=ttnn.TILE_LAYOUT,
-                    dtype=ttnn.bfloat4_b,
-                    memory_config=memory_config,
-                    # cache_file_name=cache_file_name,
+            for i in range(num_splits):
+                index = i * self.padded_vocab_size // num_splits
+                self.output_weights.append(  # (2k, 16k) 128* 1024
+                    ttnn.as_tensor(
+                        padded_lm_head[..., index : index + self.padded_vocab_size // 4],
+                        device=mesh_device,
+                        mesh_mapper=ttnn.ShardTensor2dMesh(mesh_device, dims=(3, 2), mesh_shape=args.cluster_shape),
+                        layout=ttnn.TILE_LAYOUT,
+                        dtype=dtype,
+                        memory_config=memory_config,
+                        # cache_file_name=cache_file_name,
+                    )
                 )
-            )
         else:
             for i, split_size in enumerate(split_sizes):
                 cache_file_name = (
@@ -121,7 +124,7 @@ class LMHead(LightweightModule):
             #     )
             # ]
 
-            self.program_configs = [args.model_config["LM_HEAD_TG_RING_PROGCFG"]]
+            self.program_configs = [args.model_config["LM_HEAD_TG_RING_PROGCFG"]] * num_splits
 
             if args.is_70b:
                 self.output_memory_config = args.model_config["LM_HEAD_OUT_RING_MEMCFG"]
@@ -197,23 +200,4 @@ class LMHead(LightweightModule):
             )
             outputs_reduced.append(output_reduced)
 
-        assert len(outputs_reduced) == 1
-        output = outputs_reduced[0]
-
-        # # Concatenate the outputs
-        # output = ttnn.concat(outputs, dim=-1, memory_config=ttnn.L1_MEMORY_CONFIG)
-
-        # output = tt_all_reduce(
-        #     output,
-        #     mesh_device=self.mesh_device,
-        #     cluster_axis=1,
-        #     dim=3 if self.args.is_galaxy else 0,
-        #     num_reduce_scatter_links=self.args.num_reduce_scatter_links,
-        #     num_all_gather_links=self.args.num_all_gather_links,
-        #     memory_config=ttnn.L1_MEMORY_CONFIG,
-        #     dtype=self.args.ccl_dtype,
-        #     sharded=False,
-        #     use_composite=True,
-        # )
-
-        return output
+        return outputs_reduced

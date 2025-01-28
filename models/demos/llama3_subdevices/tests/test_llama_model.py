@@ -84,7 +84,7 @@ def test_llama_model_inference(
     page_params,
     optimizations,
     mesh_device,
-    # use_program_cache,
+    use_program_cache,
     reset_seeds,
     ensure_gc,
 ):
@@ -188,7 +188,7 @@ def test_llama_model_inference(
     embd.load_state_dict({"emb.weight": state_dict[f"{state_dict_prefix}tok_embeddings.weight"]})
 
     generation_start_pos = 127  # 0
-    generation_length = 1  # iterations
+    generation_length = 2  # iterations
 
     page_table_tt = None
     paged_attention_config = None
@@ -260,173 +260,178 @@ def test_llama_model_inference(
         ),
     )
 
-    for i in range(generation_length):
-        logger.info(f"[Llama3 Model] Generating token {i}")
+    try:
+        for i in range(generation_length):
+            logger.info(f"[Llama3 Model] Generating token {i}")
 
-        decode_input = model_args.prepare_residual_tensor_decode(
-            tt_decode_input,
-            model_args.model_config["DECODE_RESIDUAL_MEMCFG"],
-        )
+            decode_input = model_args.prepare_residual_tensor_decode(
+                tt_decode_input,
+                model_args.model_config["DECODE_RESIDUAL_MEMCFG"],
+            )
 
-        # Get cos/sin matrices for the current position of each user
-        rot_mats = tt_model.rope_setup.get_rot_mats(current_pos)
+            # Get cos/sin matrices for the current position of each user
+            rot_mats = tt_model.rope_setup.get_rot_mats(current_pos)
 
-        # Run TT model
-        tt_out = tt_model(
-            decode_input,
-            current_pos_tensor,
-            rot_mats=rot_mats,
-            mode="decode",
-            page_table=page_table_tt,
-        )
+            # Run TT model
+            tt_out = tt_model(
+                decode_input,
+                current_pos_tensor,
+                rot_mats=rot_mats,
+                mode="decode",
+                page_table=page_table_tt,
+            )
 
-        # Convert ttnn tensor to torch tensor
-        mesh_composer = ttnn.ConcatMesh2dToTensor(
-            mesh_device, dims=(3, 1) if model_args.is_galaxy else (1, -1), mesh_shape=model_args.cluster_shape
-        )
-        tt_output_torch = (
-            ttnn.to_torch(tt_out, mesh_composer=mesh_composer)
-            .permute(2, 1, 0, 3)
-            .squeeze(2)[: model_args.max_batch_size, 0:1, : model_args.vocab_size]
-        )
+            # Convert ttnn tensor to torch tensor
+            mesh_composer = ttnn.ConcatMesh2dToTensor(
+                mesh_device, dims=(3, 1) if model_args.is_galaxy else (1, -1), mesh_shape=model_args.cluster_shape
+            )
 
-        ttnn.deallocate(tt_out)
+            outs = [ttnn.to_torch(out, mesh_composer=mesh_composer) for out in tt_out]
+            logger.info(f"TT output shape: {outs[0].shape}")
+            outs = torch.concat(outs, dim=-1)
+            for t in tt_out:
+                t.deallocate(True)
+            tt_output_torch = outs.permute(2, 1, 0, 3).squeeze(2)[
+                : model_args.max_batch_size, 0:1, : model_args.vocab_size
+            ]
 
-        if run_ref_pt:  # Run reference model
-            # In this test all users have the same position
-            ref_output = reference_model(pt_decode_input, current_pos[0])
+            if run_ref_pt:  # Run reference model
+                # In this test all users have the same position
+                ref_output = reference_model(pt_decode_input, current_pos[0])
 
-        # Increment position
-        current_pos = torch.tensor([generation_start_pos + i for _ in range(batch)])
-        current_pos_tensor = ttnn.from_torch(
-            current_pos,
-            device=mesh_device,
-            dtype=ttnn.int32,
-            mesh_mapper=ttnn.ShardTensor2dMesh(
-                mesh_device,
-                dims=(None, 0) if (model_args.is_galaxy and batch_size > 1) else (None, None),
-                mesh_shape=model_args.cluster_shape,
-            ),
-        )
+            # Increment position
+            current_pos = torch.tensor([generation_start_pos + i for _ in range(batch)])
+            current_pos_tensor = ttnn.from_torch(
+                current_pos,
+                device=mesh_device,
+                dtype=ttnn.int32,
+                mesh_mapper=ttnn.ShardTensor2dMesh(
+                    mesh_device,
+                    dims=(None, 0) if (model_args.is_galaxy and batch_size > 1) else (None, None),
+                    mesh_shape=model_args.cluster_shape,
+                ),
+            )
 
-        # Append the generated token to the list of outputs
-        if i in range(len(encoded_prompts[0])):
-            # While in "prefill" mode, use the prompt tokens as the output
-            all_outputs.append(encoded_prompts[0][i])  # Update list of TT outputs
+            # Append the generated token to the list of outputs
+            if i in range(len(encoded_prompts[0])):
+                # While in "prefill" mode, use the prompt tokens as the output
+                all_outputs.append(encoded_prompts[0][i])  # Update list of TT outputs
+                if run_ref_pt:
+                    all_outputs_ref.append(encoded_prompts[0][i])  # Update list of ref outputs
+
+                tt_decode_input = embd(encoded_prompts_tensor[:, i]).view(batch, seqlen, -1)
+                if run_ref_pt:
+                    pt_decode_input = embd(encoded_prompts_tensor[:, i]).view(batch, seqlen, -1)
+            else:
+                # Greedy decode (temperature = 0) the generated token and save it to print out later
+                tt_out_tok = sample_host(tt_output_torch, None, temperature=0, top_p=0.8)
+                tt_decode_input = embd(tt_out_tok)
+                all_outputs.append(tt_out_tok.squeeze(1).tolist()[0])  # Update generated token to list of TT outputs
+                if run_ref_pt:
+                    pt_out_tok = sample_host(ref_output, None, temperature=0, top_p=0.8)
+                    pt_decode_input = embd(pt_out_tok)
+                    all_outputs_ref.append(
+                        pt_out_tok.squeeze(1).tolist()[0]
+                    )  # Update generated token to list of ref outputs
+            # Measure PCC if also running reference model
             if run_ref_pt:
-                all_outputs_ref.append(encoded_prompts[0][i])  # Update list of ref outputs
+                if layers == 1 and i == iterations - 1:  # On last iteration in the quick test, set a tighter PCC
+                    passing, pcc_message = comp_pcc(ref_output, tt_output_torch, final_model_pcc)
+                    if not passing:
+                        final_tests_pass = False
+                else:
+                    passing, pcc_message = comp_pcc(ref_output, tt_output_torch, pcc)
 
-            tt_decode_input = embd(encoded_prompts_tensor[:, i]).view(batch, seqlen, -1)
-            if run_ref_pt:
-                pt_decode_input = embd(encoded_prompts_tensor[:, i]).view(batch, seqlen, -1)
-        else:
-            # Greedy decode (temperature = 0) the generated token and save it to print out later
-            tt_out_tok = sample_host(tt_output_torch, None, temperature=0, top_p=0.8)
-            tt_decode_input = embd(tt_out_tok)
-            all_outputs.append(tt_out_tok.squeeze(1).tolist()[0])  # Update generated token to list of TT outputs
-            if run_ref_pt:
-                pt_out_tok = sample_host(ref_output, None, temperature=0, top_p=0.8)
-                pt_decode_input = embd(pt_out_tok)
-                all_outputs_ref.append(
-                    pt_out_tok.squeeze(1).tolist()[0]
-                )  # Update generated token to list of ref outputs
-        # Measure PCC if also running reference model
-        if run_ref_pt:
-            if layers == 1 and i == iterations - 1:  # On last iteration in the quick test, set a tighter PCC
-                passing, pcc_message = comp_pcc(ref_output, tt_output_torch, final_model_pcc)
+                logger.info(comp_allclose(ref_output, tt_output_torch))
+                logger.info(f"PCC: {pcc_message}")
+
+                if passing:
+                    logger.info("Llama Model Passed!")
+                else:
+                    logger.warning("Llama Model Failed!")
                 if not passing:
-                    final_tests_pass = False
-            else:
-                passing, pcc_message = comp_pcc(ref_output, tt_output_torch, pcc)
+                    all_tests_pass = False
 
-            logger.info(comp_allclose(ref_output, tt_output_torch))
-            logger.info(f"PCC: {pcc_message}")
-
-            if passing:
-                logger.info("Llama Model Passed!")
-            else:
-                logger.warning("Llama Model Failed!")
-            if not passing:
-                all_tests_pass = False
-
-            # Compare KV caches
-            if cache_pcc:
-                for l in range(model_args.n_layers):
-                    pytorch_layer_present = [
-                        reference_model.layers[l]
-                        .attention.cache_k.clone()
-                        .permute(0, 2, 1, 3),  # [batch, n_kv_heads, seq, head_dim]
-                        reference_model.layers[l]
-                        .attention.cache_v.clone()
-                        .permute(0, 2, 1, 3),  # [batch, n_kv_heads, seq, head_dim]
-                    ]
-                    tt_layer_present = []
-                    if paged_attention:
-                        for layer_past in tt_model.layers[l].attention.layer_past:
-                            tt_layer_present.append(
-                                ttnn.to_torch(
-                                    layer_past,
-                                    mesh_composer=ttnn.ConcatMesh2dToTensor(
-                                        mesh_device,
-                                        dims=(1, 3) if model_args.is_galaxy else (0, 1),
-                                        mesh_shape=model_args.cluster_shape,
-                                    ),
-                                )[reverse_permutation][:, : model_args.n_kv_heads, :, : model_args.head_dim]
-                                .reshape(
-                                    model_args.max_batch_size,
-                                    paged_attention_config.max_num_blocks // model_args.max_batch_size,
-                                    model_args.n_kv_heads,
-                                    paged_attention_config.block_size,
-                                    model_args.head_dim,
+                # Compare KV caches
+                if cache_pcc:
+                    for l in range(model_args.n_layers):
+                        pytorch_layer_present = [
+                            reference_model.layers[l]
+                            .attention.cache_k.clone()
+                            .permute(0, 2, 1, 3),  # [batch, n_kv_heads, seq, head_dim]
+                            reference_model.layers[l]
+                            .attention.cache_v.clone()
+                            .permute(0, 2, 1, 3),  # [batch, n_kv_heads, seq, head_dim]
+                        ]
+                        tt_layer_present = []
+                        if paged_attention:
+                            for layer_past in tt_model.layers[l].attention.layer_past:
+                                tt_layer_present.append(
+                                    ttnn.to_torch(
+                                        layer_past,
+                                        mesh_composer=ttnn.ConcatMesh2dToTensor(
+                                            mesh_device,
+                                            dims=(1, 3) if model_args.is_galaxy else (0, 1),
+                                            mesh_shape=model_args.cluster_shape,
+                                        ),
+                                    )[reverse_permutation][:, : model_args.n_kv_heads, :, : model_args.head_dim]
+                                    .reshape(
+                                        model_args.max_batch_size,
+                                        paged_attention_config.max_num_blocks // model_args.max_batch_size,
+                                        model_args.n_kv_heads,
+                                        paged_attention_config.block_size,
+                                        model_args.head_dim,
+                                    )
+                                    .transpose(1, 2)
+                                    .reshape(model_args.max_batch_size, model_args.n_kv_heads, -1, model_args.head_dim)[
+                                        :batch, ...
+                                    ]
                                 )
-                                .transpose(1, 2)
-                                .reshape(model_args.max_batch_size, model_args.n_kv_heads, -1, model_args.head_dim)[
-                                    :batch, ...
-                                ]
+                        else:
+                            for layer_past in tt_model.layers[l].attention.layer_past:
+                                tt_layer_present.append(
+                                    ttnn.to_torch(
+                                        layer_past,
+                                        mesh_composer=ttnn.ConcatMesh2dToTensor(
+                                            mesh_device,
+                                            dims=(1, 0) if model_args.is_galaxy else (0, 1),
+                                            mesh_shape=model_args.cluster_shape,
+                                        ),
+                                    )[:batch, :, :, :]
+                                )
+
+                        for kv_cache, (cache_pt, cache_tt) in enumerate(zip(pytorch_layer_present, tt_layer_present)):
+                            cache_length_to_check = min(
+                                model_args.max_seq_len, generation_start_pos + generation_length + 1
                             )
-                    else:
-                        for layer_past in tt_model.layers[l].attention.layer_past:
-                            tt_layer_present.append(
-                                ttnn.to_torch(
-                                    layer_past,
-                                    mesh_composer=ttnn.ConcatMesh2dToTensor(
-                                        mesh_device,
-                                        dims=(1, 0) if model_args.is_galaxy else (0, 1),
-                                        mesh_shape=model_args.cluster_shape,
-                                    ),
-                                )[:batch, :, :, :]
-                            )
+                            cache_pt = cache_pt[:, :, generation_start_pos:cache_length_to_check, :]
+                            cache_tt = cache_tt[:, :, generation_start_pos:cache_length_to_check, :]
+                            if (
+                                layers == 1 and i == iterations - 1
+                            ):  # On last iteration in the quick test, set a tighter PCC
+                                if kv_cache == 0:  # K cache
+                                    does_pass, output_pcc = comp_pcc(cache_pt, cache_tt, final_k_cache_pcc)
+                                else:  # V cache
+                                    does_pass, output_pcc = comp_pcc(cache_pt, cache_tt, final_v_cache_pcc)
+                            else:
+                                does_pass, output_pcc = comp_pcc(cache_pt, cache_tt, pcc)
+                            if kv_cache == 0:
+                                logger.info(f"K cache output: {output_pcc}")
+                            else:
+                                logger.info(f"V cache output: {output_pcc}")
 
-                    for kv_cache, (cache_pt, cache_tt) in enumerate(zip(pytorch_layer_present, tt_layer_present)):
-                        cache_length_to_check = min(
-                            model_args.max_seq_len, generation_start_pos + generation_length + 1
-                        )
-                        cache_pt = cache_pt[:, :, generation_start_pos:cache_length_to_check, :]
-                        cache_tt = cache_tt[:, :, generation_start_pos:cache_length_to_check, :]
-                        if (
-                            layers == 1 and i == iterations - 1
-                        ):  # On last iteration in the quick test, set a tighter PCC
-                            if kv_cache == 0:  # K cache
-                                does_pass, output_pcc = comp_pcc(cache_pt, cache_tt, final_k_cache_pcc)
-                            else:  # V cache
-                                does_pass, output_pcc = comp_pcc(cache_pt, cache_tt, final_v_cache_pcc)
-                        else:
-                            does_pass, output_pcc = comp_pcc(cache_pt, cache_tt, pcc)
-                        if kv_cache == 0:
-                            logger.info(f"K cache output: {output_pcc}")
-                        else:
-                            logger.info(f"V cache output: {output_pcc}")
+                            if does_pass:
+                                logger.info(f"KV Cache Passed!")
+                            else:
+                                logger.warning(f"KV Cache Failed! PCC value is lower than {pcc}")
+                                all_tests_pass = False
 
-                        if does_pass:
-                            logger.info(f"KV Cache Passed!")
-                        else:
-                            logger.warning(f"KV Cache Failed! PCC value is lower than {pcc}")
-                            all_tests_pass = False
-
-        if not dummy_weights:
-            logger.info("[ttnn generation User 0] " + tokenizer.decode(all_outputs).replace("\n", "\\n"))
-            if run_ref_pt:
-                logger.info("[Ref generation User 0] " + tokenizer.decode(all_outputs_ref).replace("\n", "\\n"))
+            if not dummy_weights:
+                logger.info("[ttnn generation User 0] " + tokenizer.decode(all_outputs).replace("\n", "\\n"))
+                if run_ref_pt:
+                    logger.info("[Ref generation User 0] " + tokenizer.decode(all_outputs_ref).replace("\n", "\\n"))
+    finally:
+        tt_model.tt_ccl.close()
 
     if run_ref_pt:
         if all_tests_pass:
