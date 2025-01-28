@@ -234,7 +234,7 @@ def test_to_layout_sharded(dtype, device, use_program_cache):
 
 
 @pytest.mark.parametrize(
-    "shape", [[8, 2, 49, 2048], [1, 1, 2, 1536], [3, 76, 978], [1, 1, 120, 7300], [1, 1, 100, 7104]]
+    "shape", [[1, 1, 2, 1536], [1, 1, 1, 4608], [1, 1, 1, 13824], [3, 76, 9978], [1, 1, 120, 7300], [1, 1, 100, 7104]]
 )
 @pytest.mark.parametrize("input_layout", [ttnn.ROW_MAJOR_LAYOUT])
 @pytest.mark.parametrize("output_layout", [ttnn.TILE_LAYOUT])

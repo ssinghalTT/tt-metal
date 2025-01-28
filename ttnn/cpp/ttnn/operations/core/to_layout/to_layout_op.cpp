@@ -113,6 +113,7 @@ Tensor to_layout_impl(
     if (ttnn::is_tensor_on_device_or_multidevice(tensor_arg)) {
         bool use_multicore_untilize = true;
         bool use_multicore_tilize = use_multicore_device_tilize(tensor, dtype);
+        bool use_multicore_tilize_with_padding = true;
 
         if (not requires_padding_change(tensor, layout)) {
             if (layout == ttnn::ROW_MAJOR_LAYOUT) {
@@ -179,7 +180,7 @@ Tensor to_layout_impl(
                     pad_value_variant,
                     output_memory_config,
                     dtype,
-                    use_multicore_tilize);
+                    use_multicore_tilize_with_padding);
             }
 
             return ttnn::reshape(

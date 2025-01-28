@@ -302,7 +302,8 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_col_interleav
     Buffer* dst_buffer = output.buffer();
     TT_ASSERT(dst_buffer != nullptr, "Output buffer should be allocated on device!");
 
-    // reader
+    /** reader
+     */
 
     uint32_t src0_is_dram = src0_buffer->buffer_type() == BufferType::DRAM ? 1 : 0;
     uint32_t stick_size = unpadded_row_size_bytes;
@@ -338,7 +339,8 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_col_interleav
              third_dim,
              tile_width}));
 
-    // writer
+    /** writer
+     */
 
     uint32_t out_is_dram = dst_buffer->buffer_type() == tt::tt_metal::BufferType::DRAM ? 1 : 0;
 
@@ -365,7 +367,7 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_col_interleav
             ComputeConfig{.compile_args = {nblocks_per_core_cliff, num_tiles_per_col, third_dim}});
     }
 
-    // RUNTIME ARGS
+    /* RUNTIME ARGS */
     const auto& cores = grid_to_cores(ncores, grid_size.x, grid_size.y, true);
     uint32_t number_blocks_per_core;
     for (uint32_t i = 0; i < ncores; ++i) {
@@ -462,7 +464,8 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_interleaved(
     Buffer* dst_buffer = output.buffer();
     TT_ASSERT(dst_buffer != nullptr, "Output buffer should be allocated on device!");
 
-    // reader
+    /** reader
+     */
 
     uint32_t src0_is_dram = src0_buffer->buffer_type() == BufferType::DRAM ? 1 : 0;
     uint32_t stick_size = unpadded_row_size_bytes;
@@ -480,7 +483,8 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_interleaved(
         all_cores,
         ReaderDataMovementConfig({src0_is_dram, stick_size_is_power_of_two, log2_stick_size, shift_bits}));
 
-    // writer
+    /** writer
+     */
 
     uint32_t out_is_dram = dst_buffer->buffer_type() == tt::tt_metal::BufferType::DRAM ? 1 : 0;
 
@@ -490,7 +494,8 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_interleaved(
         all_cores,
         WriterDataMovementConfig({output_cb_index, out_is_dram}));
 
-    // compute
+    /** compute
+     */
     if (core_range.size() > 0) {
         auto tilize_kernel_id = CreateKernel(
             program,
@@ -506,7 +511,7 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_interleaved(
             ComputeConfig{.compile_args = {nblocks_per_core_cliff, num_tiles_per_row}});
     }
 
-    // RUNTIME ARGS
+    /* RUNTIME ARGS */
     // 1D distribution of blocks across cores
     uint32_t tile_height = output.get_tensor_spec().tile().get_height();
     auto core_assignments = ttnn::distribute_work(
@@ -657,7 +662,8 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_sharded(
     Buffer* dst_buffer = output.buffer();
     TT_ASSERT(dst_buffer != nullptr, "Output buffer should be allocated on device!");
 
-    // reader
+    /** reader
+     */
     KernelHandle unary_reader_kernel_id;
     std::vector<uint32_t> reader_ct_args = {
         (std::uint32_t)src0_cb_index,
@@ -672,7 +678,8 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_sharded(
         all_cores,
         tt::tt_metal::ReaderDataMovementConfig(reader_ct_args));
 
-    // writer
+    /** writer
+     */
     KernelHandle unary_writer_kernel_id;
     bool out_is_dram = dst_buffer->buffer_type() == BufferType::DRAM ? 1 : 0;
     std::vector<uint32_t> writer_ct_args = {
@@ -684,7 +691,8 @@ operation::ProgramWithCallbacks tilize_with_val_padding_multi_core_sharded(
         all_cores,
         WriterDataMovementConfig(writer_ct_args));
 
-    // compute
+    /** compute
+     */
     std::vector<uint32_t> compute_args = {
         (uint32_t)nblocks_per_core,  // per_core_block_cnt
         (uint32_t)ntiles_per_block,  // per_block_ntiles
