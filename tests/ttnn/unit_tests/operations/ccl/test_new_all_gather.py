@@ -168,7 +168,7 @@ def run_all_gather_impl(
 
     # create global semaphore handles
     ccl_semaphore_handles = create_global_semaphore_with_same_address(mesh_device, ccl_sub_device_crs, 0)
-
+    output_shape[dim] *= num_devices
     logger.info(f"Output shape: {output_shape}")
     logger.info(f"dim: {dim}")
     logger.info(f"input_shard_shape: {input_shard_shape}")
