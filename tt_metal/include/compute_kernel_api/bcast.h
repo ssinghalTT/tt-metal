@@ -24,17 +24,15 @@ namespace ckernel {
 
 template <BroadcastType bcast_type>
 ALWI void unary_bcast_init(uint32_t icb, uint32_t ocb) {
+    const auto data_copy_type = (bcast_type == BroadcastType::NONE) ? A2D : B2D;
+    const bool enable_unpack_to_dest = bcast_type == BroadcastType::NONE;
     // Will configure A & B in similar way
     UNPACK((llk_unpack_A_hw_configure_disaggregated<DST_ACCUM_MODE>(icb)));
-    UNPACK((llk_unpack_A_init<bcast_type, false, EltwiseBinaryReuseDestType::NONE, UnpackToDestEn>(
+    UNPACK((llk_unpack_A_init<bcast_type, false, EltwiseBinaryReuseDestType::NONE, enable_unpack_to_dest>(
         false, false /*transpose within 16x16 face*/, icb)));
-    if (bcast_type == BroadcastType::NONE) {
-        MATH((llk_math_eltwise_unary_datacopy_init<A2D, bcast_type, DST_ACCUM_MODE>(
-            false /*transpose of faces*/, false /*transpose within 16x16 face*/, icb)));
-    } else {
-        MATH((llk_math_eltwise_unary_datacopy_init<B2D, bcast_type, DST_ACCUM_MODE>(
-            false /*transpose of faces*/, false /*transpose within 16x16 face*/, icb)));
-    }
+
+    MATH((llk_math_eltwise_unary_datacopy_init<data_copy_type, bcast_type, DST_ACCUM_MODE>(
+        false /*transpose of faces*/, false /*transpose within 16x16 face*/, icb)));
     MATH((llk_math_pack_sync_init<DST_ACCUM_MODE>()));
     MATH((llk_math_hw_configure_disaggregated(icb, icb)));
 
