@@ -132,13 +132,12 @@ def test_yolo_v11_c3k2(
     )
     torch_output = torch_module(torch_input)
     parameters = create_yolov11_model_parameters(torch_module, torch_input, device=device)
-    print(parameters)
     ttnn_module = ttnn_c3k2(
         device=device, parameter=parameters.conv_args, conv_pt=parameters, is_bk_enabled=is_bk_enabled
     )
     ttnn_output = ttnn_module(x=ttnn_input, device=device)
     ttnn_output = ttnn.to_torch(ttnn_output)
-    print(torch_output.shape, ttnn_output.shape)
+    # print(torch_output.shape, ttnn_output.shape)
     ttnn_output = ttnn_output.permute(0, 3, 1, 2)
     ttnn_output = ttnn_output.reshape(torch_output.shape)
     assert_with_pcc(torch_output, ttnn_output, 0.99999)

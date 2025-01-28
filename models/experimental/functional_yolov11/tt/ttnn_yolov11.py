@@ -39,7 +39,7 @@ class Yolov11_Conv2D:
         self.cache = cache
         self.compute_config = ttnn.init_device_compute_kernel_config(
             device.arch(),
-            math_fidelity=ttnn.MathFidelity.LoFi,
+            math_fidelity=ttnn.MathFidelity.HiFi2,
             fp32_dest_acc_en=False,
             packer_l1_acc=False,
         )
@@ -80,7 +80,6 @@ class Yolov11_Conv2D:
             batch_size = self.conv.batch_size
             input_height = self.conv.input_height
             input_width = self.conv.input_width
-
         [x, [output_height, output_width], [self.weight, self.bias]] = ttnn.conv2d(
             input_tensor=x,
             weight_tensor=self.weight,
@@ -134,9 +133,10 @@ class Conv:
     def __call__(self, device, x):
         if self.enable_act:
             x = self.conv(x)
-            if x.is_sharded():
-                x = ttnn.sharded_to_interleaved(x, ttnn.L1_MEMORY_CONFIG)
-            x = ttnn.silu(x)
+            # if x.is_sharded():
+            #     x = ttnn.sharded_to_interleaved(x, ttnn.L1_MEMORY_CONFIG)
+            # x = ttnn.silu(x)
+            x = Yolov11_shard_SiLU(device, x)
 
         else:
             x = self.conv(x)
@@ -247,8 +247,27 @@ class C3K:
             x2 = ttnn.sharded_to_interleaved(x2, ttnn.L1_MEMORY_CONFIG)
         if k2.is_sharded():
             k2 = ttnn.sharded_to_interleaved(k2, ttnn.L1_MEMORY_CONFIG)
-
+        # print("input tensors shape and layouts for concat",x2.shape,k2.shape,x2.layout,k2.layout,x2.memory_config(),k2.memory_config())
         x = ttnn.concat((k2, x2), 3, memory_config=ttnn.L1_MEMORY_CONFIG)
+        # print("input to cv3 conv",x.shape,x.layout,x.memory_config())
+        # input tensors shape and layouts for concat ttnn.Shape([1, 1, 196[224], 32]) ttnn.Shape([1, 1, 196[224], 32]) Layout.TILE Layout.TILE MemoryConfig(memory_layout=TensorMemoryLayout::INTERLEAVED,buffer_type=BufferType::L1,shard_spec=std::nullopt) MemoryConfig(memory_layout=TensorMemoryLayout::INTERLEAVED,buffer_type=BufferType::L1,shard_spec=std::nullopt)
+
+        # k2 = ttnn.to_layout(k2,layout=ttnn.ROW_MAJOR_LAYOUT)
+        # x2 = ttnn.to_layout(x2,layout=ttnn.ROW_MAJOR_LAYOUT)
+        # print("shapes of inputs of concat",k2.shape,x2.shape)
+        # output_sharded_memory_config = ttnn.create_sharded_memory_config(
+        #     [196,64],
+        #     core_grid=x2.memory_config().shard_spec.grid,
+        #     strategy=ttnn.ShardStrategy.HEIGHT,
+        #     use_height_and_width_as_shard_shape=True,
+        # )
+        # x = ttnn.concat(
+        #     [k2, x2], dim=3, memory_config=output_sharded_memory_config
+        # )
+        # print("output after concat",x.shape,x.layout,x.memory_config())
+        # x = ttnn.sharded_to_interleaved(x,memory_config=ttnn.L1_MEMORY_CONFIG)
+        # x = ttnn.to_layout(x,layout=ttnn.TILE_LAYOUT)
+        print("shape after concat", x.shape, x.memory_config())
         x = self.cv3(device, x)
         ttnn.deallocate(x1)
         ttnn.deallocate(x2)
@@ -280,7 +299,9 @@ class C3k2:
 
             y1 = ttnn.from_torch(y1, dtype=ttnn.bfloat16, device=device)
 
-            y2 = ttnn.from_torch(y2, dtype=ttnn.bfloat16, device=device, layout=ttnn.TILE_LAYOUT)
+            y2 = ttnn.from_torch(
+                y2, dtype=ttnn.bfloat16, device=device, layout=ttnn.TILE_LAYOUT, memory_config=ttnn.L1_MEMORY_CONFIG
+            )
 
             y3 = self.k(device, y2)
 
@@ -288,9 +309,25 @@ class C3k2:
                 y2 = ttnn.to_layout(y2, ttnn.ROW_MAJOR_LAYOUT)
             if y3.get_layout() != ttnn.ROW_MAJOR_LAYOUT:
                 y3 = ttnn.to_layout(y3, ttnn.ROW_MAJOR_LAYOUT)
-
-            x = ttnn.concat((y1, y2, y3), 3, memory_config=ttnn.L1_MEMORY_CONFIG)
-
+            # print("shapes of input tensors",y1.shape,y2.shape,y3.shape,y1.layout,y2.layout,y3.layout)
+            # print("core grid shape is ",y1.memory_config().shard_spec.grid)
+            # grid_coord = ttnn.CoreCoord(4,1)
+            # shard_grid = ttnn.CoreRangeSet({ttnn.CoreRange(ttnn.CoreCoord(0, 0), grid_coord)})
+            # output_sharded_memory_config = ttnn.create_sharded_memory_config(
+            #     [3136,16],
+            #     core_grid=device.core_grid,
+            #     strategy=ttnn.ShardStrategy.HEIGHT,
+            #     use_height_and_width_as_shard_shape=True,
+            # )
+            # y1 = ttnn.to_memory_config(y1,memory_config=output_sharded_memory_config)
+            # y2 = ttnn.to_memory_config(y2,memory_config=output_sharded_memory_config)
+            # y3 = ttnn.to_memory_config(y3,memory_config=output_sharded_memory_config)
+            # print(y1.memory_config(), y2.memory_config(), y3.memory_config(),)
+            x = ttnn.concat(
+                (y1, y2, y3), 3, memory_config=ttnn.L1_MEMORY_CONFIG
+            )  # shape after concat ttnn.Shape([1, 1, 3136, 48]) Layout.ROW_MAJOR
+            # x = ttnn.sharded_to_interleaved(x,memory_config=ttnn.L1_MEMORY_CONFIG)
+            # print("shape after concat",x.shape,x.layout,x.memory_config())
             if x.get_layout() == ttnn.ROW_MAJOR_LAYOUT:
                 x = ttnn.to_layout(x, ttnn.TILE_LAYOUT)
             x = self.cv2(device, x)
@@ -300,9 +337,11 @@ class C3k2:
             x = ttnn.to_torch(x)
             y1, y2 = x.chunk(2, -1)
 
-            y1 = ttnn.from_torch(y1, dtype=ttnn.bfloat16, device=device)
+            y1 = ttnn.from_torch(y1, dtype=ttnn.bfloat16, device=device, memory_config=ttnn.L1_MEMORY_CONFIG)
 
-            y2 = ttnn.from_torch(y2, dtype=ttnn.bfloat16, device=device, layout=ttnn.TILE_LAYOUT)
+            y2 = ttnn.from_torch(
+                y2, dtype=ttnn.bfloat16, device=device, layout=ttnn.TILE_LAYOUT, memory_config=ttnn.L1_MEMORY_CONFIG
+            )
 
             y3 = self.c3k(device, y2)
 
@@ -317,8 +356,16 @@ class C3k2:
                 y2 = ttnn.to_layout(y2, ttnn.ROW_MAJOR_LAYOUT)
             if y3.get_layout() != ttnn.ROW_MAJOR_LAYOUT:
                 y3 = ttnn.to_layout(y3, ttnn.ROW_MAJOR_LAYOUT)
-
-            x = ttnn.concat((y1, y2, y3), 3, memory_config=ttnn.L1_MEMORY_CONFIG)
+            print("shapes of input tensors", y1.shape, y2.shape, y3.shape, y1.layout, y2.layout, y3.layout)
+            print("core grid shape is ", y1.memory_config().shard_spec.grid)
+            output_sharded_memory_config = ttnn.create_sharded_memory_config(
+                [3136, 48],
+                core_grid=y1.memory_config().shard_spec.grid,
+                strategy=ttnn.ShardStrategy.HEIGHT,
+                use_height_and_width_as_shard_shape=True,
+            )
+            x = ttnn.concat((y1, y2, y3), 3, memory_config=ttnn.output_sharded_memory_config)
+            print("shape after concat", x.shape, x.layout)
             if x.get_layout() == ttnn.ROW_MAJOR_LAYOUT:
                 x = ttnn.to_layout(x, ttnn.TILE_LAYOUT)
             x = self.cv2(device, x)
@@ -344,11 +391,10 @@ class Attention:
         qkv = self.qkv(device, x)  # [1, 1, 49[64], 256]
         qkv = ttnn.sharded_to_interleaved(qkv, memory_config=ttnn.L1_MEMORY_CONFIG)
         qkv = ttnn.permute(qkv, (0, 3, 1, 2))  # [1,256,1,49]
-        qkv = ttnn.to_torch(qkv)
-        qkv = ttnn.from_torch(qkv, dtype=ttnn.bfloat16, device=device, layout=ttnn.TILE_LAYOUT)
         qkv = ttnn.reshape(
             qkv, (batch_size, self.num_heads, self.key_dim * 2 + self.head_dim, qkv.shape[-1])
         )  # [1,2,128,49]
+        print("shape after reshape", qkv.shape)
         q, k, v = (
             qkv[:, :, : self.key_dim, :],
             qkv[:, :, self.key_dim : self.head_dim, :],
@@ -356,20 +402,18 @@ class Attention:
         )  # ttnn.Shape([1, 2, 32, 49[64]]) ttnn.Shape([1, 2, 32, 49[64]]) ttnn.Shape([1, 2, 64, 49[64]])
 
         q_permuted = ttnn.permute(q, (0, 1, 3, 2))  # ttnn.Shape([1, 2, 49[64]],32)
-        attn = ttnn.matmul(q_permuted, k)
+        attn = ttnn.matmul(q_permuted, k, memory_config=ttnn.L1_MEMORY_CONFIG)
         attn = ttnn.multiply(attn, self.scale)  # ([1, 2, 49, 49])
         attn = ttnn.softmax(attn, dim=-1)
         attn = ttnn.permute(attn, (0, 1, 3, 2))
-        x1 = ttnn.matmul(v, attn)  # [1, 2, 64, 49[64]]
+        x1 = ttnn.matmul(v, attn, memory_config=ttnn.L1_MEMORY_CONFIG)  # [1, 2, 64, 49[64]]
         x1 = ttnn.reshape(x1, (1, 1, (x1.shape[0] * x1.shape[1] * x1.shape[2]), x1.shape[3]))
         x1 = ttnn.permute(x1, (0, 1, 3, 2))
         v = ttnn.reshape(v, (1, 1, (v.shape[0] * v.shape[1] * v.shape[2]), v.shape[3]))  # [1,1,128, 49[64]]
         v = ttnn.permute(v, (0, 1, 3, 2))
         x2 = self.pe(device=device, x=v)
-        x2 = ttnn.sharded_to_interleaved(x2, memory_config=ttnn.L1_MEMORY_CONFIG)
-
+        # x2 = ttnn.sharded_to_interleaved(x2, memory_config=ttnn.L1_MEMORY_CONFIG)
         x = x1 + x2
-
         x = self.proj(device=device, x=x)
         ttnn.deallocate(x1)
         ttnn.deallocate(qkv)
@@ -379,6 +423,7 @@ class Attention:
         ttnn.deallocate(k)
         ttnn.deallocate(v)
         ttnn.deallocate(x2)
+        print("outout of attention config", x.memory_config())
         return x
 
 
@@ -391,6 +436,7 @@ class PSABlock:
     def __call__(self, device, x):
         x1 = x
         x = self.attn(device, x)
+        print("configs befotre", x1.memory_config(), x.memory_config(), x.shape, x1.shape)
         x = x1 + x
         x1 = x
         x = self.ffn_conv1(device, x)
@@ -410,6 +456,7 @@ class C2PSA:
         a, b = x[:, :, :, : int(self.out_channel_0 / 2)], x[:, :, :, int(self.out_channel_0 / 2) :]
         x = self.psablock(device, b)
         x = ttnn.sharded_to_interleaved(x, memory_config=ttnn.L1_MEMORY_CONFIG)
+        print("shape before concat", a.shape, x.shape, a.layout, x.layout, a.memory_config(), x.memory_config)
         x = ttnn.concat((a, x), dim=-1, memory_config=ttnn.L1_MEMORY_CONFIG)
         x = self.cv2(device, x)
         ttnn.deallocate(a)

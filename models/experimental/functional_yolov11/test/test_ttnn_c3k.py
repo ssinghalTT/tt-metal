@@ -65,7 +65,6 @@ def test_yolo_v11_c3k(
     ttnn_input = ttnn.to_layout(ttnn_input, layout=ttnn.TILE_LAYOUT)
     torch_output = torch_module(torch_input)
     parameters = create_yolov11_model_parameters(torch_module, torch_input, device=device)
-    print(parameters.conv_args, parameters)
     ttnn_module = ttnn_c3k(device=device, parameter=parameters.conv_args, conv_pt=parameters)
     ttnn_output = ttnn_module(x=ttnn_input, device=device)  # ttnn.Shape([1, 1, 224, 64])
     ttnn_output = ttnn.to_torch(ttnn_output)
