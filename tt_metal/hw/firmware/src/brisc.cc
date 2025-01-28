@@ -388,8 +388,6 @@ int main() {
     kernel_profiler::init_profiler();
 
     while (1) {
-        // DeviceZoneScopedPush();
-        DeviceZoneScopedMainN("BRISC-FW");
         init_sync_registers();
         reset_ncrisc_with_iram();
 
@@ -434,6 +432,17 @@ int main() {
 
         WAYPOINT("GD");
         {
+            DeviceZoneScopedPush();
+            DeviceZoneScopedMainN("BRISC-LOOP");
+            {
+                DeviceZoneScopedMainN("BRISC-TEST");
+                {
+                    DeviceZoneScopedMainN("BRISC-TEST-CHILD");
+                }
+            }
+            {
+                DeviceZoneScopedMainN("BRISC-TEST-2");
+            }
             //  Only include this iteration in the device profile if the launch message is valid. This is because all
             //  workers get a go signal regardless of whether they're running a kernel or not. We don't want to profile
             //  "invalid" iterations.

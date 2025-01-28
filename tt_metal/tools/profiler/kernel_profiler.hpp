@@ -308,7 +308,7 @@ __attribute__((noinline)) void quick_push() {
     //}
 
     wIndex = CUSTOM_MARKERS;
-    doPush = false;
+    // doPush = false;
 
 #endif
 }
@@ -343,24 +343,33 @@ struct profileScope {
 
 void push_time_out() {
 #if defined(COMPILE_FOR_BRISC)
-    if (time_out++ > 100000) {
-        if (wIndex > CUSTOM_MARKERS + PROFILER_L1_MARKER_UINT32_SIZE) {
-            wIndex -= PROFILER_L1_MARKER_UINT32_SIZE;
-            if (((profiler_data_buffer[0][wIndex] >> 28) & 0x7) == ZONE_END) {
-                wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
-            }
-            time_out = 0;
-            quick_push<true>();
-        }
+    if (time_out++ > 100000 and wIndex > CUSTOM_MARKERS + PROFILER_L1_MARKER_UINT32_SIZE) {
+        // wIndex -= PROFILER_L1_MARKER_UINT32_SIZE;
+        // stackSize -= PROFILER_L1_MARKER_UINT32_SIZE;
+        // if (((profiler_data_buffer[0][wIndex] >> 28) & 0x7) == ZONE_END) {
+        // wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
+        // stackSize += PROFILER_L1_MARKER_UINT32_SIZE;
+        //}
+        time_out = 0;
+        quick_push<true>();
     }
 #endif
 }
 
 struct scopePush {
 #if defined(COMPILE_FOR_BRISC)
-    inline __attribute__((always_inline)) scopePush() {}
+    inline __attribute__((always_inline)) scopePush() {
+        uint32_t runCounter = profiler_control_buffer[RUN_COUNTER];
+        profiler_data_buffer[myRiscID][wIndex] = (runCounter & 0xFFFF) |
+                                                 ((((core_flat_id & 0xFF) << 3) | myRiscID) << 16) |
+                                                 ((runCounter & 0xF) << 27) | (0x1 << 31);
+    }
 
-    inline __attribute__((always_inline)) ~scopePush() {}
+    inline __attribute__((always_inline)) ~scopePush() {
+        if (wIndex >= (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
+            quick_push<true>();
+        }
+    }
 #else
 #endif
 };
@@ -375,13 +384,10 @@ struct profileScopeGuaranteed {
 #if defined(COMPILE_FOR_BRISC)
     bool start_marked = false;
     inline __attribute__((always_inline)) profileScopeGuaranteed() {
-        if (wIndex < (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
-            uint32_t runCounter = profiler_control_buffer[RUN_COUNTER];
-            profiler_data_buffer[myRiscID][wIndex] = (runCounter & 0xFFFF) |
-                                                     ((((core_flat_id & 0xFF) << 3) | myRiscID) << 16) |
-                                                     ((runCounter & 0xF) << 27) | (0x1 << 31);
+        if (wIndex <
+            (PROFILER_L1_VECTOR_SIZE - stackSize - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
             stackSize += PROFILER_L1_MARKER_UINT32_SIZE;
-            doPush = true;
+            // doPush = true;
             start_marked = true;
             mark_time_at_index_inlined(wIndex, timer_id);
             wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
@@ -389,14 +395,11 @@ struct profileScopeGuaranteed {
     }
 
     inline __attribute__((always_inline)) ~profileScopeGuaranteed() {
-        if (start_marked and doPush) {
+        if (start_marked) {
             mark_time_at_index_inlined(wIndex, get_const_id(timer_id, ZONE_END));
             wIndex += PROFILER_L1_MARKER_UINT32_SIZE;
             start_marked = false;
             stackSize -= PROFILER_L1_MARKER_UINT32_SIZE;
-            if (wIndex >= (PROFILER_L1_VECTOR_SIZE - (QUICK_PUSH_MARKER_COUNT * PROFILER_L1_MARKER_UINT32_SIZE))) {
-                quick_push<true>();
-            }
         }
     }
 #else
