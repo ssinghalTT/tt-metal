@@ -924,7 +924,7 @@ class TtModelArgs:
         if torch.is_tensor(x):  # Input on host -> Use torch
             x = x.transpose(0, 1).unsqueeze(1)  # [seq_len, 1, batch, dim]
             # Pad small batches to 32
-            if batch < 32:
+            if batch < 32 * data_parallel:
                 zeros = torch.zeros(1, seq_len, 32, self.dim)
                 if data_parallel > 1:
                     padded_batch = []
@@ -932,7 +932,6 @@ class TtModelArgs:
                         zeros[:, :, : (batch // data_parallel), :] = chunk
                         padded_batch.append(zeros.clone())
                     x = torch.cat(padded_batch, dim=2)
-                    print(x.shape)
                 else:
                     zeros[:, :, :batch, :] = x
                     x = zeros
