@@ -5,6 +5,7 @@ set(IMPL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/device/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device/device_pool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/buffers/buffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/buffers/dispatch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/buffers/circular_buffer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/buffers/circular_buffer_types.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/buffers/global_circular_buffer.cpp
@@ -21,6 +22,8 @@ set(IMPL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/program/dispatch.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dispatch/debug_tools.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dispatch/command_queue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dispatch/hardware_command_queue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dispatch/launch_message_ring_buffer_state.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dispatch/worker_config_buffer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dispatch/data_collection.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dispatch/topology.cpp
@@ -42,6 +45,16 @@ set(IMPL_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/event/event.cpp
 )
 
+# Include helper functions and generate headers from flatbuffer schemas
+include(flatbuffers)
+
+set(FLATBUFFER_SCHEMAS) # Empty to start, coming soon.
+
+foreach(FBS_FILE ${FLATBUFFER_SCHEMAS})
+    GENERATE_FBS_HEADER(${FBS_FILE})
+    list(APPEND IMPL_SRC ${FBS_GENERATED_HEADER_FILE})
+endforeach()
+
 add_library(impl OBJECT ${IMPL_SRC})
 add_library(Metalium::Metal::Impl ALIAS impl)
 
@@ -49,11 +62,15 @@ target_link_libraries(
     impl
     PUBLIC
         common
-        Metalium::Metal::LLRT
         Tracy::TracyClient
     PRIVATE
         Boost::smart_ptr
         range-v3::range-v3
+        Metalium::Metal::Common
+        Taskflow::Taskflow
+        TT::Metalium::HostDevCommon
+        Metalium::Metal::Hardware
+        FlatBuffers::FlatBuffers
 )
 
 target_include_directories(
@@ -62,6 +79,8 @@ target_include_directories(
         ${PROJECT_SOURCE_DIR}/tt_metal
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${PROJECT_SOURCE_DIR}/tt_metal/include
+    PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/flatbuffers
 )
 
 target_compile_options(impl PUBLIC -Wno-int-to-pointer-cast)

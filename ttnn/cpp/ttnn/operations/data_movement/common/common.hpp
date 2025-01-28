@@ -5,14 +5,14 @@
 #include "ttnn/operations/data_movement/squeeze/squeeze.hpp"
 #include "ttnn/operations/data_movement/pad/pad.hpp"
 
-#include "ttnn/cpp/ttnn/tensor/types.hpp"
-#include "ttnn/cpp/ttnn/tensor/tensor.hpp"
+#include "cpp/ttnn/tensor/types.hpp"
+#include "cpp/ttnn/tensor/tensor.hpp"
 
 namespace ttnn {
 namespace operations {
 namespace data_movement {
 
-ttnn::Shape squeeze_shape_to_4D(ttnn::Shape output_shape);
+ttnn::SimpleShape squeeze_shape_to_4D(ttnn::SimpleShape output_shape);
 ttnn::Tensor squeeze_from_ND_to_4D(const ttnn::Tensor& tensor);
 
 ttnn::Tensor pad_to_tile_vol(

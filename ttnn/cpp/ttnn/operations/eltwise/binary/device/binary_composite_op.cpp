@@ -8,16 +8,16 @@
 #include "ttnn/operations/eltwise/binary/binary.hpp"
 #include "ttnn/operations/eltwise/unary/unary.hpp"
 #include "ttnn/types.hpp"
-#include "tt_metal/common/bfloat16.hpp"
-#include "tt_metal/experimental/hal.hpp"
+#include <tt-metalium/bfloat16.hpp>
+#include <tt-metalium/hal_exp.hpp>
 #include "ttnn/operations/eltwise/binary/binary_composite.hpp"
-#include "ttnn/cpp/ttnn/operations/eltwise/ternary/where.hpp"
-#include "ttnn/cpp/ttnn/operations/copy.hpp"
+#include "cpp/ttnn/operations/eltwise/ternary/where.hpp"
+#include "cpp/ttnn/operations/copy.hpp"
 #include "ttnn/operations/eltwise/unary/unary_composite.hpp"
 #include "ttnn/operations/data_movement/pad/pad.hpp"
 #include "ttnn/operations/matmul/matmul.hpp"
 #include "ttnn/operations/creation.hpp"
-#include "ttnn/cpp/ttnn/operations/data_movement/reshape_view/reshape.hpp"
+#include "cpp/ttnn/operations/data_movement/reshape_view/reshape.hpp"
 #include "ttnn/operations/experimental/auto_format/auto_format.hpp"
 
 namespace ttnn::operations::binary {
@@ -478,9 +478,9 @@ Tensor _floor_div(const Tensor& input_a, const Tensor& input_b, const std::optio
 Tensor _scatter(const Tensor& input_a, const Tensor& input_b, const std::optional<MemoryConfig>& output_mem_config) {
     tt::tt_metal::Array4D start_index = {0, 0, 0, 0};
     Tensor index_pad = ttnn::pad(
-        0, ttnn::ones_like(input_a), input_b.get_legacy_shape().to_array_4D(), start_index, 0, false, std::nullopt);
+        0, ttnn::ones_like(input_a), input_b.get_padded_shape().to_array_4D(), start_index, 0, false, std::nullopt);
     Tensor temp_a =
-        ttnn::pad(0, input_a, input_b.get_legacy_shape().to_array_4D(), start_index, 0, false, std::nullopt);
+        ttnn::pad(0, input_a, input_b.get_padded_shape().to_array_4D(), start_index, 0, false, std::nullopt);
     return ttnn::where(index_pad, temp_a, input_b);
 }
 

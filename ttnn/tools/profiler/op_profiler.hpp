@@ -5,18 +5,20 @@
 #pragma once
 
 #include <filesystem>
+#include <mutex>
 #include <reflect>
+#include <stack>
 #include <tuple>
 #include <type_traits>
 
 #include "ttnn/tensor/tensor.hpp"
 #include <nlohmann/json.hpp>
 #include <magic_enum/magic_enum.hpp>
-#include "tools/profiler/profiler.hpp"
-#include "tt_metal/impl/kernels/kernel.hpp"
+#include <tt-metalium/profiler.hpp>
+#include <tt-metalium/kernel.hpp>
 #include "ttnn/operation.hpp"
-#include "tt_metal/detail/tt_metal.hpp"
-#include "tt_metal/impl/device/device_pool.hpp"
+#include <tt-metalium/tt_metal.hpp>
+#include <tt-metalium/device_pool.hpp>
 #include "tracy/Tracy.hpp"
 #include "tracy/TracyC.h"
 
@@ -223,7 +225,7 @@ static inline json get_tensor_json(const Tensor& tensor) {
         ret["storage_type"] = fmt::format("{}", magic_enum::enum_name(tensor.storage_type()));
     }
 
-    auto tensor_shape = tensor.get_legacy_shape();
+    auto tensor_shape = tensor.get_padded_shape();
     ret["shape"]["W"] = tensor_shape.rank() >= 4 ? tensor_shape[-4] : 1;
     ret["shape"]["Z"] = tensor_shape.rank() >= 3 ? tensor_shape[-3] : 1;
     ret["shape"]["Y"] = tensor_shape.rank() >= 2 ? tensor_shape[-2] : 1;
