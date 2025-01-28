@@ -759,7 +759,7 @@ def test_slice_adversarial(input_shape, dim, start, end, step, layout, device):
     ttnn_tensor = ttnn.from_torch(torch_input, device=device, layout=layout, dtype=ttnn.bfloat16)
     ttnn_output = ttnn_tensor[indices]
 
-    ttnn_output_tensor = ttnn.to_torch(ttnn_output)
+    ttnn_output_tensor = ttnn.from_device(ttnn_output).to_torch_with_logical_shape()
 
     assert_with_pcc(torch_output_tensor, ttnn_output_tensor, 0.999)
 
@@ -793,7 +793,7 @@ def test_slice_adversarial_fixed(input_shape, dim, start, end, step, layout, dev
 
     ttnn_tensor = ttnn.from_torch(torch_input, device=device, layout=layout, dtype=ttnn.bfloat16)
     ttnn_output = ttnn_tensor[indices]
-
+    print(ttnn_output)
     ttnn_output_tensor = ttnn.to_torch(ttnn_output)
 
     assert_with_pcc(torch_output_tensor, ttnn_output_tensor, 0.999)
