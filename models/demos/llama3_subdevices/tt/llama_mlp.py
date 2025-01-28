@@ -55,7 +55,7 @@ class TtLlamaMLP(LightweightModule):
         if args.dummy_weights:
             cache_name = lambda _: None
         else:
-            cache_name = lambda name: weight_cache_path / (state_dict_prefix + f".{name}")
+            cache_name = lambda name: weight_cache_path / (state_dict_prefix + f".{name}" + "prefetcher")
 
         w1_w3_mem_config = self.model_config[
             "W1W3_RING_MEMCFG"
@@ -72,7 +72,7 @@ class TtLlamaMLP(LightweightModule):
             mesh_mapper=ttnn.ShardTensor2dMesh(self.mesh_device, dims=dim, mesh_shape=args.cluster_shape),
             layout=ttnn.TILE_LAYOUT,
             memory_config=w2_mem_config if "w2" in name else w1_w3_mem_config,
-            # cache_file_name=cache_name(name) + "padded",
+            cache_file_name=cache_name(name),
         )
 
         self.four_bit_mlp = args.optimizations.bfp4_mlp
