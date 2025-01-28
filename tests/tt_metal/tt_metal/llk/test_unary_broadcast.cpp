@@ -44,15 +44,15 @@ std::vector<bfloat16> gold_broadcast(std::vector<bfloat16>& src, const std::vect
                 bfloat16 broadcast_value;
                 switch (dim) {
                     case BroadcastDim::ROW: {
-                        broadcast_value = src_b[j];
+                        broadcast_value = src[j];
                         break;
                     }
                     case BroadcastDim::COL: {
-                        broadcast_value = src_b[i * num_cols];
+                        broadcast_value = src[i * num_cols];
                         break;
                     }
                     case BroadcastDim::SCALAR: {
-                        broadcast_value = src_b[0];
+                        broadcast_value = src[0];
                         break;
                     }
                     default: {
@@ -120,7 +120,7 @@ void run_single_core_unary_broadcast(tt_metal::IDevice* device, const UnaryBroad
         program,
         "tests/tt_metal/tt_metal/test_kernels/compute/unary_broadcast.cpp",
         core,
-        tt_metal::ComputeConfig{.math_fidelity = test_config.math_fidelity, .compile_args = {}, .defines = defines});
+        tt_metal::ComputeConfig{.compile_args = {}, .defines = defines});
 
     tt_metal::SetRuntimeArgs(
         program,
@@ -153,7 +153,7 @@ void run_single_core_unary_broadcast(tt_metal::IDevice* device, const UnaryBroad
         .num_tiles_r_dim = tile_width / 32, .num_tiles_c_dim = tile_height / 32};
     auto tilized_input0 = unit_tests::compute::gold_standard_tilize(packed_input0, config);
 
-    tt_metal::detail::WriteToBuffer(src_a_dram_buffer, tilized_input0);
+    tt_metal::detail::WriteToBuffer(src_dram_buffer, tilized_input0);
 
     tt_metal::detail::LaunchProgram(device, program);
 
