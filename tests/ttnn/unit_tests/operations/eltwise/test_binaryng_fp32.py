@@ -17,15 +17,16 @@ from models.utility_functions import skip_for_grayskull
     ],
 )
 def test_sub_fp32(device, ttnn_function):
-    x_torch = torch.tensor([[1]], dtype=torch.float32)
-    y_torch = torch.tensor([[0.00030171126]], dtype=torch.float32)
+    x_torch = torch.ones([1, 1, 32, 32], dtype=torch.int32) * 16
+    y_torch = torch.ones([1, 1, 32, 32], dtype=torch.int32) * 4
     golden_fn = ttnn.get_golden_function(ttnn_function)
     z_torch = golden_fn(x_torch, y_torch)
-    x_tt = ttnn.from_torch(x_torch, dtype=ttnn.float32, layout=ttnn.TILE_LAYOUT, device=device)
-    y_tt = ttnn.from_torch(y_torch, dtype=ttnn.float32, layout=ttnn.TILE_LAYOUT, device=device)
-    z_tt_sub = ttnn.experimental.sub(x_tt, y_tt)
+    x_tt = ttnn.from_torch(x_torch, dtype=ttnn.int32, layout=ttnn.TILE_LAYOUT, device=device)
+    y_tt = ttnn.from_torch(y_torch, dtype=ttnn.int32, layout=ttnn.TILE_LAYOUT, device=device)
+    z_tt_sub = ttnn.experimental.sub(x_tt, y_tt, dtype=ttnn.float32)
     tt_out = ttnn.to_torch(z_tt_sub)
-
+    print("z_torch", z_torch)
+    print("tt_out", z_tt_sub)
     status = torch.allclose(z_torch, tt_out, atol=1e-10, rtol=1e-5, equal_nan=False)
     assert status
 
