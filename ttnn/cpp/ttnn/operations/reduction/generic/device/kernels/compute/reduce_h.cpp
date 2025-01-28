@@ -3,8 +3,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <cstdint>
-
+#include "debug/dprint_tensix.h"
+#include "debug/dprint.h"
 #include "compute_kernel_api/reduce.h"
+
+inline void print_full_tile(uint32_t cb_id, uint32_t tile_id = 0, bool untilize = false) {
+    DPRINT << "======" << ENDL();
+    for (uint8_t r = 0; r < 32; ++r) {
+        SliceRange sr_left = SliceRange{.h0 = r, .h1 = (uint8_t)(r + 1), .hs = 1, .w0 = 0, .w1 = 32, .ws = 1};
+        DPRINT << (uint)r << ": " << TileSlice(cb_id, tile_id, sr_left, true, untilize) << ENDL();
+    }
+    DPRINT << "++++++" << ENDL();
+}
 
 namespace NAMESPACE {
 void MAIN {
@@ -40,6 +50,7 @@ void MAIN {
                 for (uint32_t i = wt; i < chunk_end; ++i) {
                     cb_wait_front(tt::CB::c_in0, onetile);
                     reduce_tile(tt::CB::c_in0, tt::CB::c_in2, 0, 0, reduce_dst_idx);
+                    // dprint_tensix_dest_reg(0);
                     cb_pop_front(tt::CB::c_in0, onetile);
                     ++reduce_dst_idx;
                 }
@@ -47,6 +58,7 @@ void MAIN {
             for (uint32_t i = wt; i < chunk_end; ++i) {
                 cb_reserve_back(tt::CB::c_out0, onetile);
                 pack_tile((i - wt), tt::CB::c_out0);
+                PACK((print_full_tile(tt::CB::c_out0, 0, true)));
                 cb_push_back(tt::CB::c_out0, onetile);
             }
             release_dst();
