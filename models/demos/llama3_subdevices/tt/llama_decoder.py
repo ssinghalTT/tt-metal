@@ -128,9 +128,10 @@ class TtTransformerBlock(LightweightModule):
         # Attention takes replicated inputs and produces fractured outputs
 
         # pad attn input
-        attn_in = ttnn.to_memory_config(attn_in, self.model_config["SHARDED_ATTN_INPUT_RING_MEMCFG"])
+        attn_in_sharded = ttnn.to_memory_config(attn_in, self.model_config["SHARDED_ATTN_INPUT_RING_MEMCFG"])
+        attn_in.deallocate(True)
         attn_out = self.attention.forward(
-            attn_in,
+            attn_in_sharded,
             current_pos,
             rot_mats,
             user_id,
@@ -144,8 +145,7 @@ class TtTransformerBlock(LightweightModule):
         # Here x and attn_out are both fractured across devices
         h = ttnn.add(x, attn_out, memory_config=skip_mem_cfg)
         ttnn.deallocate(attn_out)
-        if mode == "prefill":
-            x.deallocate(True)
+        x.deallocate(True)
 
         # Norms take fractured inputs and output replicated across devices
 
@@ -154,8 +154,12 @@ class TtTransformerBlock(LightweightModule):
         #     ff_in = ttnn.to_memory_config(ff_in, memory_config=self.model_config["MLP_ACT_MEMCFG"])
 
         # MLP takes replicated inputs and produces fractured outputs
-        ff_in = ttnn.to_memory_config(ff_in, self.model_config["SHARDED_FF12_RING_MEMCFG"])
-        ff_out = self.feed_forward.forward(ff_in, mode)
+        ff_in_sharded = ttnn.to_memory_config(ff_in, self.model_config["SHARDED_FF12_RING_MEMCFG"])
+        ff_in.deallocate(True)
+        ff_out = self.feed_forward.forward(ff_in_sharded, mode)
 
         out = ttnn.add(h, ff_out, memory_config=skip_mem_cfg)
+
+        ttnn.deallocate(h)
+        ttnn.deallocate(ff_out)
         return out  # fractured across devices

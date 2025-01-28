@@ -149,7 +149,7 @@ class TtLlamaAttention(LightweightModule):
             mesh_mapper=ttnn.ShardTensor2dMesh(
                 self.mesh_device, dims=(3, 2) if self.TG else (2, 3), mesh_shape=configuration.cluster_shape
             ),
-            # cache_file_name=cache_name("wqkv_sharded_2d_padded_pf"),  ## TODO: Fix caching
+            cache_file_name=cache_name("wqkv_sharded_2d_prefetcher"),  ## TODO: Fix caching
         )
 
         if self.model_config["USE_PREFETCHER"]:
@@ -176,9 +176,9 @@ class TtLlamaAttention(LightweightModule):
                 dims=(2, 3) if (self.use_fused_all_gather_matmul or self.TG) else (3, 2),
                 mesh_shape=configuration.cluster_shape,
             ),
-            # cache_file_name=cache_name("wo_width_sharded_2d_padded_pf")
-            # if (self.use_fused_all_gather_matmul or self.TG)
-            # else cache_name("wo"),
+            cache_file_name=cache_name("wo_width_sharded_2d_prefetcher")
+            if (self.use_fused_all_gather_matmul or self.TG)
+            else cache_name("wo"),
         )
         if self.model_config["USE_PREFETCHER"]:
             self.prefetcher_setup.insert_tensor(self.wo)
@@ -281,7 +281,7 @@ class TtLlamaAttention(LightweightModule):
         ttnn.deallocate(xqkv_fused_dram)
 
         xqkv_fused = ttnn.to_memory_config(xqkv_reduced, self.model_config["CREATE_HEAD_INPUT_MEMCFG"])
-
+        xqkv_reduced.deallocate(True)
         ###
         # Reshape and rotary embeddings
         ###
@@ -346,7 +346,7 @@ class TtLlamaAttention(LightweightModule):
                 memory_config=sdpa_out_mem_cfg,
             )
         else:
-            attn_output_1G4D = ttnn.transformer.scaled_dot_product_attention_decode(
+            attn_output_1G4D_sharded = ttnn.transformer.scaled_dot_product_attention_decode(
                 q_heads_1BQD,
                 keys,
                 values,
@@ -359,24 +359,29 @@ class TtLlamaAttention(LightweightModule):
 
         ttnn.deallocate(q_heads_1BQD)
 
-        attn_output_1G4D = ttnn.to_memory_config(attn_output_1G4D, ttnn.DRAM_MEMORY_CONFIG)
+        attn_output_1G4D = ttnn.to_memory_config(attn_output_1G4D_sharded, ttnn.DRAM_MEMORY_CONFIG)
+        attn_output_1G4D_sharded.deallocate(True)
         attn_output_gathered = self.tt_ccl.line_all_gather(
             attn_output_1G4D, dim=1, cluster_axis=1, num_links=1, memory_config=ttnn.DRAM_MEMORY_CONFIG
         )
         ttnn.deallocate(attn_output_1G4D)
 
-        attn_output_gathered = ttnn.to_memory_config(
+        attn_output_gathered_sharded = ttnn.to_memory_config(
             attn_output_gathered, self.model_config["GATHER_USERS_MEMCFG"](list(self.mesh_device.shape)[1])
-        )
-
-        attn_output_cat = ttnn.experimental.nlp_concat_heads_decode(
-            attn_output_gathered,
-            num_heads=self.n_local_heads,
         )
         ttnn.deallocate(attn_output_gathered)
 
+        attn_output_cat_0 = ttnn.experimental.nlp_concat_heads_decode(
+            attn_output_gathered_sharded,
+            num_heads=self.n_local_heads,
+        )
+        ttnn.deallocate(attn_output_gathered_sharded)
+
         # Original matmul on each device [1, 1, 32, 1024] @ [1, 1, 1024, 2048]
-        attn_output_cat = ttnn.to_memory_config(attn_output_cat, self.model_config["SHARDED_ATTN_WO_INPUT_RING_MEMCFG"])
+        attn_output_cat = ttnn.to_memory_config(
+            attn_output_cat_0, self.model_config["SHARDED_ATTN_WO_INPUT_RING_MEMCFG"]
+        )
+        attn_output_cat_0.deallocate(True)
         dense_out_ttnn = ttnn.matmul(
             attn_output_cat,
             self.wo,
