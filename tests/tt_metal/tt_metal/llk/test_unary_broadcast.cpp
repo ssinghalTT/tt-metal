@@ -69,7 +69,7 @@ std::vector<bfloat16> gold_broadcast(std::vector<bfloat16>& src, const std::vect
     return golden;
 }
 
-void run_single_core_broadcast(tt_metal::IDevice* device, const BroadcastConfig& test_config) {
+void run_single_core_unary_broadcast(tt_metal::IDevice* device, const UnaryBroadcastConfig& test_config) {
     Program program = tt_metal::CreateProgram();
 
     CoreCoord core = {0, 0};
@@ -116,8 +116,6 @@ void run_single_core_broadcast(tt_metal::IDevice* device, const BroadcastConfig&
         tt_metal::DataMovementConfig{
             .processor = tt_metal::DataMovementProcessor::RISCV_0, .noc = tt_metal::NOC::RISCV_0_default});
 
-    vector<uint32_t> compute_kernel_args = {num_tiles, 1};
-
     auto binary_kernel = tt_metal::CreateKernel(
         program,
         "tests/tt_metal/tt_metal/test_kernels/compute/unary_broadcast.cpp",
@@ -129,9 +127,7 @@ void run_single_core_broadcast(tt_metal::IDevice* device, const BroadcastConfig&
         reader_kernel,
         core,
         {
-            (uint32_t)dram_buffer_src_a_addr,
-            (uint32_t)0,  // dram bank id
-            (uint32_t)dram_buffer_src_b_addr,
+            (uint32_t)dram_buffer_src_addr,
             (uint32_t)0,  // dram bank id
             (uint32_t)1,  // num tiles
         });
@@ -149,29 +145,15 @@ void run_single_core_broadcast(tt_metal::IDevice* device, const BroadcastConfig&
     std::vector<bfloat16> input0 = generate_uniform_random_vector<bfloat16>(
         -1.0f, 1.0f, single_tile_size / bfloat16::SIZEOF, std::chrono::system_clock::now().time_since_epoch().count());
 
-    std::vector<bfloat16> input1 = generate_uniform_random_vector<bfloat16>(
-        -1.0f, 1.0f, single_tile_size / bfloat16::SIZEOF, std::chrono::system_clock::now().time_since_epoch().count());
-
-    mask_src_b_for_broadcast(input1, {tile_width, tile_height}, test_config.broadcast_dim);
-
-    std::vector<bfloat16> golden = gold_broadcast(
-        input0,
-        input1,
-        {tile_width, tile_height},
-        test_config.eltwise_op,
-        test_config.broadcast_dim,
-        test_config.math_fidelity);
+    std::vector<bfloat16> golden = gold_broadcast(input0, {tile_width, tile_height}, test_config.broadcast_dim);
 
     auto packed_input0 = pack_vector<uint32_t, bfloat16>(input0);
-    auto packed_input1 = pack_vector<uint32_t, bfloat16>(input1);
     auto packed_golden = pack_vector<uint32_t, bfloat16>(golden);
     unit_tests::compute::GoldenConfig config = {
         .num_tiles_r_dim = tile_width / 32, .num_tiles_c_dim = tile_height / 32};
     auto tilized_input0 = unit_tests::compute::gold_standard_tilize(packed_input0, config);
-    auto tilized_input1 = unit_tests::compute::gold_standard_tilize(packed_input1, config);
 
     tt_metal::detail::WriteToBuffer(src_a_dram_buffer, tilized_input0);
-    tt_metal::detail::WriteToBuffer(src_b_dram_buffer, tilized_input1);
 
     tt_metal::detail::LaunchProgram(device, program);
 
@@ -181,33 +163,26 @@ void run_single_core_broadcast(tt_metal::IDevice* device, const BroadcastConfig&
 
     bool result = is_close_packed_vectors<bfloat16, uint32_t>(
         dest_buffer_data_untilized, packed_golden, [&](const bfloat16& a, const bfloat16& b) {
-            return is_close(a, b, 0.0155);
+            return is_close(a, b, 0.0);
         });
     ASSERT_TRUE(result);
 }
 }  // namespace unit_tests::compute::broadcast
 
-class BroadcastParameterizedDeviceFixture
+class UnaryBroadcastParameterizedDeviceFixture
     : public DeviceFixture,
-      public testing::WithParamInterface<unit_tests::compute::broadcast::BroadcastConfig> {};
+      public testing::WithParamInterface<unit_tests::compute::broadcast::UnaryBroadcastConfig> {};
 
-TEST_P(BroadcastParameterizedDeviceFixture, TensixComputeSingleTileBroadcast) {
-    unit_tests::compute::broadcast::BroadcastConfig test_config = GetParam();
-    for (uint8_t i = uint8_t(MathFidelity::LoFi); i <= uint8_t(MathFidelity::HiFi4); i++) {
-        if (i == 1) {
-            continue;
-        }
-        log_info("Math Fidelity = {}", i);
-        test_config.math_fidelity = MathFidelity(i);
-        unit_tests::compute::broadcast::run_single_core_broadcast(this->devices_.at(0), test_config);
-    }
+TEST_P(UnaryBroadcastParameterizedDeviceFixture, TensixComputeSingleTileUnaryBroadcast) {
+    unit_tests::compute::broadcast::UnaryBroadcastConfig test_config = GetParam();
+    unit_tests::compute::broadcast::run_single_core_unary_broadcast(this->devices_.at(0), test_config);
 }
 
 using namespace unit_tests::compute::broadcast;
 
 INSTANTIATE_TEST_SUITE_P(
-    ComputeSingleTileBroadcast,
-    BroadcastParameterizedDeviceFixture,
+    ComputeSingleTileUnaryBroadcast,
+    UnaryBroadcastParameterizedDeviceFixture,
     ::testing::Values(
         (UnaryBroadcastConfig){BroadcastDim::ROW},
         (UnaryBroadcastConfig){BroadcastDim::COL},
