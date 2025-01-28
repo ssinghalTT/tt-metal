@@ -1,0 +1,215 @@
+// SPDX-FileCopyrightText: © 2024 Tenstorrent Inc.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+#include <gtest/gtest.h>
+
+#include "device_fixture.hpp"
+#include "tt_metal/test_utils/comparison.hpp"
+#include "tt_metal/test_utils/df/df.hpp"
+#include "tt_metal/test_utils/stimulus.hpp"
+#include "test_golden_impls.hpp"
+
+using std::map;
+using namespace tt;
+using namespace tt::test_utils;
+using namespace tt::test_utils::df;
+using namespace tt::tt_metal;
+
+namespace unit_tests::compute::broadcast {
+
+enum BroadcastDim : uint8_t { ROW = 0, COL = 1, SCALAR = 2, NONE = 3 };
+
+const map<BroadcastDim, string> broadcast_dim_to_type = {
+    {BroadcastDim::ROW, "BroadcastType::ROW"},
+    {BroadcastDim::COL, "BroadcastType::COL"},
+    {BroadcastDim::SCALAR, "BroadcastType::SCALAR"},
+    {BroadcastDim::NONE, "BroadcastType::NONE"}};
+
+struct UnaryBroadcastConfig {
+    BroadcastDim broadcast_dim;
+};
+
+std::vector<bfloat16> gold_broadcast(std::vector<bfloat16>& src, const std::vector<uint32_t>& shape, BroadcastDim dim) {
+    int num_rows = shape.at(0);
+    int num_cols = shape.at(1);
+
+    std::vector<bfloat16> golden(num_cols * num_rows);
+
+    if (dim == BroadcastDim::NONE) {
+        golden = src;
+    } else {
+        for (int i = 0; i < num_rows; i++) {
+            for (int j = 0; j < num_cols; j++) {
+                bfloat16 broadcast_value;
+                switch (dim) {
+                    case BroadcastDim::ROW: {
+                        broadcast_value = src_b[j];
+                        break;
+                    }
+                    case BroadcastDim::COL: {
+                        broadcast_value = src_b[i * num_cols];
+                        break;
+                    }
+                    case BroadcastDim::SCALAR: {
+                        broadcast_value = src_b[0];
+                        break;
+                    }
+                    default: {
+                        TT_THROW("Unsupported BroadcastDim={}", dim);
+                        break;
+                    }
+                }
+
+                golden[i * num_cols + j] = broadcast_value.to_float();
+            }
+        }
+    }
+
+    return golden;
+}
+
+void run_single_core_broadcast(tt_metal::IDevice* device, const BroadcastConfig& test_config) {
+    Program program = tt_metal::CreateProgram();
+
+    CoreCoord core = {0, 0};
+
+    constexpr uint32_t tile_width = 32;
+    constexpr uint32_t tile_height = 32;
+    constexpr uint32_t single_tile_size = tile_width * tile_height * bfloat16::SIZEOF;
+
+    tt_metal::InterleavedBufferConfig dram_config{
+        .device = device,
+        .size = single_tile_size,
+        .page_size = single_tile_size,
+        .buffer_type = tt_metal::BufferType::DRAM};
+
+    auto src_dram_buffer = CreateBuffer(dram_config);
+    uint32_t dram_buffer_src_addr = src_dram_buffer->address();
+    tt_metal::CircularBufferConfig l1_src_cb_config =
+        tt_metal::CircularBufferConfig(single_tile_size, {{0, tt::DataFormat::Float16_b}})
+            .set_page_size(0, single_tile_size);
+    auto l1_src_cb = tt_metal::CreateCircularBuffer(program, core, l1_src_cb_config);
+
+    auto dst_dram_buffer = CreateBuffer(dram_config);
+    uint32_t dram_buffer_dst_addr = dst_dram_buffer->address();
+    tt_metal::CircularBufferConfig l1_dst_cb_config =
+        tt_metal::CircularBufferConfig(single_tile_size, {{16, tt::DataFormat::Float16_b}})
+            .set_page_size(16, single_tile_size);
+    auto l1_dst_cb = tt_metal::CreateCircularBuffer(program, core, l1_dst_cb_config);
+
+    std::map<string, string> defines = {{"BCAST_DIM", broadcast_dim_to_type.at(test_config.broadcast_dim)}};
+
+    log_info("Testing UNARY BCAST_DIM={}", defines["BCAST_DIM"]);
+
+    auto reader_kernel = tt_metal::CreateKernel(
+        program,
+        "tests/tt_metal/tt_metal/test_kernels/dataflow/reader_unary.cpp",
+        core,
+        tt_metal::DataMovementConfig{
+            .processor = tt_metal::DataMovementProcessor::RISCV_1, .noc = tt_metal::NOC::RISCV_1_default});
+
+    auto writer_kernel = tt_metal::CreateKernel(
+        program,
+        "tt_metal/kernels/dataflow/writer_unary.cpp",
+        core,
+        tt_metal::DataMovementConfig{
+            .processor = tt_metal::DataMovementProcessor::RISCV_0, .noc = tt_metal::NOC::RISCV_0_default});
+
+    vector<uint32_t> compute_kernel_args = {num_tiles, 1};
+
+    auto binary_kernel = tt_metal::CreateKernel(
+        program,
+        "tests/tt_metal/tt_metal/test_kernels/compute/unary_broadcast.cpp",
+        core,
+        tt_metal::ComputeConfig{.math_fidelity = test_config.math_fidelity, .compile_args = {}, .defines = defines});
+
+    tt_metal::SetRuntimeArgs(
+        program,
+        reader_kernel,
+        core,
+        {
+            (uint32_t)dram_buffer_src_a_addr,
+            (uint32_t)0,  // dram bank id
+            (uint32_t)dram_buffer_src_b_addr,
+            (uint32_t)0,  // dram bank id
+            (uint32_t)1,  // num tiles
+        });
+
+    tt_metal::SetRuntimeArgs(
+        program,
+        writer_kernel,
+        core,
+        {
+            (uint32_t)dram_buffer_dst_addr,
+            (uint32_t)0,  // dram bank id
+            (uint32_t)1,  // num tiles
+        });
+
+    std::vector<bfloat16> input0 = generate_uniform_random_vector<bfloat16>(
+        -1.0f, 1.0f, single_tile_size / bfloat16::SIZEOF, std::chrono::system_clock::now().time_since_epoch().count());
+
+    std::vector<bfloat16> input1 = generate_uniform_random_vector<bfloat16>(
+        -1.0f, 1.0f, single_tile_size / bfloat16::SIZEOF, std::chrono::system_clock::now().time_since_epoch().count());
+
+    mask_src_b_for_broadcast(input1, {tile_width, tile_height}, test_config.broadcast_dim);
+
+    std::vector<bfloat16> golden = gold_broadcast(
+        input0,
+        input1,
+        {tile_width, tile_height},
+        test_config.eltwise_op,
+        test_config.broadcast_dim,
+        test_config.math_fidelity);
+
+    auto packed_input0 = pack_vector<uint32_t, bfloat16>(input0);
+    auto packed_input1 = pack_vector<uint32_t, bfloat16>(input1);
+    auto packed_golden = pack_vector<uint32_t, bfloat16>(golden);
+    unit_tests::compute::GoldenConfig config = {
+        .num_tiles_r_dim = tile_width / 32, .num_tiles_c_dim = tile_height / 32};
+    auto tilized_input0 = unit_tests::compute::gold_standard_tilize(packed_input0, config);
+    auto tilized_input1 = unit_tests::compute::gold_standard_tilize(packed_input1, config);
+
+    tt_metal::detail::WriteToBuffer(src_a_dram_buffer, tilized_input0);
+    tt_metal::detail::WriteToBuffer(src_b_dram_buffer, tilized_input1);
+
+    tt_metal::detail::LaunchProgram(device, program);
+
+    std::vector<uint32_t> dest_buffer_data;
+    tt_metal::detail::ReadFromBuffer(dst_dram_buffer, dest_buffer_data);
+    auto dest_buffer_data_untilized = unit_tests::compute::gold_standard_untilize(dest_buffer_data, config);
+
+    bool result = is_close_packed_vectors<bfloat16, uint32_t>(
+        dest_buffer_data_untilized, packed_golden, [&](const bfloat16& a, const bfloat16& b) {
+            return is_close(a, b, 0.0155);
+        });
+    ASSERT_TRUE(result);
+}
+}  // namespace unit_tests::compute::broadcast
+
+class BroadcastParameterizedDeviceFixture
+    : public DeviceFixture,
+      public testing::WithParamInterface<unit_tests::compute::broadcast::BroadcastConfig> {};
+
+TEST_P(BroadcastParameterizedDeviceFixture, TensixComputeSingleTileBroadcast) {
+    unit_tests::compute::broadcast::BroadcastConfig test_config = GetParam();
+    for (uint8_t i = uint8_t(MathFidelity::LoFi); i <= uint8_t(MathFidelity::HiFi4); i++) {
+        if (i == 1) {
+            continue;
+        }
+        log_info("Math Fidelity = {}", i);
+        test_config.math_fidelity = MathFidelity(i);
+        unit_tests::compute::broadcast::run_single_core_broadcast(this->devices_.at(0), test_config);
+    }
+}
+
+using namespace unit_tests::compute::broadcast;
+
+INSTANTIATE_TEST_SUITE_P(
+    ComputeSingleTileBroadcast,
+    BroadcastParameterizedDeviceFixture,
+    ::testing::Values(
+        (UnaryBroadcastConfig){BroadcastDim::ROW},
+        (UnaryBroadcastConfig){BroadcastDim::COL},
+        (UnaryBroadcastConfig){BroadcastDim::SCALAR},
+        (UnaryBroadcastConfig){BroadcastDim::NONE}));
